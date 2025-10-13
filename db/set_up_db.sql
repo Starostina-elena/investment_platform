@@ -161,7 +161,7 @@ CREATE TABLE
         from_id integer,
         reciever_id integer,
         type transaction_type,
-        amount DECIMAL(34, 2),
+        amount DECIMAL(34, 2) NOT NULL,
         cum_sum_of_reciever DECIMAL(34, 2),
         cum_sum_of_sender DECIMAL(34, 2),
         time_at timestamp DEFAULT CURRENT_TIMESTAMP
