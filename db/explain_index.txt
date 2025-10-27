@@ -30,40 +30,6 @@ SELECT * FROM projects WHERE creator_id = 5 ORDER BY created_at DESC;
 
 
 
-EXPLAIN ANALYZE
-SELECT * FROM users WHERE is_banned = FALSE ORDER BY created_at DESC;
-venture-platform-db=# EXPLAIN ANALYZE
-SELECT * FROM users WHERE is_banned = FALSE ORDER BY created_at DESC;
-                                                  QUERY PLAN                                                   
----------------------------------------------------------------------------------------------------------------
- Sort  (cost=475.40..484.46 rows=3623 width=202) (actual time=7.561..8.136 rows=3623 loops=1)
-   Sort Key: created_at DESC
-   Sort Method: quicksort  Memory: 910kB
-   ->  Seq Scan on users  (cost=0.00..261.23 rows=3623 width=202) (actual time=0.045..4.849 rows=3623 loops=1)
-         Filter: (NOT is_banned)
- Planning Time: 2.242 ms
- Execution Time: 8.423 ms
-(7 rows)
-
-С индексом 
-venture-platform-db=# CREATE INDEX idx_users_is_banned ON users (is_banned);
-CREATE INDEX
-venture-platform-db=# EXPLAIN ANALYZE                                       
-SELECT * FROM users WHERE is_banned = FALSE ORDER BY created_at DESC;
-                                                  QUERY PLAN                                                   
----------------------------------------------------------------------------------------------------------------
- Sort  (cost=475.40..484.46 rows=3623 width=202) (actual time=2.293..2.704 rows=3623 loops=1)
-   Sort Key: created_at DESC
-   Sort Method: quicksort  Memory: 910kB
-   ->  Seq Scan on users  (cost=0.00..261.23 rows=3623 width=202) (actual time=0.016..1.321 rows=3623 loops=1)
-         Filter: (NOT is_banned)
- Planning Time: 0.889 ms
- Execution Time: 2.950 ms
-(7 rows)
-
-
-
-
 venture-platform-db=# EXPLAIN ANALYZE
 SELECT * FROM organizations WHERE type = 'jur';
                                                      QUERY PLAN                                                      
