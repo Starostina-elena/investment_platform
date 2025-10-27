@@ -38,9 +38,9 @@ services:
       - db
     environment:
       - DATABASE_URL=postgres://comrade:secret_password@db:5432/venture-platform-db?sslmode=disable
-      - NUM_USERS=300
-      - NUM_ORGANIZATIONS=120
-      - NUM_PROJECTS=240
+      - NUM_USERS=10
+      - NUM_ORGANIZATIONS=12000
+      - NUM_PROJECTS=24000
     entrypoint: ["/datagen"]
 
 volumes:

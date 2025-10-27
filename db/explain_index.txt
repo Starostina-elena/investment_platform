@@ -1,0 +1,186 @@
+venture-platform-db=# EXPLAIN ANALYZE
+SELECT * FROM projects WHERE creator_id = 5 ORDER BY created_at DESC;
+                                                  QUERY PLAN                                                  
+--------------------------------------------------------------------------------------------------------------
+ Sort  (cost=3471.02..3471.03 rows=3 width=246) (actual time=47.748..47.752 rows=1 loops=1)
+   Sort Key: created_at DESC
+   Sort Method: quicksort  Memory: 25kB
+   ->  Seq Scan on projects  (cost=0.00..3471.00 rows=3 width=246) (actual time=0.359..47.705 rows=1 loops=1)
+         Filter: (creator_id = 5)
+         Rows Removed by Filter: 74879
+ Planning Time: 1.199 ms
+ Execution Time: 47.857 ms
+(8 rows)
+
+После добавления индекса
+
+venture-platform-db=# EXPLAIN ANALYZE                                               
+SELECT * FROM projects WHERE creator_id = 5 ORDER BY created_at DESC;
+                                                                QUERY PLAN                                                                 
+-------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=10.07..10.08 rows=3 width=246) (actual time=0.124..0.133 rows=1 loops=1)
+   Sort Key: created_at DESC
+   Sort Method: quicksort  Memory: 25kB
+   ->  Index Scan using idx_projects_creator_id on projects  (cost=0.29..10.05 rows=3 width=246) (actual time=0.105..0.114 rows=1 loops=1)
+         Index Cond: (creator_id = 5)
+ Planning Time: 1.046 ms
+ Execution Time: 0.233 ms
+(7 rows)
+
+
+
+
+EXPLAIN ANALYZE
+SELECT * FROM users WHERE is_banned = FALSE ORDER BY created_at DESC;
+venture-platform-db=# EXPLAIN ANALYZE
+SELECT * FROM users WHERE is_banned = FALSE ORDER BY created_at DESC;
+                                                  QUERY PLAN                                                   
+---------------------------------------------------------------------------------------------------------------
+ Sort  (cost=475.40..484.46 rows=3623 width=202) (actual time=7.561..8.136 rows=3623 loops=1)
+   Sort Key: created_at DESC
+   Sort Method: quicksort  Memory: 910kB
+   ->  Seq Scan on users  (cost=0.00..261.23 rows=3623 width=202) (actual time=0.045..4.849 rows=3623 loops=1)
+         Filter: (NOT is_banned)
+ Planning Time: 2.242 ms
+ Execution Time: 8.423 ms
+(7 rows)
+
+С индексом 
+venture-platform-db=# CREATE INDEX idx_users_is_banned ON users (is_banned);
+CREATE INDEX
+venture-platform-db=# EXPLAIN ANALYZE                                       
+SELECT * FROM users WHERE is_banned = FALSE ORDER BY created_at DESC;
+                                                  QUERY PLAN                                                   
+---------------------------------------------------------------------------------------------------------------
+ Sort  (cost=475.40..484.46 rows=3623 width=202) (actual time=2.293..2.704 rows=3623 loops=1)
+   Sort Key: created_at DESC
+   Sort Method: quicksort  Memory: 910kB
+   ->  Seq Scan on users  (cost=0.00..261.23 rows=3623 width=202) (actual time=0.016..1.321 rows=3623 loops=1)
+         Filter: (NOT is_banned)
+ Planning Time: 0.889 ms
+ Execution Time: 2.950 ms
+(7 rows)
+
+
+
+
+venture-platform-db=# EXPLAIN ANALYZE
+SELECT * FROM organizations WHERE type = 'jur';
+                                                     QUERY PLAN                                                      
+---------------------------------------------------------------------------------------------------------------------
+ Seq Scan on organizations  (cost=0.00..1139.00 rows=12334 width=121) (actual time=0.123..26.804 rows=12362 loops=1)
+   Filter: (type = 'jur'::org_type)
+   Rows Removed by Filter: 25078
+ Planning Time: 1.617 ms
+ Execution Time: 27.485 ms
+(5 rows)
+
+С индексом:
+venture-platform-db=# CREATE INDEX idx_organizations_type ON organizations (type);
+CREATE INDEX
+venture-platform-db=# EXPLAIN ANALYZE                                             
+SELECT * FROM organizations WHERE type = 'jur';
+                                                               QUERY PLAN                                                                
+-----------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on organizations  (cost=143.88..969.05 rows=12334 width=121) (actual time=1.397..7.890 rows=12362 loops=1)
+   Recheck Cond: (type = 'jur'::org_type)
+   Heap Blocks: exact=671
+   ->  Bitmap Index Scan on idx_organizations_type  (cost=0.00..140.79 rows=12334 width=0) (actual time=1.270..1.285 rows=12362 loops=1)
+         Index Cond: (type = 'jur'::org_type)
+ Planning Time: 1.002 ms
+ Execution Time: 8.651 ms
+(7 rows)
+
+
+
+
+venture-platform-db=# EXPLAIN ANALYZE
+SELECT * FROM organizations WHERE owner = 5;
+                                                  QUERY PLAN                                                  
+--------------------------------------------------------------------------------------------------------------
+ Seq Scan on organizations  (cost=0.00..1139.00 rows=1 width=121) (actual time=15.655..15.659 rows=0 loops=1)
+   Filter: (owner = 5)
+   Rows Removed by Filter: 37440
+ Planning Time: 0.426 ms
+ Execution Time: 15.754 ms
+(5 rows)
+
+venture-platform-db=# CREATE INDEX idx_organizations_owner ON organizations (owner);
+CREATE INDEX
+venture-platform-db=# EXPLAIN ANALYZE                                               
+SELECT * FROM organizations WHERE owner = 5;
+                                                               QUERY PLAN                                                                
+-----------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using idx_organizations_owner on organizations  (cost=0.29..8.31 rows=1 width=121) (actual time=0.224..0.225 rows=0 loops=1)
+   Index Cond: (owner = 5)
+ Planning Time: 0.842 ms
+ Execution Time: 0.271 ms
+(4 rows)
+
+
+
+
+venture-platform-db=# EXPLAIN ANALYZE
+SELECT * FROM comments WHERE project_id = 42 ORDER BY created_at DESC;
+                                                          QUERY PLAN                                                           
+-------------------------------------------------------------------------------------------------------------------------------
+ Gather Merge  (cost=18647.03..18647.50 rows=4 width=306) (actual time=41.609..42.912 rows=6 loops=1)
+   Workers Planned: 2
+   Workers Launched: 2
+   ->  Sort  (cost=17647.01..17647.01 rows=2 width=306) (actual time=38.697..38.697 rows=2 loops=3)
+         Sort Key: created_at DESC
+         Sort Method: quicksort  Memory: 27kB
+         Worker 0:  Sort Method: quicksort  Memory: 25kB
+         Worker 1:  Sort Method: quicksort  Memory: 25kB
+         ->  Parallel Seq Scan on comments  (cost=0.00..17647.00 rows=2 width=306) (actual time=24.992..38.620 rows=2 loops=3)
+               Filter: (project_id = 42)
+               Rows Removed by Filter: 124798
+ Planning Time: 0.414 ms
+ Execution Time: 42.931 ms
+(13 rows)
+
+venture-platform-db=# CREATE INDEX idx_comments_project_id_created_at ON comments (project_id, created_at DESC); 
+CREATE INDEX
+venture-platform-db=# EXPLAIN ANALYZE                                                                           SELECT * FROM comments WHERE project_id = 42 ORDER BY created_at DESC;
+                                                                   QUERY PLAN                                                                   
+------------------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using idx_comments_project_id_created_at on comments  (cost=0.42..19.41 rows=6 width=306) (actual time=0.352..0.678 rows=6 loops=1)
+   Index Cond: (project_id = 42)
+ Planning Time: 1.141 ms
+ Execution Time: 0.740 ms
+(4 rows)
+
+
+
+
+
+venture-platform-db=# EXPLAIN ANALYZE
+SELECT * FROM transactions WHERE from_id = 15 ORDER BY time_at DESC;
+                                                   QUERY PLAN                                                    
+-----------------------------------------------------------------------------------------------------------------
+ Sort  (cost=4249.29..4249.32 rows=9 width=41) (actual time=51.771..51.772 rows=4 loops=1)
+   Sort Key: time_at DESC
+   Sort Method: quicksort  Memory: 25kB
+   ->  Seq Scan on transactions  (cost=0.00..4249.15 rows=9 width=41) (actual time=1.067..51.753 rows=4 loops=1)
+         Filter: (from_id = 15)
+         Rows Removed by Filter: 194488
+ Planning Time: 1.470 ms
+ Execution Time: 51.956 ms
+(8 rows)
+
+venture-platform-db=# CREATE INDEX idx_transactions_from_id ON transactions (from_id);
+CREATE INDEX idx_transactions_reciever_id ON transactions (reciever_id);
+CREATE INDEX
+CREATE INDEX
+venture-platform-db=# EXPLAIN ANALYZE                                                 
+SELECT * FROM transactions WHERE from_id = 15 ORDER BY time_at DESC;
+                                                                  QUERY PLAN                                                                   
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=33.36..33.39 rows=9 width=41) (actual time=0.082..0.083 rows=4 loops=1)
+   Sort Key: time_at DESC
+   Sort Method: quicksort  Memory: 25kB
+   ->  Index Scan using idx_transactions_from_id on transactions  (cost=0.29..33.22 rows=9 width=41) (actual time=0.065..0.072 rows=4 loops=1)
+         Index Cond: (from_id = 15)
+ Planning Time: 0.446 ms
+ Execution Time: 0.106 ms
+(7 rows)

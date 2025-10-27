@@ -11,10 +11,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 
-# Отладка архитектуры
 RUN echo "Building for: TARGETOS=$TARGETOS, TARGETARCH=$TARGETARCH, BUILDPLATFORM=$BUILDPLATFORM" && uname -m
 
-# Сборка бинарей под целевую архитектуру
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /app/datagen ./db_datagen
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /app/venture-platform ./cmd
 

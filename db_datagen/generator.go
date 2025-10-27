@@ -531,7 +531,7 @@ func (g *Generator) generateComments() error {
 }
 
 func (g *Generator) generateTransactions() error {
-	numTransactions := g.config.NumUsers * 10 // по 10 транзакций на юзера
+	numTransactions := g.config.NumUsers * 10000 // по 10 транзакций на юзера
 	fmt.Printf("Запускаем денежные потоки (%d транзакций)...\n", numTransactions)
 
 	txTypes := []string{

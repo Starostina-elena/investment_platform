@@ -182,3 +182,13 @@ CREATE TRIGGER projects_set_completed
     BEFORE INSERT OR UPDATE OF current_money, wanted_money ON projects
     FOR EACH ROW
     EXECUTE FUNCTION trg_set_project_completed();
+
+CREATE INDEX idx_projects_creator_id ON projects (creator_id);
+CREATE INDEX idx_users_is_banned ON users (is_banned);
+CREATE INDEX idx_users_is_banned ON organizations (is_banned);
+CREATE INDEX idx_projects_is_banned ON projects (is_banned);
+CREATE INDEX idx_organizations_type ON organizations (type);
+CREATE INDEX idx_organizations_owner ON organizations (owner);
+CREATE INDEX idx_comments_project_id_created_at ON comments (project_id, created_at DESC);
+CREATE INDEX idx_transactions_from_id ON transactions (from_id);
+CREATE INDEX idx_transactions_reciever_id ON transactions (reciever_id);
