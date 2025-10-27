@@ -1,46 +1,47 @@
 services:
-  # Наш генератор данных
-  datagen:
-    # Указываем Docker Compose собрать образ из Dockerfile в текущей директории
+  db:
+    image: postgres:15
+    container_name: venture-platform-db
+    restart: always
+    environment:
+      - POSTGRES_DB=venture-platform-db
+      - POSTGRES_USER=comrade
+      - POSTGRES_PASSWORD=secret_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d
+      - pgdata:/var/lib/postgresql/data
+    platform: linux/arm64
+
+  app:
     build: .
-    # Наш генератор зависит от базы данных. Compose запустит БД ПЕРЕД генератором.
+    platform: linux/arm64
+    container_name: venture-platform
     depends_on:
       - db
-    # Переменные окружения. Наше Go-приложение будет читать их, чтобы подключиться к БД.
+    ports:
+      - "8080:8080"
     environment:
-      # Обрати внимание: хост - это 'db', имя сервиса базы данных!
-      # Docker Compose создает внутреннюю сеть, где сервисы видят друг друга по именам.
-      - DATABASE_URL=postgres://comrade:secret_password@db:5432/test_db?sslmode=disable
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: comrade
+      DB_PASSWORD: secret_password
+      DB_NAME: venture-platform-db
+    restart: always
+    entrypoint: ["/venture-platform"]
+
+  datagen:
+    build: .
+    platform: linux/arm64
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgres://comrade:secret_password@db:5432/venture-platform-db?sslmode=disable
       - NUM_USERS=300
       - NUM_ORGANIZATIONS=120
       - NUM_PROJECTS=240
-    # Эта опция гарантирует, что наш генератор не стартанет, пока БД не будет готова принимать соединения.
-    # Это важно, т.к. depends_on гарантирует только порядок запуска, а не готовность.
-    # (Эта возможность удалена в compose v2, используй скрипт-обертку если нужно)
+    entrypoint: ["/datagen"]
 
-  # Наша база данных PostgreSQL
-  db:
-    # Используем официальный образ Postgres
-    image: postgres:14
-    # Переменные окружения для инициализации контейнера Postgres.
-    # Он сам создаст базу 'test_db' с пользователем 'comrade' и паролем 'secret_password'.
-    environment:
-      - POSTGRES_DB=test_db
-      - POSTGRES_USER=comrade
-      - POSTGRES_PASSWORD=secret_password
-    # Пробрасываем порты: порт_на_хосте:порт_в_контейнере.
-    # Позволяет нам подключиться к БД с нашей машины через DBeaver/pgAdmin.
-    ports:
-      - "54321:5432"
-    # Тома (volumes). Это, блядь, критически важно!
-    volumes:
-      # Эта строка монтирует наш init.sql в специальную папку внутри контейнера.
-      # Postgres выполнит его при первом запуске и создаст нашу схему.
-      - ./db:/docker-entrypoint-initdb.d
-      # Эта строка создает именованный том для хранения данных.
-      # Если ты остановишь и перезапустишь compose, данные БД НЕ ПРОПАДУТ.
-      - postgres_data:/var/lib/postgresql/data
-
-# Объявляем именованный том, чтобы Docker управлял им.
 volumes:
-  postgres_data:
+  pgdata:

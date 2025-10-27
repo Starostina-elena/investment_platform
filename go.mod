@@ -1,10 +1,11 @@
-module DB_testdata_generation
+module investment_platform
 
 go 1.25
 
 require (
 	github.com/brianvoe/gofakeit/v6 v6.28.0
 	github.com/jackc/pgx/v4 v4.18.3
+	github.com/lib/pq v1.10.2
 	golang.org/x/crypto v0.20.0
 )
 

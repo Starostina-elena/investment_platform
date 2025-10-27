@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"math/rand"
 	"time"
 
@@ -11,24 +12,20 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Config хранит настройки для генерации
 type Config struct {
 	NumUsers         int
 	NumOrganizations int
 	NumProjects      int
 	NumTags          int
-	// ... другие параметры
 }
 
-// Generator - наш стахановец, который будет генерировать данные
 type Generator struct {
-	conn            *pgx.Conn
-	config          Config
-	userIDs         []int
-	organizationIDs []int
-	projectIDs      []int
-	tagIDs          []int
-	// НОВОЕ: Карты для связи организаций с их счетами
+	conn             *pgx.Conn
+	config           Config
+	userIDs          []int
+	organizationIDs  []int
+	projectIDs       []int
+	tagIDs           []int
 	orgToPhysAccount map[int]int
 	orgToJurAccount  map[int]int
 	orgToIpAccount   map[int]int
@@ -36,7 +33,6 @@ type Generator struct {
 
 func NewGenerator(conn *pgx.Conn, config Config) *Generator {
 	gofakeit.Seed(time.Now().UnixNano())
-	// НОВОЕ: Инициализируем карты
 	return &Generator{
 		conn:             conn,
 		config:           config,
@@ -46,17 +42,16 @@ func NewGenerator(conn *pgx.Conn, config Config) *Generator {
 	}
 }
 
-// hashPassword - пролетарская функция для хеширования паролей. Безопасность прежде всего!
 func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes), err
 }
 
-// Run - главный метод, запускающий конвейер
 func (g *Generator) Run() error {
 	fmt.Println("Начинаем генерацию тестовых данных. За работу, товарищи!")
 
 	if err := g.generateUsers(); err != nil {
+		log.Printf(">> %v", err)
 		return err
 	}
 	if err := g.generateOrganizations(); err != nil {
@@ -71,7 +66,6 @@ func (g *Generator) Run() error {
 	if err := g.generateProjects(); err != nil {
 		return err
 	}
-	// НОВЫЕ ВЫЗОВЫ
 	if err := g.generateUserRights(); err != nil {
 		return err
 	}
@@ -120,8 +114,7 @@ func (g *Generator) generateProjects() error {
 		}
 		g.projectIDs = append(g.projectIDs, projectID)
 
-		// Привязываем к проекту несколько случайных тэгов
-		numTagsForProject := rand.Intn(3) + 1 // от 1 до 3 тэгов
+		numTagsForProject := rand.Intn(3) + 1
 		rand.Shuffle(len(g.tagIDs), func(i, j int) { g.tagIDs[i], g.tagIDs[j] = g.tagIDs[j], g.tagIDs[i] })
 
 		for j := 0; j < numTagsForProject; j++ {
@@ -140,7 +133,6 @@ func (g *Generator) generateProjects() error {
 	return nil
 }
 
-// generateTags - простой генератор тэгов
 func (g *Generator) generateTags() error {
 	fmt.Printf("Создаем %d тэгов для категоризации проектов...\n", g.config.NumTags)
 
@@ -166,7 +158,6 @@ func (g *Generator) generateTags() error {
 		return err
 	}
 
-	// Собираем ID
 	rows, err := g.conn.Query(context.Background(), "SELECT id FROM tags")
 	if err != nil {
 		return err
@@ -184,7 +175,6 @@ func (g *Generator) generateTags() error {
 	return nil
 }
 
-// UserData - структура для хранения данных одного сгенерированного юзера
 type UserData struct {
 	Name         string
 	Surname      string
@@ -196,19 +186,16 @@ type UserData struct {
 	IsAdmin      bool
 }
 
-// UserCopySource - это наш конвейер. Он реализует интерфейс pgx.CopyFromSource.
 type UserCopySource struct {
 	users []UserData
 	idx   int
 }
 
-// Next - переходит к следующей записи. Возвращает true, если запись есть.
 func (ucs *UserCopySource) Next() bool {
 	ucs.idx++
 	return ucs.idx-1 < len(ucs.users)
 }
 
-// Values - возвращает значения текущей записи.
 func (ucs *UserCopySource) Values() ([]interface{}, error) {
 	user := ucs.users[ucs.idx-1]
 	return []interface{}{
@@ -217,7 +204,6 @@ func (ucs *UserCopySource) Values() ([]interface{}, error) {
 	}, nil
 }
 
-// Err - возвращает ошибку, если она произошла.
 func (ucs *UserCopySource) Err() error {
 	return nil
 }
@@ -225,7 +211,6 @@ func (ucs *UserCopySource) Err() error {
 func (g *Generator) generateUsers() error {
 	fmt.Printf("Генерируем %d пользователей...\n", g.config.NumUsers)
 
-	// 1. Сначала генерируем все данные в памяти.
 	usersData := make([]UserData, g.config.NumUsers)
 	for i := 0; i < g.config.NumUsers; i++ {
 		isMale := gofakeit.Bool()
@@ -255,12 +240,11 @@ func (g *Generator) generateUsers() error {
 		}
 	}
 
-	// 2. Создаем источник данных для COPY
 	source := &UserCopySource{users: usersData, idx: 0}
 
-	// 3. Используем правильный, высокоуровневый tx.CopyFrom
 	tx, err := g.conn.Begin(context.Background())
 	if err != nil {
+		log.Printf(">> %v", err)
 		return err
 	}
 	defer tx.Rollback(context.Background())
@@ -284,14 +268,12 @@ func (g *Generator) generateUsers() error {
 		return err
 	}
 
-	// 4. Получаем ID, как и раньше
 	rows, err := g.conn.Query(context.Background(), "SELECT id FROM USERS ORDER BY id DESC LIMIT $1", g.config.NumUsers)
 	if err != nil {
 		return err
 	}
 	defer rows.Close()
 
-	// Очищаем слайс перед заполнением
 	g.userIDs = g.userIDs[:0]
 	for rows.Next() {
 		var id int
@@ -300,7 +282,6 @@ func (g *Generator) generateUsers() error {
 		}
 		g.userIDs = append(g.userIDs, id)
 	}
-	// Переворачиваем, чтобы ID шли по порядку
 	for i, j := 0, len(g.userIDs)-1; i < j; i, j = i+1, j-1 {
 		g.userIDs[i], g.userIDs[j] = g.userIDs[j], g.userIDs[i]
 	}
@@ -312,7 +293,6 @@ func (g *Generator) generateUsers() error {
 func (g *Generator) generateOrgAccounts() error {
 	fmt.Println("Создаем бюрократический аппарат: счета для организаций...")
 
-	// Получим тип для каждой организации
 	rows, err := g.conn.Query(context.Background(), "SELECT id, type FROM ORGANIZATIONS")
 	if err != nil {
 		return err
@@ -354,7 +334,6 @@ func (g *Generator) generateOrgAccounts() error {
 			g.orgToIpAccount[orgID] = accID
 		}
 
-		// Обновляем запись в ORGANIZATIONS, чтобы связать ее со счетом
 		_, err = g.conn.Exec(context.Background(),
 			"UPDATE ORGANIZATIONS SET org_type_id = $1 WHERE id = $2", accID, orgID)
 		if err != nil {
@@ -429,7 +408,6 @@ func (g *Generator) generateOrganizations() error {
 	}
 	defer tx.Rollback(context.Background())
 
-	// Здесь для простоты используем батчинг, а не COPY, т.к. есть FOREIGN KEY
 	batch := &pgx.Batch{}
 	sql := `
 		INSERT INTO ORGANIZATIONS (name, owner, email, balance, type)
@@ -447,7 +425,6 @@ func (g *Generator) generateOrganizations() error {
 	}
 
 	br := tx.SendBatch(context.Background(), batch)
-	// Нужно выполнить все запросы в батче
 	for i := 0; i < g.config.NumOrganizations; i++ {
 		_, err := br.Exec()
 		if err != nil {
@@ -462,7 +439,6 @@ func (g *Generator) generateOrganizations() error {
 		return err
 	}
 
-	// Собираем ID
 	rows, err := g.conn.Query(context.Background(), "SELECT id FROM ORGANIZATIONS ORDER BY id DESC LIMIT $1", g.config.NumOrganizations)
 	if err != nil {
 		return err
@@ -476,7 +452,6 @@ func (g *Generator) generateOrganizations() error {
 		}
 		g.organizationIDs = append(g.organizationIDs, id)
 	}
-	// Переворачиваем
 	for i, j := 0, len(g.organizationIDs)-1; i < j; i, j = i+1, j-1 {
 		g.organizationIDs[i], g.organizationIDs[j] = g.organizationIDs[j], g.organizationIDs[i]
 	}
@@ -491,14 +466,12 @@ func (g *Generator) generateUserRights() error {
 		return fmt.Errorf("нет пользователей или организаций для назначения прав!")
 	}
 
-	// Каждому пользователю дадим права в нескольких случайных организациях
 	batch := &pgx.Batch{}
 	sql := `INSERT INTO user_right_at_org (org_id, user_id, org_account_management, money_management, project_management)
 	VALUES ($1, $2, $3, $4, $5)`
 
 	insertCount := 0
 	for _, userID := range g.userIDs {
-		// Дадим права в 1-3 организациях
 		numOrgs := rand.Intn(3) + 1
 		rand.Shuffle(len(g.organizationIDs), func(i, j int) {
 			g.organizationIDs[i], g.organizationIDs[j] = g.organizationIDs[j], g.organizationIDs[i]
@@ -526,7 +499,7 @@ func (g *Generator) generateUserRights() error {
 }
 
 func (g *Generator) generateComments() error {
-	numComments := g.config.NumProjects * 5 // 5 комментов на проект в среднем
+	numComments := g.config.NumProjects * 5
 	fmt.Printf("Разводим срачи в комментариях (%d штук)...\n", numComments)
 	if len(g.userIDs) == 0 || len(g.projectIDs) == 0 {
 		return fmt.Errorf("некому или негде комментировать!")
@@ -557,15 +530,9 @@ func (g *Generator) generateComments() error {
 	return nil
 }
 
-// generateTransactions - самый сложный, но и самый важный метод. Госплан в действии!
 func (g *Generator) generateTransactions() error {
 	numTransactions := g.config.NumUsers * 10 // по 10 транзакций на юзера
 	fmt.Printf("Запускаем денежные потоки (%d транзакций)...\n", numTransactions)
-
-	// Это, блядь, сложная логика. Мы не можем просто вставлять записи.
-	// Нам нужно симулировать реальные переводы, обновляя балансы.
-	// Для простоты, будем делать это последовательно, а не в одной транзакции,
-	// так как нам нужно читать балансы перед каждой операцией.
 
 	txTypes := []string{
 		"user_to_project", "user_deposit", "user_withdraw",
@@ -575,7 +542,6 @@ func (g *Generator) generateTransactions() error {
 		txType := gofakeit.RandomString(txTypes)
 		amount := gofakeit.Price(100, 5000)
 
-		// Начинаем транзакцию для ОДНОЙ операции. Атомарность!
 		tx, err := g.conn.Begin(context.Background())
 		if err != nil {
 			return err
@@ -603,13 +569,12 @@ func (g *Generator) generateTransactions() error {
 			fromColumn, toColumn = "balance", "current_money"
 		}
 
-		// Получаем текущие балансы
 		if fromTable != "" {
 			err = tx.QueryRow(context.Background(), fmt.Sprintf("SELECT %s FROM %s WHERE id = $1 FOR UPDATE", fromColumn, fromTable), fromID).Scan(&fromBalance)
 			if err != nil {
 				tx.Rollback(context.Background())
 				continue
-			} // Пропускаем, если юзера нет
+			}
 		}
 		if toTable != "" {
 			err = tx.QueryRow(context.Background(), fmt.Sprintf("SELECT %s FROM %s WHERE id = $1 FOR UPDATE", toColumn, toTable), toID).Scan(&toBalance)
@@ -619,13 +584,11 @@ func (g *Generator) generateTransactions() error {
 			}
 		}
 
-		// Проверяем, хватает ли денег
 		if fromTable != "" && fromBalance < amount {
-			tx.Rollback(context.Background()) // Откат! Денег нет, но вы держитесь.
+			tx.Rollback(context.Background())
 			continue
 		}
 
-		// Обновляем балансы
 		newFromBalance, newToBalance := fromBalance, toBalance
 		if fromTable != "" {
 			newFromBalance = fromBalance - amount
@@ -644,7 +607,6 @@ func (g *Generator) generateTransactions() error {
 			}
 		}
 
-		// Записываем саму транзакцию
 		_, err = tx.Exec(context.Background(),
 			`INSERT INTO transactions (from_id, reciever_id, type, amount, cum_sum_of_sender, cum_sum_of_reciever)
 			VALUES ($1, $2, $3, $4, $5, $6)`,
@@ -654,7 +616,6 @@ func (g *Generator) generateTransactions() error {
 			continue
 		}
 
-		// Если все прошло успешно - коммитим
 		if err := tx.Commit(context.Background()); err != nil {
 			fmt.Printf("Ошибка коммита транзакции: %v\n", err)
 		}

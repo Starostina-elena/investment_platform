@@ -12,15 +12,13 @@ import (
 )
 
 func main() {
-	// Читаем строку подключения из переменной окружения DATABASE_URL.
-	// Это единственно верный, пролетарский способ!
+	fmt.Println("gen started")
 	connString := os.Getenv("DATABASE_URL")
 
 	if connString == "" {
 		log.Fatal("Переменная окружения DATABASE_URL не установлена! Саботаж!")
 	}
 
-	// Ждем, пока БД будет готова (простой, но эффективный цикл)
 	var conn *pgx.Conn
 	var err error
 	for i := 0; i < 10; i++ {
