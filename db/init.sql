@@ -1,12 +1,12 @@
 CREATE TABLE
     users (
               id SERIAL PRIMARY KEY,
-              name text NOT NULL,
-              surname text NOT NULL,
-              patronymic text,
-              nickname text UNIQUE NOT NULL,
-              email text UNIQUE NOT NULL,
-              avatar_path text,
+              name varchar(64) NOT NULL,
+              surname varchar(64) NOT NULL,
+              patronymic varchar(64),
+              nickname varchar(64) UNIQUE NOT NULL,
+              email varchar(64) UNIQUE NOT NULL,
+              avatar_path varchar(256),
               password_hash text NOT NULL,
               balance DECIMAL(34, 2) DEFAULT 0.00,
               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -30,10 +30,10 @@ CREATE type transaction_type AS ENUM (
 CREATE TABLE
     organizations (
                       id SERIAL PRIMARY KEY,
-                      name text NOT NULL,
+                      name varchar(128) NOT NULL,
                       owner integer REFERENCES users (id) NOT NULL,
-                      avatar_path text,
-                      email text NOT NULL,
+                      avatar_path varchar(256),
+                      email varchar(64) NOT NULL,
                       balance DECIMAL(34, 2) DEFAULT 0.00,
                       type org_type DEFAULT NULL,
                       org_type_id integer DEFAULT null,
@@ -47,39 +47,39 @@ CREATE TABLE
                                       BIC BIGINT NOT NULL,
                                       checking_account BIGINT NOT NULL,
                                       correspondent_account BIGINT NOT NULL,
-                                      FIO text NOT NULL,
+                                      FIO varchar(256) NOT NULL,
                                       INN BIGINT NOT NULL,
                                       pasport_series integer NOT NULL,
                                       pasport_number integer NOT NULL,
-                                      pasport_givenby text NOT NULL,
-                                      registration_address text NOT NULL,
-                                      post_address text NOT NULL,
-                                      pasport_page_with_photo_path text NOT NULL,
-                                      pasport_page_with_propiska_path text NOT NULL,
-                                      svid_o_postanovke_na_uchet_phys_litsa_path text NOT NULL
+                                      pasport_givenby varchar(256) NOT NULL,
+                                      registration_address varchar(256) NOT NULL,
+                                      post_address varchar(256) NOT NULL,
+                                      pasport_page_with_photo_path varchar(256) NOT NULL,
+                                      pasport_page_with_propiska_path varchar(256) NOT NULL,
+                                      svid_o_postanovke_na_uchet_phys_litsa_path varchar(256) NOT NULL
 );
 
 CREATE TABLE
     juridical_face_project_accout (
                                       id SERIAL PRIMARY KEY,
-                                      acts_on_base text NOT NULL,
-                                      position text NOT NULL,
+                                      acts_on_base varchar(256) NOT NULL,
+                                      position varchar(256) NOT NULL,
                                       BIC BIGINT NOT NULL,
                                       checking_account BIGINT NOT NULL,
                                       correspondent_account BIGINT NOT NULL,
-                                      full_organisation_name text NOT NULL,
-                                      short_organisation_name text NOT NULL,
+                                      full_organisation_name varchar(128) NOT NULL,
+                                      short_organisation_name varchar(128) NOT NULL,
                                       INN BIGINT NOT NULL,
                                       OGRN BIGINT NOT NULL,
-                                      KPP text NOT NULL,
-                                      jur_address text NOT NULL,
-                                      fact_address text NOT NULL,
-                                      post_address text NOT NULL,
-                                      svid_o_registratsii_jur_litsa_path text NOT NULL,
-                                      svid_o_postanovke_na_nalog_uchet_path text NOT NULL,
-                                      protocol_o_nasznachenii_litsa_path text NOT NULL,
-                                      USN_path text NOT NULL,
-                                      ustav_path text NOT NULL
+                                      KPP varchar(128) NOT NULL,
+                                      jur_address varchar(256) NOT NULL,
+                                      fact_address varchar(256) NOT NULL,
+                                      post_address varchar(256) NOT NULL,
+                                      svid_o_registratsii_jur_litsa_path varchar(256) NOT NULL,
+                                      svid_o_postanovke_na_nalog_uchet_path varchar(256) NOT NULL,
+                                      protocol_o_nasznachenii_litsa_path varchar(256) NOT NULL,
+                                      USN_path varchar(256) NOT NULL,
+                                      ustav_path varchar(256) NOT NULL
 );
 
 CREATE TABLE
@@ -88,30 +88,30 @@ CREATE TABLE
                            BIC BIGINT NOT NULL,
                            ras_schot BIGINT NOT NULL,
                            kor_schot BIGINT NOT NULL,
-                           FIO text NOT NULL,
+                           FIO varchar(256) NOT NULL,
                            ip_svid_serial BIGINT NOT NULL,
                            ip_svid_number BIGINT NOT NULL,
-                           ip_svid_givenby text NOT NULL,
+                           ip_svid_givenby varchar(256) NOT NULL,
                            INN BIGINT NOT NULL,
                            OGRN BIGINT NOT NULL,
-                           jur_address text NOT NULL,
-                           fact_address text NOT NULL,
-                           post_address text NOT NULL,
-                           svid_o_postanovke_na_nalog_uchet_path text NOT NULL,
-                           ip_pasport_photo_page_path text NOT NULL,
-                           ip_pasport_propiska_path text NOT NULL,
-                           USN_path text NOT NULL,
-                           OGRNIP_path text NOT NULL
+                           jur_address varchar(256) NOT NULL,
+                           fact_address varchar(256) NOT NULL,
+                           post_address varchar(256) NOT NULL,
+                           svid_o_postanovke_na_nalog_uchet_path varchar(256) NOT NULL,
+                           ip_pasport_photo_page_path varchar(256) NOT NULL,
+                           ip_pasport_propiska_path varchar(256) NOT NULL,
+                           USN_path varchar(256) NOT NULL,
+                           OGRNIP_path varchar(256) NOT NULL
 );
 
 CREATE TABLE
     projects (
                  id SERIAL PRIMARY KEY,
-                 name text NOT NULL,
+                 name varchar(128) NOT NULL,
                  creator_id integer REFERENCES organizations (id) NOT NULL,
-                 quick_peek text NOT NULL,
-                 quick_peek_picture_path text,
-                 content text NOT NULL,
+                 quick_peek varchar(128) NOT NULL,
+                 quick_peek_picture_path varchar(256),
+                 content varchar(1024) NOT NULL,
                  is_public bool DEFAULT true,
                  is_completed bool DEFAULT false,
                  current_money DECIMAL(34, 2) DEFAULT 0.00,
@@ -124,8 +124,8 @@ CREATE TABLE
 CREATE TABLE
     tags (
              id SERIAL PRIMARY KEY,
-             name text NOT NULL,
-             description text,
+             name varchar(128) NOT NULL,
+             description varchar(256),
              vector bytea
 );
 
@@ -139,7 +139,7 @@ CREATE TABLE
 CREATE TABLE
     comments (
                  id SERIAL PRIMARY KEY,
-                 body text NOT NULL,
+                 body varchar(1024) NOT NULL,
                  user_id integer REFERENCES users (id) NOT NULL,
                  project_id integer REFERENCES projects (id) NOT NULL,
                  created_at timestamp
