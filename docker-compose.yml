@@ -2,7 +2,7 @@ services:
   db:
     image: postgres:15
     container_name: venture-platform-db
-    restart: always
+    restart: unless-stopped
     environment:
       - POSTGRES_DB=venture-platform-db
       - POSTGRES_USER=comrade
@@ -28,7 +28,7 @@ services:
       DB_USER: comrade
       DB_PASSWORD: secret_password
       DB_NAME: venture-platform-db
-    restart: always
+    restart: unless-stopped
     entrypoint: ["/venture-platform"]
 
   datagen:
@@ -38,9 +38,9 @@ services:
       - db
     environment:
       - DATABASE_URL=postgres://comrade:secret_password@db:5432/venture-platform-db?sslmode=disable
-      - NUM_USERS=10
-      - NUM_ORGANIZATIONS=12000
-      - NUM_PROJECTS=24000
+      - NUM_USERS=0
+      - NUM_ORGANIZATIONS=0
+      - NUM_PROJECTS=0
     entrypoint: ["/datagen"]
 
 volumes:

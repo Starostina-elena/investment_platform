@@ -189,3 +189,7 @@ CREATE INDEX idx_organizations_owner ON organizations (owner);
 CREATE INDEX idx_comments_project_id_created_at ON comments (project_id, created_at DESC);
 CREATE INDEX idx_transactions_from_id ON transactions (from_id);
 CREATE INDEX idx_transactions_reciever_id ON transactions (reciever_id);
+
+CREATE INDEX idx_project_tags_tag_project ON project_tags (tag_id, project_id) INCLUDE (id);
+CREATE INDEX idx_tags_name ON tags (name);
+CREATE INDEX idx_projects_public_created_desc ON projects (is_public, created_at DESC, name DESC);
