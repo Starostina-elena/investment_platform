@@ -31,17 +31,85 @@ services:
     restart: unless-stopped
     entrypoint: ["/venture-platform"]
 
-  datagen:
-    build: .
-    platform: linux/arm64
+  user:
+    build: ./services/user
+    container_name: user
     depends_on:
       - db
+    ports:
+      - "12550:8101"
     environment:
-      - DATABASE_URL=postgres://comrade:secret_password@db:5432/venture-platform-db?sslmode=disable
-      - NUM_USERS=0
-      - NUM_ORGANIZATIONS=0
-      - NUM_PROJECTS=0
-    entrypoint: ["/datagen"]
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: comrade
+      DB_PASSWORD: secret_password
+      DB_NAME: venture-platform-db
+      APP_PORT: 8101
+    restart: unless-stopped
+
+  organisation:
+    build: ./services/organisation
+    container_name: organisation
+    depends_on:
+      - db
+    ports:
+      - "12551:8102"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: comrade
+      DB_PASSWORD: secret_password
+      DB_NAME: venture-platform-db
+      APP_PORT: 8102
+    restart: unless-stopped
+
+  transactions:
+    build: ./services/transactions
+    container_name: transactions
+    depends_on:
+      - db
+    ports:
+      - "12552:8103"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: comrade
+      DB_PASSWORD: secret_password
+      DB_NAME: venture-platform-db
+      APP_PORT: 8103
+    restart: unless-stopped
+
+  project:
+    build: ./services/project
+    container_name: project
+    depends_on:
+      - db
+    ports:
+      - "12553:8104"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: comrade
+      DB_PASSWORD: secret_password
+      DB_NAME: venture-platform-db
+      APP_PORT: 8104
+    restart: unless-stopped
+
+  comment:
+    build: ./services/comment
+    container_name: comment
+    depends_on:
+      - db
+    ports:
+      - "12554:8105"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: comrade
+      DB_PASSWORD: secret_password
+      DB_NAME: venture-platform-db
+      APP_PORT: 8105
+    restart: unless-stopped
 
 volumes:
   pgdata:
