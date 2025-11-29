@@ -41,7 +41,7 @@ func (r *Repo) Create(ctx context.Context, u *core.User) (int, error) {
 
 func (r *Repo) Get(ctx context.Context, id int) (*core.User, error) {
 	u := &core.User{}
-	if err := r.db.GetContext(ctx, u, `SELECT id, name, nickname, email FROM users WHERE id = $1`, id); err != nil {
+	if err := r.db.GetContext(ctx, u, `SELECT id, name, surname, patronymic, nickname, email, avatar_path, password_hash, balance, created_at, is_admin, is_banned FROM users WHERE id = $1`, id); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("not found")
 		}
