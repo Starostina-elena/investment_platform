@@ -19,7 +19,9 @@ type Repo struct {
 
 type RepoInterface interface {
 	Create(ctx context.Context, u *core.User) (int, error)
+	Update(ctx context.Context, user core.User) (*core.User, error)
 	Get(ctx context.Context, id int) (*core.User, error)
+	GetByEmail(ctx context.Context, email string) (*core.User, error)
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -39,9 +41,31 @@ func (r *Repo) Create(ctx context.Context, u *core.User) (int, error) {
 	return id, nil
 }
 
+func (r *Repo) Update(ctx context.Context, user core.User) (*core.User, error) {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE users SET name=$1, surname=$2, patronymic=$3, nickname=$4, email=$5, password_hash=$6 WHERE id=$7`,
+		user.Name, user.Surname, user.Patronymic, user.Nickname, user.Email, user.PasswordHash, user.ID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 func (r *Repo) Get(ctx context.Context, id int) (*core.User, error) {
 	u := &core.User{}
 	if err := r.db.GetContext(ctx, u, `SELECT id, name, surname, patronymic, nickname, email, avatar_path, password_hash, balance, created_at, is_admin, is_banned FROM users WHERE id = $1`, id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("not found")
+		}
+		return nil, err
+	}
+	return u, nil
+}
+
+func (r *Repo) GetByEmail(ctx context.Context, email string) (*core.User, error) {
+	u := &core.User{}
+	if err := r.db.GetContext(ctx, u, `SELECT id, name, surname, patronymic, nickname, email, avatar_path, password_hash, balance, created_at, is_admin, is_banned FROM users WHERE email = $1`, email); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("not found")
 		}

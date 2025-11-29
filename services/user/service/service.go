@@ -13,7 +13,9 @@ import (
 
 type Service interface {
 	Create(ctx context.Context, user core.User) (*core.User, error)
+	Update(ctx context.Context, user core.User) (*core.User, error)
 	Get(ctx context.Context, id int) (*core.User, error)
+	GetByEmail(ctx context.Context, email string) (*core.User, error)
 }
 
 type service struct {
@@ -26,7 +28,7 @@ func NewService(r repo.RepoInterface, log slog.Logger) Service {
 }
 
 func (s *service) Create(ctx context.Context, user core.User) (*core.User, error) {
-	hashed, err := core.HashPassword(user.PasswordHash)
+	hashed, err := core.HashPassword(user.Password)
 	if err != nil {
 		s.log.Error("failed to hash password", "error", err)
 		return nil, err
@@ -56,6 +58,41 @@ func (s *service) Create(ctx context.Context, user core.User) (*core.User, error
 	return &user, nil
 }
 
+func (s *service) Update(ctx context.Context, user core.User) (*core.User, error) {
+	hashed, err := core.HashPassword(user.Password)
+	if err != nil {
+		s.log.Error("failed to hash password", "error", err)
+		return nil, err
+	}
+	user.PasswordHash = hashed
+	user.Password = ""
+	user_updated, err := s.repo.Update(ctx, user)
+	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+			s.log.Info("unique constraint violation", "constraint", pqErr.Constraint, "detail", pqErr.Detail)
+			switch pqErr.Constraint {
+			case "users_nickname_key":
+				return nil, core.ErrNicknameExists
+			case "users_email_key":
+				return nil, core.ErrEmailExists
+			}
+		}
+		s.log.Error("failed to update user", "error", err)
+		return nil, err
+	}
+	return user_updated, nil
+}
+
 func (s *service) Get(ctx context.Context, id int) (*core.User, error) {
 	return s.repo.Get(ctx, id)
+}
+
+func (s *service) GetByEmail(ctx context.Context, email string) (*core.User, error) {
+	u, err := s.repo.GetByEmail(ctx, email)
+	if err != nil {
+		s.log.Error("failed to get user by email", "email", email, "error", err)
+		return nil, err
+	}
+	return u, nil
 }
