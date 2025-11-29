@@ -2,46 +2,60 @@ package service
 
 import (
 	"context"
+	"errors"
 	"log/slog"
+	"time"
+
+	"github.com/Starostina-elena/investment_platform/services/user/core"
+	"github.com/Starostina-elena/investment_platform/services/user/repo"
+	"github.com/lib/pq"
 )
 
-type User struct {
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	Nickname string `json:"nickname"`
-	Email    string `json:"email"`
-}
-
-type Repo interface {
-	Create(ctx context.Context, u *User) (int, error)
-	Get(ctx context.Context, id int) (*User, error)
-}
-
 type Service interface {
-	Create(ctx context.Context, name, nickname, email string) (*User, error)
-	Get(ctx context.Context, id int) (*User, error)
+	Create(ctx context.Context, user core.User) (*core.User, error)
+	Get(ctx context.Context, id int) (*core.User, error)
 }
 
 type service struct {
-	repo Repo
+	repo repo.RepoInterface
 	log  slog.Logger
 }
 
-func NewService(r Repo, log slog.Logger) Service {
+func NewService(r repo.RepoInterface, log slog.Logger) Service {
 	return &service{repo: r, log: log}
 }
 
-func (s *service) Create(ctx context.Context, name, nickname, email string) (*User, error) {
-	u := &User{Name: name, Nickname: nickname, Email: email}
-	id, err := s.repo.Create(ctx, u)
+func (s *service) Create(ctx context.Context, user core.User) (*core.User, error) {
+	hashed, err := core.HashPassword(user.PasswordHash)
 	if err != nil {
+		s.log.Error("failed to hash password", "error", err)
+		return nil, err
+	}
+	user.PasswordHash = hashed
+	user.Password = ""
+	user.CreatedAt = time.Now()
+	user.IsAdmin = false
+	user.IsBanned = false
+	user.Balance = 0.0
+	id, err := s.repo.Create(ctx, &user)
+	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+			s.log.Info("unique constraint violation", "constraint", pqErr.Constraint, "detail", pqErr.Detail)
+			switch pqErr.Constraint {
+			case "users_nickname_key":
+				return nil, core.ErrNicknameExists
+			case "users_email_key":
+				return nil, core.ErrEmailExists
+			}
+		}
 		s.log.Error("failed to create user", "error", err)
 		return nil, err
 	}
-	u.ID = id
-	return u, nil
+	user.ID = id
+	return &user, nil
 }
 
-func (s *service) Get(ctx context.Context, id int) (*User, error) {
+func (s *service) Get(ctx context.Context, id int) (*core.User, error) {
 	return s.repo.Get(ctx, id)
 }

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/Starostina-elena/investment_platform/services/user/core"
 	"github.com/Starostina-elena/investment_platform/services/user/service"
 )
 
@@ -20,18 +21,18 @@ func NewHandler(s service.Service, log slog.Logger) *Handler {
 
 func CreateUserHandler(h *Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req struct {
-			Name     string `json:"name"`
-			Nickname string `json:"nickname"`
-			Email    string `json:"email"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		var user core.User
+		if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 			http.Error(w, "bad request", http.StatusBadRequest)
 			return
 		}
-		u, err := h.service.Create(r.Context(), req.Name, req.Nickname, req.Email)
+		u, err := h.service.Create(r.Context(), user)
 		if err != nil {
 			h.log.Error("failed to create user", "error", err)
+			if err == core.ErrNicknameExists || err == core.ErrEmailExists {
+				http.Error(w, err.Error(), http.StatusConflict)
+				return
+			}
 			http.Error(w, "Error while creating user", http.StatusInternalServerError)
 			return
 		}
@@ -56,7 +57,7 @@ func GetUserHandler(h *Handler) http.HandlerFunc {
 			http.Error(w, "No such user", http.StatusNotFound)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(u)
 	}
 }
