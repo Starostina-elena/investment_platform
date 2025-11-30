@@ -1,15 +1,22 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
-	_ "github.com/lib/pq"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
+
+	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/jmoiron/sqlx"
+
+	dbpkg "investment_platform/db"
 )
 
 func main() {
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	logger.Info("starting app")
+
 	connStr := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		os.Getenv("DB_HOST"),
@@ -18,21 +25,26 @@ func main() {
 		os.Getenv("DB_PASSWORD"),
 		os.Getenv("DB_NAME"),
 	)
+	logger.Info("Try to reach database on", "path", connStr)
 
-	db, err := sql.Open("postgres", connStr)
+	db, err := sqlx.Connect("pgx", connStr)
 	if err != nil {
-		log.Fatal("Failed to connect:", err)
+		logger.Error("failed to connect to db", "error", err)
+		return
 	}
 	defer db.Close()
+	logger.Info("Connected to database")
 
-	err = db.Ping()
-	if err != nil {
-		log.Fatal("Cannot reach database:", err)
+	appDB := &dbpkg.DB{
+		Log:  logger,
+		Conn: db,
 	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Connected to PostgreSQL successfully 🎉")
-	})
+	if err := appDB.Migrate(); err != nil {
+		logger.Error("migration failed", "error", err)
+		return
+	}
+	logger.Info("Database migrated successfully")
 
 	log.Println("Server started on :8080")
 	http.ListenAndServe(":8080", nil)
