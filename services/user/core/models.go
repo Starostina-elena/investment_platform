@@ -17,3 +17,12 @@ type User struct {
 	IsAdmin      bool      `json:"is_admin" db:"is_admin"`
 	IsBanned     bool      `json:"is_banned" db:"is_banned"`
 }
+
+type RefreshToken struct {
+	ID        int       `db:"id"`
+	UserID    int       `db:"user_id"`
+	TokenHash string    `db:"token_hash"`
+	ExpiresAt time.Time `db:"expires_at"`
+	CreatedAt time.Time `db:"created_at"`
+	Revoked   bool      `db:"revoked"`
+}

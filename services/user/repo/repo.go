@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"log/slog"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -22,6 +23,9 @@ type RepoInterface interface {
 	Update(ctx context.Context, user core.User) (*core.User, error)
 	Get(ctx context.Context, id int) (*core.User, error)
 	GetByEmail(ctx context.Context, email string) (*core.User, error)
+	CreateRefreshToken(ctx context.Context, userID int, tokenHash string, expiresAt time.Time) (int, error)
+	GetRefreshTokenByHash(ctx context.Context, tokenHash string) (*core.RefreshToken, error)
+	RevokeRefreshToken(ctx context.Context, id int) error
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -72,4 +76,29 @@ func (r *Repo) GetByEmail(ctx context.Context, email string) (*core.User, error)
 		return nil, err
 	}
 	return u, nil
+}
+
+func (r *Repo) CreateRefreshToken(ctx context.Context, userID int, tokenHash string, expiresAt time.Time) (int, error) {
+	var id int
+	row := r.db.QueryRowxContext(ctx,
+		`INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1,$2,$3) RETURNING id`,
+		userID, tokenHash, expiresAt,
+	)
+	if err := row.Scan(&id); err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+func (r *Repo) GetRefreshTokenByHash(ctx context.Context, tokenHash string) (*core.RefreshToken, error) {
+	rt := &core.RefreshToken{}
+	if err := r.db.GetContext(ctx, rt, `SELECT id, user_id, token_hash, expires_at, created_at, revoked FROM refresh_tokens WHERE token_hash = $1`, tokenHash); err != nil {
+		return nil, err
+	}
+	return rt, nil
+}
+
+func (r *Repo) RevokeRefreshToken(ctx context.Context, id int) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE refresh_tokens SET revoked = true WHERE id = $1`, id)
+	return err
 }

@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/Starostina-elena/investment_platform/services/user/auth"
 	"github.com/Starostina-elena/investment_platform/services/user/core"
 	"github.com/Starostina-elena/investment_platform/services/user/repo"
 	"github.com/lib/pq"
@@ -16,6 +17,9 @@ type Service interface {
 	Update(ctx context.Context, user core.User) (*core.User, error)
 	Get(ctx context.Context, id int) (*core.User, error)
 	GetByEmail(ctx context.Context, email string) (*core.User, error)
+	GenerateRefreshToken(ctx context.Context, userID int, ttl time.Duration) (string, error)
+	RevokeRefreshToken(ctx context.Context, tokenHash string) error
+	AuthenticateByRefresh(ctx context.Context, rawToken string) (*core.User, error)
 }
 
 type service struct {
@@ -92,6 +96,50 @@ func (s *service) GetByEmail(ctx context.Context, email string) (*core.User, err
 	u, err := s.repo.GetByEmail(ctx, email)
 	if err != nil {
 		s.log.Error("failed to get user by email", "email", email, "error", err)
+		return nil, err
+	}
+	return u, nil
+}
+
+func (s *service) GenerateRefreshToken(ctx context.Context, userID int, ttl time.Duration) (string, error) {
+	raw, err := auth.GenerateRandomToken(32)
+	if err != nil {
+		s.log.Error("failed to generate refresh token", "error", err)
+		return "", err
+	}
+	hash := auth.HashToken(raw)
+	expiresAt := time.Now().Add(ttl)
+	if _, err := s.repo.CreateRefreshToken(ctx, userID, hash, expiresAt); err != nil {
+		s.log.Error("failed to store refresh token", "error", err)
+		return "", err
+	}
+	return raw, nil
+}
+
+func (s *service) RevokeRefreshToken(ctx context.Context, tokenHash string) error {
+	rt, err := s.repo.GetRefreshTokenByHash(ctx, tokenHash)
+	if err != nil {
+		return err
+	}
+	return s.repo.RevokeRefreshToken(ctx, rt.ID)
+}
+
+func (s *service) AuthenticateByRefresh(ctx context.Context, rawToken string) (*core.User, error) {
+	hash := auth.HashToken(rawToken)
+	rt, err := s.repo.GetRefreshTokenByHash(ctx, hash)
+	if err != nil {
+		s.log.Info("refresh: token not found", "error", err)
+		return nil, err
+	}
+	if rt.Revoked {
+		return nil, errors.New("token revoked")
+	}
+	if time.Now().After(rt.ExpiresAt) {
+		return nil, errors.New("token expired")
+	}
+	u, err := s.repo.Get(ctx, rt.UserID)
+	if err != nil {
+		s.log.Error("failed to load user by refresh token", "user", rt.UserID, "error", err)
 		return nil, err
 	}
 	return u, nil

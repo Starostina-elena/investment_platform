@@ -15,6 +15,8 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 	router.Handle("GET /{id}", handler.GetUserHandler(h))
 
 	router.Handle("POST /login", handler.LoginHandler(h))
+	router.Handle("POST /refresh", handler.RefreshHandler(h))
+	router.Handle("POST /logout", handler.LogoutHandler(h))
 
 	router.Handle("GET /ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
