@@ -20,6 +20,7 @@ type Service interface {
 	GenerateRefreshToken(ctx context.Context, userID int, ttl time.Duration) (string, error)
 	RevokeRefreshToken(ctx context.Context, tokenHash string) error
 	AuthenticateByRefresh(ctx context.Context, rawToken string) (*core.User, error)
+	SetAdmin(ctx context.Context, userID int, isAdmin bool) error
 }
 
 type service struct {
@@ -143,4 +144,8 @@ func (s *service) AuthenticateByRefresh(ctx context.Context, rawToken string) (*
 		return nil, err
 	}
 	return u, nil
+}
+
+func (s *service) SetAdmin(ctx context.Context, userID int, isAdmin bool) error {
+	return s.repo.SetAdmin(ctx, userID, isAdmin)
 }

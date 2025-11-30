@@ -26,6 +26,7 @@ type RepoInterface interface {
 	CreateRefreshToken(ctx context.Context, userID int, tokenHash string, expiresAt time.Time) (int, error)
 	GetRefreshTokenByHash(ctx context.Context, tokenHash string) (*core.RefreshToken, error)
 	RevokeRefreshToken(ctx context.Context, id int) error
+	SetAdmin(ctx context.Context, userID int, isAdmin bool) error
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -100,5 +101,10 @@ func (r *Repo) GetRefreshTokenByHash(ctx context.Context, tokenHash string) (*co
 
 func (r *Repo) RevokeRefreshToken(ctx context.Context, id int) error {
 	_, err := r.db.ExecContext(ctx, `UPDATE refresh_tokens SET revoked = true WHERE id = $1`, id)
+	return err
+}
+
+func (r *Repo) SetAdmin(ctx context.Context, userID int, isAdmin bool) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE users SET is_admin = $1 WHERE id = $2`, isAdmin, userID)
 	return err
 }
