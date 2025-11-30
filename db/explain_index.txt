@@ -1,0 +1,333 @@
+venture-platform-db=# EXPLAIN ANALYZE
+SELECT * FROM projects WHERE creator_id = 5 ORDER BY created_at DESC;
+                                                  QUERY PLAN                                                  
+--------------------------------------------------------------------------------------------------------------
+ Sort  (cost=3471.02..3471.03 rows=3 width=246) (actual time=47.748..47.752 rows=1 loops=1)
+   Sort Key: created_at DESC
+   Sort Method: quicksort  Memory: 25kB
+   ->  Seq Scan on projects  (cost=0.00..3471.00 rows=3 width=246) (actual time=0.359..47.705 rows=1 loops=1)
+         Filter: (creator_id = 5)
+         Rows Removed by Filter: 74879
+ Planning Time: 1.199 ms
+ Execution Time: 47.857 ms
+(8 rows)
+
+После добавления индекса
+
+venture-platform-db=# EXPLAIN ANALYZE                                               
+SELECT * FROM projects WHERE creator_id = 5 ORDER BY created_at DESC;
+                                                                QUERY PLAN                                                                 
+-------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=10.07..10.08 rows=3 width=246) (actual time=0.124..0.133 rows=1 loops=1)
+   Sort Key: created_at DESC
+   Sort Method: quicksort  Memory: 25kB
+   ->  Index Scan using idx_projects_creator_id on projects  (cost=0.29..10.05 rows=3 width=246) (actual time=0.105..0.114 rows=1 loops=1)
+         Index Cond: (creator_id = 5)
+ Planning Time: 1.046 ms
+ Execution Time: 0.233 ms
+(7 rows)
+
+
+
+
+venture-platform-db=# EXPLAIN ANALYZE
+SELECT * FROM organizations WHERE type = 'jur';
+                                                     QUERY PLAN                                                      
+---------------------------------------------------------------------------------------------------------------------
+ Seq Scan on organizations  (cost=0.00..1139.00 rows=12334 width=121) (actual time=0.123..26.804 rows=12362 loops=1)
+   Filter: (type = 'jur'::org_type)
+   Rows Removed by Filter: 25078
+ Planning Time: 1.617 ms
+ Execution Time: 27.485 ms
+(5 rows)
+
+С индексом:
+venture-platform-db=# CREATE INDEX idx_organizations_type ON organizations (type);
+CREATE INDEX
+venture-platform-db=# EXPLAIN ANALYZE                                             
+SELECT * FROM organizations WHERE type = 'jur';
+                                                               QUERY PLAN                                                                
+-----------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on organizations  (cost=143.88..969.05 rows=12334 width=121) (actual time=1.397..7.890 rows=12362 loops=1)
+   Recheck Cond: (type = 'jur'::org_type)
+   Heap Blocks: exact=671
+   ->  Bitmap Index Scan on idx_organizations_type  (cost=0.00..140.79 rows=12334 width=0) (actual time=1.270..1.285 rows=12362 loops=1)
+         Index Cond: (type = 'jur'::org_type)
+ Planning Time: 1.002 ms
+ Execution Time: 8.651 ms
+(7 rows)
+
+
+
+
+venture-platform-db=# EXPLAIN ANALYZE
+SELECT * FROM organizations WHERE owner = 5;
+                                                  QUERY PLAN                                                  
+--------------------------------------------------------------------------------------------------------------
+ Seq Scan on organizations  (cost=0.00..1139.00 rows=1 width=121) (actual time=15.655..15.659 rows=0 loops=1)
+   Filter: (owner = 5)
+   Rows Removed by Filter: 37440
+ Planning Time: 0.426 ms
+ Execution Time: 15.754 ms
+(5 rows)
+
+venture-platform-db=# CREATE INDEX idx_organizations_owner ON organizations (owner);
+CREATE INDEX
+venture-platform-db=# EXPLAIN ANALYZE                                               
+SELECT * FROM organizations WHERE owner = 5;
+                                                               QUERY PLAN                                                                
+-----------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using idx_organizations_owner on organizations  (cost=0.29..8.31 rows=1 width=121) (actual time=0.224..0.225 rows=0 loops=1)
+   Index Cond: (owner = 5)
+ Planning Time: 0.842 ms
+ Execution Time: 0.271 ms
+(4 rows)
+
+
+
+
+venture-platform-db=# EXPLAIN ANALYZE
+SELECT * FROM comments WHERE project_id = 42 ORDER BY created_at DESC;
+                                                          QUERY PLAN                                                           
+-------------------------------------------------------------------------------------------------------------------------------
+ Gather Merge  (cost=18647.03..18647.50 rows=4 width=306) (actual time=41.609..42.912 rows=6 loops=1)
+   Workers Planned: 2
+   Workers Launched: 2
+   ->  Sort  (cost=17647.01..17647.01 rows=2 width=306) (actual time=38.697..38.697 rows=2 loops=3)
+         Sort Key: created_at DESC
+         Sort Method: quicksort  Memory: 27kB
+         Worker 0:  Sort Method: quicksort  Memory: 25kB
+         Worker 1:  Sort Method: quicksort  Memory: 25kB
+         ->  Parallel Seq Scan on comments  (cost=0.00..17647.00 rows=2 width=306) (actual time=24.992..38.620 rows=2 loops=3)
+               Filter: (project_id = 42)
+               Rows Removed by Filter: 124798
+ Planning Time: 0.414 ms
+ Execution Time: 42.931 ms
+(13 rows)
+
+venture-platform-db=# CREATE INDEX idx_comments_project_id_created_at ON comments (project_id, created_at DESC); 
+CREATE INDEX
+venture-platform-db=# EXPLAIN ANALYZE                                                                           SELECT * FROM comments WHERE project_id = 42 ORDER BY created_at DESC;
+                                                                   QUERY PLAN                                                                   
+------------------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using idx_comments_project_id_created_at on comments  (cost=0.42..19.41 rows=6 width=306) (actual time=0.352..0.678 rows=6 loops=1)
+   Index Cond: (project_id = 42)
+ Planning Time: 1.141 ms
+ Execution Time: 0.740 ms
+(4 rows)
+
+
+
+
+
+venture-platform-db=# EXPLAIN ANALYZE
+SELECT * FROM transactions WHERE from_id = 15 ORDER BY time_at DESC;
+                                                   QUERY PLAN                                                    
+-----------------------------------------------------------------------------------------------------------------
+ Sort  (cost=4249.29..4249.32 rows=9 width=41) (actual time=51.771..51.772 rows=4 loops=1)
+   Sort Key: time_at DESC
+   Sort Method: quicksort  Memory: 25kB
+   ->  Seq Scan on transactions  (cost=0.00..4249.15 rows=9 width=41) (actual time=1.067..51.753 rows=4 loops=1)
+         Filter: (from_id = 15)
+         Rows Removed by Filter: 194488
+ Planning Time: 1.470 ms
+ Execution Time: 51.956 ms
+(8 rows)
+
+venture-platform-db=# CREATE INDEX idx_transactions_from_id ON transactions (from_id);
+CREATE INDEX idx_transactions_reciever_id ON transactions (reciever_id);
+CREATE INDEX
+CREATE INDEX
+venture-platform-db=# EXPLAIN ANALYZE                                                 
+SELECT * FROM transactions WHERE from_id = 15 ORDER BY time_at DESC;
+                                                                  QUERY PLAN                                                                   
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=33.36..33.39 rows=9 width=41) (actual time=0.082..0.083 rows=4 loops=1)
+   Sort Key: time_at DESC
+   Sort Method: quicksort  Memory: 25kB
+   ->  Index Scan using idx_transactions_from_id on transactions  (cost=0.29..33.22 rows=9 width=41) (actual time=0.065..0.072 rows=4 loops=1)
+         Index Cond: (from_id = 15)
+ Planning Time: 0.446 ms
+ Execution Time: 0.106 ms
+(7 rows)
+
+
+EXPLAIN ANALYZE
+SELECT * FROM project_tags WHERE project_id=100;
+                                                        QUERY PLAN                                                         
+---------------------------------------------------------------------------------------------------------------------------
+ Gather  (cost=1000.00..4744.91 rows=2 width=12) (actual time=3.169..42.466 rows=1 loops=1)
+   Workers Planned: 1
+   Workers Launched: 1
+   ->  Parallel Seq Scan on project_tags  (cost=0.00..3744.71 rows=1 width=12) (actual time=12.849..31.379 rows=0 loops=2)
+         Filter: (project_id = 100)
+         Rows Removed by Filter: 146724
+ Planning Time: 1.218 ms
+ Execution Time: 42.552 ms
+
+ С индексом:
+
+ EXPLAIN ANALYZE                                           SELECT * FROM project_tags WHERE project_id=100;
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using idx_project_tags_project_tag_unique on project_tags  (cost=0.42..10.21 rows=2 width=12) (actual time=0.094..0.097 rows=1 loops=1)
+   Index Cond: (project_id = 100)
+ Planning Time: 0.770 ms
+ Execution Time: 0.134 ms
+(4 rows)
+
+
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT id, name, created_at
+FROM projects
+WHERE creator_id = 5
+ORDER BY created_at DESC
+LIMIT 20;
+
+                                                            QUERY PLAN                                                             
+-----------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=6723.03..6723.27 rows=2 width=47) (actual time=24.517..25.592 rows=1 loops=1)
+   Buffers: shared hit=73 read=4957 dirtied=1359
+   ->  Gather Merge  (cost=6723.03..6723.27 rows=2 width=47) (actual time=24.516..25.590 rows=1 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=73 read=4957 dirtied=1359
+         ->  Sort  (cost=5723.01..5723.02 rows=1 width=47) (actual time=22.442..22.442 rows=0 loops=3)
+               Sort Key: created_at DESC
+               Sort Method: quicksort  Memory: 25kB
+               Buffers: shared hit=73 read=4957 dirtied=1359
+               Worker 0:  Sort Method: quicksort  Memory: 25kB
+               Worker 1:  Sort Method: quicksort  Memory: 25kB
+               ->  Parallel Seq Scan on projects  (cost=0.00..5723.00 rows=1 width=47) (actual time=14.439..22.408 rows=0 loops=3)
+                     Filter: (creator_id = 5)
+                     Rows Removed by Filter: 48960
+                     Buffers: shared hit=1 read=4957 dirtied=1359
+ Planning:
+   Buffers: shared hit=6 dirtied=1
+ Planning Time: 0.089 ms
+ Execution Time: 25.630 ms
+(20 rows)
+
+
+
+С индексом
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=15.86..15.87 rows=3 width=47) (actual time=0.730..0.740 rows=1 loops=1)
+   Buffers: shared hit=3 read=3
+   ->  Sort  (cost=15.86..15.87 rows=3 width=47) (actual time=0.728..0.737 rows=1 loops=1)
+         Sort Key: created_at DESC
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=3 read=3
+         ->  Bitmap Heap Scan on projects  (cost=4.02..15.84 rows=3 width=47) (actual time=0.362..0.371 rows=1 loops=1)
+               Recheck Cond: (creator_id = 5)
+               Heap Blocks: exact=1
+               Buffers: shared read=3
+               ->  Bitmap Index Scan on idx_projects_creator_id  (cost=0.00..4.02 rows=3 width=0) (actual time=0.233..0.240 rows=1 loops=1)
+                     Index Cond: (creator_id = 5)
+                     Buffers: shared read=2
+ Planning:
+   Buffers: shared hit=54 read=6
+ Planning Time: 2.534 ms
+ Execution Time: 0.995 ms
+(17 rows)
+
+
+EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
+SELECT p.id, p.name, p.created_at
+FROM projects p                                     
+JOIN project_tags pt ON pt.project_id = p.id
+JOIN tags t ON t.id = pt.tag_id
+WHERE t.name = 'экология' AND p.is_public = TRUE
+ORDER BY p.created_at, p.name DESC  
+LIMIT 10;
+                                                                            QUERY PLAN                                                                            
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=11285.39..11286.55 rows=10 width=47) (actual time=43.486..44.987 rows=10 loops=1)
+   Buffers: shared hit=3666 read=3067
+   ->  Gather Merge  (cost=11285.39..14851.90 rows=30568 width=47) (actual time=43.483..44.982 rows=10 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=3666 read=3067
+         ->  Sort  (cost=10285.36..10323.57 rows=15284 width=47) (actual time=39.053..39.055 rows=8 loops=3)
+               Sort Key: p.created_at, p.name DESC
+               Sort Method: top-N heapsort  Memory: 26kB
+               Buffers: shared hit=3666 read=3067
+               Worker 0:  Sort Method: top-N heapsort  Memory: 27kB
+               Worker 1:  Sort Method: top-N heapsort  Memory: 27kB
+               ->  Parallel Hash Join  (cost=4065.68..9955.08 rows=15284 width=47) (actual time=23.052..37.457 rows=12219 loops=3)
+                     Hash Cond: (p.id = pt.project_id)
+                     Buffers: shared hit=3578 read=3067
+                     ->  Parallel Seq Scan on projects p  (cost=0.00..5570.00 rows=61200 width=47) (actual time=0.014..7.881 rows=48960 loops=3)
+                           Filter: is_public
+                           Buffers: shared hit=1891 read=3067
+                     ->  Parallel Hash  (cost=3795.97..3795.97 rows=21577 width=4) (actual time=22.766..22.768 rows=12219 loops=3)
+                           Buckets: 65536  Batches: 1  Memory Usage: 1984kB
+                           Buffers: shared hit=1593
+                           ->  Hash Join  (cost=3.01..3795.97 rows=21577 width=4) (actual time=0.060..19.508 rows=12219 loops=3)
+                                 Hash Cond: (pt.tag_id = t.id)
+                                 Buffers: shared hit=1593
+                                 ->  Parallel Seq Scan on project_tags pt  (cost=0.00..3313.17 rows=172617 width=8) (actual time=0.011..8.600 rows=97816 loops=3)
+                                       Buffers: shared hit=1587
+                                 ->  Hash  (cost=2.90..2.90 rows=9 width=4) (actual time=0.034..0.034 rows=9 loops=3)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                       Buffers: shared hit=6
+                                       ->  Seq Scan on tags t  (cost=0.00..2.90 rows=9 width=4) (actual time=0.015..0.026 rows=9 loops=3)
+                                             Filter: (name = 'экология'::text)
+                                             Rows Removed by Filter: 63
+                                             Buffers: shared hit=6
+ Planning:
+   Buffers: shared hit=46 dirtied=1
+ Planning Time: 1.048 ms
+ Execution Time: 45.049 ms
+(37 rows)
+
+
+
+С индексом
+
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT p.id, p.name, p.created_at
+FROM projects p
+JOIN project_tags pt ON pt.project_id = p.id
+JOIN tags t ON t.id = pt.tag_id
+WHERE t.name = 'экология' AND p.is_public = TRUE
+ORDER BY p.created_at DESC, p.name ASC
+LIMIT 10;
+
+                          
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=3551.52..5606.58 rows=10 width=47) (actual time=7.303..9.935 rows=10 loops=1)
+   Buffers: shared hit=2803
+   ->  Nested Loop  (cost=3551.52..7541728.60 rows=36681 width=47) (actual time=7.301..9.931 rows=10 loops=1)
+         Buffers: shared hit=2803
+         ->  Gather Merge  (cost=3551.10..41668.60 rows=146880 width=47) (actual time=7.209..9.062 rows=36 loops=1)
+               Workers Planned: 1
+               Workers Launched: 1
+               Buffers: shared hit=1783
+               ->  Incremental Sort  (cost=2551.09..24144.59 rows=86400 width=47) (actual time=0.405..1.909 rows=463 loops=2)
+                     Sort Key: p.created_at, p.name DESC
+                     Presorted Key: p.created_at
+                     Full-sort Groups: 1  Sort Method: quicksort  Average Memory: 30kB  Peak Memory: 30kB
+                     Pre-sorted Groups: 1  Sort Method: quicksort  Average Memory: 46kB  Peak Memory: 46kB
+                     Buffers: shared hit=1783
+                     Worker 0:  Full-sort Groups: 2  Sort Method: quicksort  Average Memory: 30kB  Peak Memory: 30kB
+                       Pre-sorted Groups: 2  Sort Method: quicksort  Average Memory: 162kB  Peak Memory: 284kB
+                     ->  Parallel Index Scan Backward using idx_projects_public_created_desc on projects p  (cost=0.42..14005.08 rows=86400 width=47) (actual time=0.021..1.031 rows=1406 loops=2)
+                           Index Cond: (is_public = true)
+                           Buffers: shared hit=1723
+         ->  Nested Loop  (cost=0.42..50.97 rows=9 width=4) (actual time=0.018..0.023 rows=0 loops=36)
+               Buffers: shared hit=1020
+               ->  Seq Scan on tags t  (cost=0.00..2.90 rows=9 width=4) (actual time=0.002..0.008 rows=9 loops=36)
+                     Filter: (name = 'экология'::text)
+                     Rows Removed by Filter: 61
+                     Buffers: shared hit=71
+               ->  Index Only Scan using idx_project_tags_tag_project on project_tags pt  (cost=0.42..5.33 rows=1 width=8) (actual time=0.001..0.001 rows=0 loops=316)
+                     Index Cond: ((tag_id = t.id) AND (project_id = p.id))
+                     Heap Fetches: 0
+                     Buffers: shared hit=949
+ Planning:
+   Buffers: shared hit=53
+ Planning Time: 0.577 ms
+ Execution Time: 9.975 ms
+(33 rows)
