@@ -6,11 +6,13 @@ require (
 	github.com/brianvoe/gofakeit/v6 v6.28.0
 	github.com/jackc/pgx/v4 v4.18.3
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/lib/pq v1.10.9
 	golang.org/x/crypto v0.45.0
 )
 
-require github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa // indirect
+require (
+	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa // indirect
+	github.com/lib/pq v1.10.9 // indirect
+)
 
 require (
 	github.com/golang-migrate/migrate/v4 v4.19.1
