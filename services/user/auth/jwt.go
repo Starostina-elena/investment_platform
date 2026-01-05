@@ -13,6 +13,7 @@ var jwtSecret = []byte(getEnv("JWT_SECRET", "dev-secret"))
 type Claims struct {
 	UserID int  `json:"user_id"`
 	Admin  bool `json:"admin"`
+	Banned bool `json:"banned"`
 	jwt.RegisteredClaims
 }
 
@@ -23,10 +24,11 @@ func getEnv(k, d string) string {
 	return d
 }
 
-func GenerateAccessToken(userID int, isAdmin bool, ttl time.Duration) (string, error) {
+func GenerateAccessToken(userID int, isAdmin bool, isBanned bool, ttl time.Duration) (string, error) {
 	claims := Claims{
 		UserID: userID,
 		Admin:  isAdmin,
+		Banned: isBanned,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(ttl)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

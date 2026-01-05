@@ -15,6 +15,7 @@ const ctxUserKey ctxKey = "user"
 type UserClaims struct {
 	UserID int
 	Admin  bool
+	Banned bool
 }
 
 func FromContext(ctx context.Context) *UserClaims {
@@ -44,7 +45,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			http.Error(w, "invalid token", http.StatusUnauthorized)
 			return
 		}
-		uc := &UserClaims{UserID: claims.UserID, Admin: claims.Admin}
+		uc := &UserClaims{UserID: claims.UserID, Admin: claims.Admin, Banned: claims.Banned}
 		ctx := context.WithValue(r.Context(), ctxUserKey, uc)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

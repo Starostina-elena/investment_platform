@@ -19,6 +19,7 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 	router.Handle("POST /logout", handler.LogoutHandler(h))
 
 	router.Handle("POST /{user_id}/admin", middleware.AuthMiddleware(handler.SetAdminHandler(h)))
+	router.Handle("POST /{user_id}/active", middleware.AuthMiddleware(handler.BanUserHandler(h)))
 
 	router.Handle("GET /ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

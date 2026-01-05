@@ -21,6 +21,7 @@ type Service interface {
 	RevokeRefreshToken(ctx context.Context, tokenHash string) error
 	AuthenticateByRefresh(ctx context.Context, rawToken string) (*core.User, error)
 	SetAdmin(ctx context.Context, userID int, isAdmin bool) error
+	BanUser(ctx context.Context, userID int, isBanned bool) error
 }
 
 type service struct {
@@ -148,4 +149,8 @@ func (s *service) AuthenticateByRefresh(ctx context.Context, rawToken string) (*
 
 func (s *service) SetAdmin(ctx context.Context, userID int, isAdmin bool) error {
 	return s.repo.SetAdmin(ctx, userID, isAdmin)
+}
+
+func (s *service) BanUser(ctx context.Context, userID int, isBanned bool) error {
+	return s.repo.BanUser(ctx, userID, isBanned)
 }

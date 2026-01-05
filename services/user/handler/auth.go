@@ -40,7 +40,7 @@ func LoginHandler(h *Handler) http.HandlerFunc {
 		}
 
 		ttl := 15 * time.Minute
-		token, err := auth.GenerateAccessToken(u.ID, u.IsAdmin, ttl)
+		token, err := auth.GenerateAccessToken(u.ID, u.IsAdmin, u.IsBanned, ttl)
 		if err != nil {
 			h.log.Error("failed to generate token", "error", err)
 			http.Error(w, "internal error", http.StatusInternalServerError)
@@ -92,7 +92,7 @@ func RefreshHandler(h *Handler) http.HandlerFunc {
 		}
 
 		ttl := 15 * time.Minute
-		accessToken, err := auth.GenerateAccessToken(u.ID, u.IsAdmin, ttl)
+		accessToken, err := auth.GenerateAccessToken(u.ID, u.IsAdmin, u.IsBanned, ttl)
 		if err != nil {
 			h.log.Error("failed to generate access token", "error", err)
 			http.Error(w, "internal error", http.StatusInternalServerError)
