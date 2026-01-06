@@ -28,6 +28,7 @@ type RepoInterface interface {
 	RevokeRefreshToken(ctx context.Context, id int) error
 	SetAdmin(ctx context.Context, userID int, isAdmin bool) error
 	BanUser(ctx context.Context, userID int, isBanned bool) error
+	UpdateAvatarPath(ctx context.Context, userID int, avatarPath *string) error
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -112,5 +113,10 @@ func (r *Repo) SetAdmin(ctx context.Context, userID int, isAdmin bool) error {
 
 func (r *Repo) BanUser(ctx context.Context, userID int, isBanned bool) error {
 	_, err := r.db.ExecContext(ctx, `UPDATE users SET is_banned = $1 WHERE id = $2`, isBanned, userID)
+	return err
+}
+
+func (r *Repo) UpdateAvatarPath(ctx context.Context, userID int, avatarPath *string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE users SET avatar_path = $1 WHERE id = $2`, avatarPath, userID)
 	return err
 }

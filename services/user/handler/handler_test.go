@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -126,6 +127,18 @@ func (m *mockService) SetAdmin(ctx context.Context, userID int, isAdmin bool) er
 
 func (m *mockService) BanUser(ctx context.Context, userID int, isBanned bool) error {
 	return nil
+}
+
+func (m *mockService) UpdateAvatarPath(ctx context.Context, userID int, avatarPath string) error {
+	return nil
+}
+
+func (m *mockService) DeleteAvatar(ctx context.Context, userID int, avatarPath string) error {
+	return nil
+}
+
+func (m *mockService) UploadAvatar(ctx context.Context, userID int, file multipart.File, fileHeader *multipart.FileHeader) (string, error) {
+	return "userpic_1.webp", nil
 }
 
 func mockLogger() *slog.Logger {

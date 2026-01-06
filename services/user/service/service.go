@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"mime/multipart"
 	"time"
 
 	"github.com/Starostina-elena/investment_platform/services/user/auth"
 	"github.com/Starostina-elena/investment_platform/services/user/core"
 	"github.com/Starostina-elena/investment_platform/services/user/repo"
+	"github.com/Starostina-elena/investment_platform/services/user/storage"
 	"github.com/lib/pq"
 )
 
@@ -22,15 +24,19 @@ type Service interface {
 	AuthenticateByRefresh(ctx context.Context, rawToken string) (*core.User, error)
 	SetAdmin(ctx context.Context, userID int, isAdmin bool) error
 	BanUser(ctx context.Context, userID int, isBanned bool) error
+	UpdateAvatarPath(ctx context.Context, userID int, avatarPath string) error
+	UploadAvatar(ctx context.Context, userID int, file multipart.File, fileHeader *multipart.FileHeader) (string, error)
+	DeleteAvatar(ctx context.Context, userID int, avatarPath string) error
 }
 
 type service struct {
-	repo repo.RepoInterface
-	log  slog.Logger
+	repo  repo.RepoInterface
+	minio storage.MinioStorage
+	log   slog.Logger
 }
 
-func NewService(r repo.RepoInterface, log slog.Logger) Service {
-	return &service{repo: r, log: log}
+func NewService(r repo.RepoInterface, minio storage.MinioStorage, log slog.Logger) Service {
+	return &service{repo: r, minio: minio, log: log}
 }
 
 func (s *service) Create(ctx context.Context, user core.User) (*core.User, error) {
@@ -153,4 +159,12 @@ func (s *service) SetAdmin(ctx context.Context, userID int, isAdmin bool) error 
 
 func (s *service) BanUser(ctx context.Context, userID int, isBanned bool) error {
 	return s.repo.BanUser(ctx, userID, isBanned)
+}
+
+func (s *service) UpdateAvatarPath(ctx context.Context, userID int, avatarPath string) error {
+	var pathPtr *string
+	if avatarPath != "" {
+		pathPtr = &avatarPath
+	}
+	return s.repo.UpdateAvatarPath(ctx, userID, pathPtr)
 }

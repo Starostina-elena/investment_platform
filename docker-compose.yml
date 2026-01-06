@@ -36,6 +36,7 @@ services:
     container_name: user
     depends_on:
       - db
+      - minio
     ports:
       - "12550:8101"
     environment:
@@ -45,6 +46,11 @@ services:
       DB_PASSWORD: secret_password
       DB_NAME: venture-platform-db
       APP_PORT: 8101
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      MINIO_USE_SSL: "false"
+      MINIO_BUCKET: avatars
     restart: unless-stopped
 
   organisation:
@@ -111,5 +117,25 @@ services:
       APP_PORT: 8105
     restart: unless-stopped
 
+  minio:
+    image: minio/minio:latest
+    container_name: venture_minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
 volumes:
   pgdata:
+  minio_data:
