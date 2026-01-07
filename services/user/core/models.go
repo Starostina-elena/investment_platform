@@ -9,7 +9,7 @@ type User struct {
 	Patronymic   *string   `json:"patronymic,omitempty"`
 	Nickname     string    `json:"nickname"`
 	Email        string    `json:"email"`
-	AvatarPath   *string   `json:"avatar_path,omitempty" db:"avatar_path"`
+	AvatarPath   *string   `json:"-" db:"avatar_path"`
 	Password     string    `json:"password,omitempty"`
 	PasswordHash string    `json:"-" db:"password_hash"`
 	Balance      float64   `json:"balance"`
