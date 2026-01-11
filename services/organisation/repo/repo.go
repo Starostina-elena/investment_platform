@@ -21,6 +21,7 @@ type RepoInterface interface {
 	Create(ctx context.Context, o *core.Org) (int, error)
 	Get(ctx context.Context, id int) (*core.Org, error)
 	Update(ctx context.Context, o *core.Org) (*core.Org, error)
+	UpdateAvatarPath(ctx context.Context, orgID int, avatarPath *string) error
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -235,4 +236,9 @@ func (r *Repo) Update(ctx context.Context, o *core.Org) (*core.Org, error) {
 		return nil, err
 	}
 	return o, nil
+}
+
+func (r *Repo) UpdateAvatarPath(ctx context.Context, orgID int, avatarPath *string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE organizations SET avatar_path = $1 WHERE id = $2`, avatarPath, orgID)
+	return err
 }

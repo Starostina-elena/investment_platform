@@ -3,25 +3,31 @@ package service
 import (
 	"context"
 	"log/slog"
+	"mime/multipart"
 	"time"
 
 	"github.com/Starostina-elena/investment_platform/services/organisation/core"
 	"github.com/Starostina-elena/investment_platform/services/organisation/repo"
+	"github.com/Starostina-elena/investment_platform/services/organisation/storage"
 )
 
 type Service interface {
 	Create(ctx context.Context, org core.Org) (*core.Org, error)
 	Get(ctx context.Context, id int) (*core.Org, error)
 	Update(ctx context.Context, org core.Org, userRequestedId int) (*core.Org, error)
+	UploadAvatar(ctx context.Context, orgID int, userID int, file multipart.File, fileHeader *multipart.FileHeader) (string, error)
+	DeleteAvatar(ctx context.Context, orgID int, userID int, avatarPath string) error
+	UpdateAvatarPath(ctx context.Context, orgID int, avatarPath string) error
 }
 
 type service struct {
-	repo repo.RepoInterface
-	log  slog.Logger
+	repo  repo.RepoInterface
+	minio storage.MinioStorage
+	log   slog.Logger
 }
 
-func NewService(r repo.RepoInterface, log slog.Logger) Service {
-	return &service{repo: r, log: log}
+func NewService(r repo.RepoInterface, minio storage.MinioStorage, log slog.Logger) Service {
+	return &service{repo: r, minio: minio, log: log}
 }
 
 func (s *service) Create(ctx context.Context, org core.Org) (*core.Org, error) {
@@ -73,5 +79,14 @@ func (s *service) Update(ctx context.Context, org core.Org, userRequestedId int)
 		s.log.Error("failed to update organisation", "error", err)
 		return nil, err
 	}
+
 	return updatedOrg, nil
+}
+
+func (s *service) UpdateAvatarPath(ctx context.Context, orgID int, avatarPath string) error {
+	var pathPtr *string
+	if avatarPath != "" {
+		pathPtr = &avatarPath
+	}
+	return s.repo.UpdateAvatarPath(ctx, orgID, pathPtr)
 }

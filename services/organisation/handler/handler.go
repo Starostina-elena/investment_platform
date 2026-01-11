@@ -151,6 +151,14 @@ func UpdateOrgHandler(h *Handler) http.HandlerFunc {
 		updatedOrg, err := h.service.Update(r.Context(), org, claims.UserID)
 		if err != nil {
 			h.log.Error("failed to update org", "error", err)
+			switch err {
+			case core.ErrOrgNotFound:
+				http.Error(w, "Организация не найдена", http.StatusNotFound)
+				return
+			case core.ErrNotAuthorized:
+				http.Error(w, "Нет прав для изменения организации", http.StatusForbidden)
+				return
+			}
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}

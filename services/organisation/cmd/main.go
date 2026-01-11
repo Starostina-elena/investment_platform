@@ -16,6 +16,7 @@ import (
 	"github.com/Starostina-elena/investment_platform/services/organisation/handler"
 	"github.com/Starostina-elena/investment_platform/services/organisation/repo"
 	"github.com/Starostina-elena/investment_platform/services/organisation/service"
+	"github.com/Starostina-elena/investment_platform/services/organisation/storage"
 )
 
 func openDB() *sqlx.DB {
@@ -32,6 +33,31 @@ func openDB() *sqlx.DB {
 	return db
 }
 
+func openMinio() *storage.MinioStorage {
+	endpoint := os.Getenv("MINIO_ENDPOINT")
+	accessKey := os.Getenv("MINIO_ACCESS_KEY")
+	secretKey := os.Getenv("MINIO_SECRET_KEY")
+	useSSL := os.Getenv("MINIO_USE_SSL") == "true"
+	bucketName := os.Getenv("MINIO_BUCKET")
+
+	var minioStorage *storage.MinioStorage
+	var err error
+
+	maxRetries := 10
+	for i := 0; i < maxRetries; i++ {
+		minioStorage, err = storage.NewMinioStorage(endpoint, accessKey, secretKey, useSSL, bucketName)
+		if err == nil {
+			log.Printf("Successfully connected to MinIO on attempt %d", i+1)
+			return minioStorage
+		}
+		log.Printf("Failed to connect to MinIO (attempt %d/%d): %v", i+1, maxRetries, err)
+		time.Sleep(2 * time.Second)
+	}
+
+	log.Fatalf("failed to connect to MinIO after %d attempts: %v", maxRetries, err)
+	return nil
+}
+
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	logger.Info("starting organisation service")
@@ -39,8 +65,10 @@ func main() {
 	db := openDB()
 	defer db.Close()
 
+	minioStorage := openMinio()
+
 	repo := repo.NewRepo(db, *logger)
-	service := service.NewService(repo, *logger)
+	service := service.NewService(repo, *minioStorage, *logger)
 	handler := handler.NewHandler(service, *logger)
 
 	router := getRouter(handler)
