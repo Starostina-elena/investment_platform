@@ -12,6 +12,7 @@ import (
 type Service interface {
 	Create(ctx context.Context, org core.Org) (*core.Org, error)
 	Get(ctx context.Context, id int) (*core.Org, error)
+	Update(ctx context.Context, org core.Org, userRequestedId int) (*core.Org, error)
 }
 
 type service struct {
@@ -40,41 +41,37 @@ func (s *service) Get(ctx context.Context, id int) (*core.Org, error) {
 	org, err := s.repo.Get(ctx, id)
 	if err != nil {
 		s.log.Error("failed to get organisation", "error", err)
-		return nil, err
+		return nil, core.ErrOrgNotFound
 	}
 
-	org.RegistrationCompleted = true
-
-	switch org.OrgType {
-	case core.OrgTypePhys:
-		if org.PhysFace == nil {
-			org.RegistrationCompleted = false
-		} else if org.PhysFace.PassportPageWithPhotoPath == "" ||
-			org.PhysFace.PassportPageWithPropiskaPath == "" ||
-			org.PhysFace.SvidOPostanovkeNaUchetPhysLitsaPath == "" {
-			org.RegistrationCompleted = false
-		}
-	case core.OrgTypeJur:
-		if org.JurFace == nil {
-			org.RegistrationCompleted = false
-		} else if org.JurFace.SvidORegistratsiiJurLitsaPath == "" ||
-			org.JurFace.SvidOPostanovkeNaNalogUchetPath == "" ||
-			org.JurFace.ProtocolONasznacheniiLitsaPath == "" ||
-			org.JurFace.USNPath == "" ||
-			org.JurFace.UstavPath == "" {
-			org.RegistrationCompleted = false
-		}
-	case core.OrgTypeIP:
-		if org.IPFace == nil {
-			org.RegistrationCompleted = false
-		} else if org.IPFace.SvidOPostanovkeNaNalogUchetPath == "" ||
-			org.IPFace.IpPassportPhotoPagePath == "" ||
-			org.IPFace.IpPassportPropiskaPath == "" ||
-			org.IPFace.USNPath == "" ||
-			org.IPFace.OGRNIPPath == "" {
-			org.RegistrationCompleted = false
-		}
-	}
+	org.SetIsRegistrationCompleted()
 
 	return org, nil
+}
+
+func (s *service) Update(ctx context.Context, org core.Org, userRequestedId int) (*core.Org, error) {
+	oldOrg, err := s.repo.Get(ctx, org.ID)
+	if err != nil {
+		s.log.Error("failed to get organisation for update", "error", err)
+		return nil, core.ErrOrgNotFound
+	}
+	if oldOrg.OwnerId != userRequestedId {
+		s.log.Error("user not authorized to update organisation", "org_id", org.ID, "user_id", userRequestedId)
+		return nil, core.ErrNotAuthorized
+	}
+
+	org.OrgType = oldOrg.OrgType
+	org.OrgTypeId = oldOrg.OrgTypeId
+	org.Balance = oldOrg.Balance
+	org.CreatedAt = oldOrg.CreatedAt
+	org.IsBanned = oldOrg.IsBanned
+	org.OwnerId = oldOrg.OwnerId
+	org.SetIsRegistrationCompleted()
+
+	updatedOrg, err := s.repo.Update(ctx, &org)
+	if err != nil {
+		s.log.Error("failed to update organisation", "error", err)
+		return nil, err
+	}
+	return updatedOrg, nil
 }

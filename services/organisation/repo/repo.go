@@ -20,6 +20,7 @@ type Repo struct {
 type RepoInterface interface {
 	Create(ctx context.Context, o *core.Org) (int, error)
 	Get(ctx context.Context, id int) (*core.Org, error)
+	Update(ctx context.Context, o *core.Org) (*core.Org, error)
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -163,5 +164,75 @@ func (r *Repo) Get(ctx context.Context, id int) (*core.Org, error) {
 		}
 	}
 
+	return o, nil
+}
+
+func (r *Repo) Update(ctx context.Context, o *core.Org) (*core.Org, error) {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	_, err = tx.ExecContext(ctx, `
+		UPDATE organizations 
+		SET name = $1, email = $2
+		WHERE id = $3
+	`, o.Name, o.Email, o.ID)
+	if err != nil {
+		r.log.Error("failed to update organisation", "error", err)
+		return nil, err
+	}
+
+	switch {
+	case o.OrgType == core.OrgTypePhys && o.PhysFace != nil:
+		_, err = tx.ExecContext(ctx, `
+			UPDATE physical_face_project_account
+			SET BIC = $1, checking_account = $2, correspondent_account = $3, FIO = $4, 
+				INN = $5, pasport_series = $6, pasport_number = $7, pasport_givenby = $8,
+				registration_address = $9, post_address = $10
+			WHERE id = $11
+		`, o.PhysFace.BIC, o.PhysFace.CheckingAccount, o.PhysFace.CorrespondentAccount,
+			o.PhysFace.FIO, o.PhysFace.INN, o.PhysFace.PassportSeries, o.PhysFace.PassportNumber,
+			o.PhysFace.PassportGivenBy, o.PhysFace.RegistrationAddress, o.PhysFace.PostAddress,
+			o.OrgTypeId)
+	case o.OrgType == core.OrgTypeJur && o.JurFace != nil:
+		_, err = tx.ExecContext(ctx, `
+			UPDATE juridical_face_project_accout
+			SET acts_on_base = $1, position = $2, BIC = $3, checking_account = $4,
+				correspondent_account = $5, full_organisation_name = $6, short_organisation_name = $7,
+				INN = $8, OGRN = $9, KPP = $10, jur_address = $11, fact_address = $12,
+				post_address = $13
+			WHERE id = $14
+		`, o.JurFace.ActsOnBase, o.JurFace.Position, o.JurFace.BIC,
+			o.JurFace.CheckingAccount, o.JurFace.CorrespondentAccount,
+			o.JurFace.FullOrganisationName, o.JurFace.ShortOrganisationName, o.JurFace.INN,
+			o.JurFace.OGRN, o.JurFace.KPP, o.JurFace.JurAddress, o.JurFace.FactAddress,
+			o.JurFace.PostAddress, o.OrgTypeId)
+	case o.OrgType == core.OrgTypeIP && o.IPFace != nil:
+		_, err = tx.ExecContext(ctx, `
+			UPDATE ip_project_account
+			SET BIC = $1, ras_schot = $2, kor_schot = $3, FIO = $4, ip_svid_serial = $5,
+				ip_svid_number = $6, ip_svid_givenby = $7, INN = $8, OGRN = $9,
+				jur_address = $10, fact_address = $11, post_address = $12
+			WHERE id = $13
+		`, o.IPFace.BIC, o.IPFace.RasSchot, o.IPFace.KorSchot, o.IPFace.FIO,
+			o.IPFace.IpSvidSerial, o.IPFace.IpSvidNumber, o.IPFace.IpSvidGivenBy,
+			o.IPFace.INN, o.IPFace.OGRN, o.IPFace.JurAddress, o.IPFace.FactAddress,
+			o.IPFace.PostAddress, o.OrgTypeId)
+	default:
+		return nil, errors.New("invalid organisation type or missing face details")
+	}
+
+	if err != nil {
+		r.log.Error("failed to update detailed organisation info", "error", err)
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
 	return o, nil
 }

@@ -113,3 +113,49 @@ func GetOrgHandler(h *Handler) http.HandlerFunc {
 		_ = json.NewEncoder(w).Encode(o)
 	}
 }
+
+func UpdateOrgHandler(h *Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims := middleware.FromContext(r.Context())
+		if claims == nil {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		orgIdStr := r.PathValue("org_id")
+		orgId, err := strconv.Atoi(orgIdStr)
+		if err != nil {
+			h.log.Error("invalid org id", "id", orgIdStr, "error", err)
+			http.Error(w, "Некорретный id", http.StatusBadRequest)
+			return
+		}
+
+		var req CreateOrgRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			h.log.Error("failed to decode request", "error", err)
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+		org := core.Org{
+			OrgBase: core.OrgBase{
+				ID:      orgId,
+				Name:    req.Name,
+				Email:   req.Email,
+				OrgType: req.OrgType,
+			},
+			PhysFace: req.PhysFace,
+			JurFace:  req.JurFace,
+			IPFace:   req.IPFace,
+		}
+
+		updatedOrg, err := h.service.Update(r.Context(), org, claims.UserID)
+		if err != nil {
+			h.log.Error("failed to update org", "error", err)
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(updatedOrg)
+	}
+}

@@ -12,6 +12,7 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 
 	router.Handle("POST /create", middleware.AuthMiddleware(handler.CreateOrgHandler(h)))
 	router.Handle("GET /{id}", handler.GetOrgHandler(h))
+	router.Handle("POST /{org_id}/update", middleware.AuthMiddleware(handler.UpdateOrgHandler(h)))
 
 	router.Handle("GET /ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
