@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -44,7 +45,7 @@ func (r *Repo) Create(ctx context.Context, o *core.Org) (int, error) {
 
 	var OrgId, detailedOrgId int
 
-	// write to database additinal info (physical/juridical/ip face)
+	// write to database additional info (physical/juridical/ip face)
 	switch {
 	case o.OrgType == core.OrgTypePhys && o.PhysFace != nil:
 		err = tx.QueryRowContext(ctx, `
@@ -338,25 +339,202 @@ func buildDocSelectQuery(docType core.OrgDocType) (string, error) {
 	}
 }
 
+// func (r *Repo) GetUsersOrgs(ctx context.Context, userID int) ([]core.Org, error) {
+// 	var bases []core.OrgBase
+// 	err := r.db.SelectContext(ctx, &bases, `
+// 		SELECT id, name, owner, avatar_path, email, balance, type, org_type_id, created_at, is_banned
+// 		FROM organizations
+// 		WHERE owner = $1
+// 	`, userID)
+// 	if err != nil {
+// 		r.log.Error("failed to get user's organisations", "user_id", userID, "error", err)
+// 		return nil, err
+// 	}
+
+// 	if len(bases) == 0 {
+// 		return []core.Org{}, nil
+// 	}
+
+// 	var physIDs, jurIDs, ipIDs []int
+// 	orgTypeMap := make(map[int]core.OrgType)
+
+// 	for _, base := range bases {
+// 		orgTypeMap[base.OrgTypeId] = base.OrgType
+// 		switch base.OrgType {
+// 		case core.OrgTypePhys:
+// 			physIDs = append(physIDs, base.OrgTypeId)
+// 		case core.OrgTypeJur:
+// 			jurIDs = append(jurIDs, base.OrgTypeId)
+// 		case core.OrgTypeIP:
+// 			ipIDs = append(ipIDs, base.OrgTypeId)
+// 		}
+// 	}
+
+// 	physMap := make(map[int]*core.PhysFace)
+// 	if len(physIDs) > 0 {
+// 		var physFaces []core.PhysFace
+// 		query, args, err := sqlx.In(`
+// 			SELECT id, BIC, checking_account, correspondent_account, FIO, INN, pasport_series,
+// 			pasport_number, pasport_givenby, registration_address, post_address,
+// 			pasport_page_with_photo_path, pasport_page_with_propiska_path,
+// 			svid_o_postanovke_na_uchet_phys_litsa_path
+// 			FROM physical_face_project_account WHERE id IN (?)
+// 		`, physIDs)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		query = r.db.Rebind(query)
+// 		if err := r.db.SelectContext(ctx, &physFaces, query, args...); err != nil {
+// 			r.log.Error("failed to get phys faces", "error", err)
+// 			return nil, err
+// 		}
+// 		for i := range physFaces {
+// 			physMap[physFaces[i].ID] = &physFaces[i]
+// 		}
+// 	}
+
+// 	jurMap := make(map[int]*core.JurFace)
+// 	if len(jurIDs) > 0 {
+// 		var jurFaces []core.JurFace
+// 		query, args, err := sqlx.In(`
+// 			SELECT id, acts_on_base, position, BIC, checking_account, correspondent_account,
+// 			full_organisation_name, short_organisation_name, INN, OGRN, KPP,
+// 			jur_address, fact_address, post_address, svid_o_registratsii_jur_litsa_path,
+// 			svid_o_postanovke_na_nalog_uchet_path, protocol_o_nasznachenii_litsa_path,
+// 			USN_path, ustav_path
+// 			FROM juridical_face_project_accout WHERE id IN (?)
+// 		`, jurIDs)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		query = r.db.Rebind(query)
+// 		if err := r.db.SelectContext(ctx, &jurFaces, query, args...); err != nil {
+// 			r.log.Error("failed to get jur faces", "error", err)
+// 			return nil, err
+// 		}
+// 		for i := range jurFaces {
+// 			jurMap[jurFaces[i].ID] = &jurFaces[i]
+// 		}
+// 	}
+
+// 	ipMap := make(map[int]*core.IPFace)
+// 	if len(ipIDs) > 0 {
+// 		var ipFaces []core.IPFace
+// 		query, args, err := sqlx.In(`
+// 			SELECT id, BIC, ras_schot, kor_schot, FIO, ip_svid_serial, ip_svid_number, ip_svid_givenby,
+// 			INN, OGRN, jur_address, fact_address, post_address,
+// 			svid_o_postanovke_na_nalog_uchet_path, ip_pasport_photo_page_path,
+// 			ip_pasport_propiska_path, USN_path, OGRNIP_path
+// 			FROM ip_project_account WHERE id IN (?)
+// 		`, ipIDs)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		query = r.db.Rebind(query)
+// 		if err := r.db.SelectContext(ctx, &ipFaces, query, args...); err != nil {
+// 			r.log.Error("failed to get ip faces", "error", err)
+// 			return nil, err
+// 		}
+// 		for i := range ipFaces {
+// 			ipMap[ipFaces[i].ID] = &ipFaces[i]
+// 		}
+// 	}
+
+// 	var orgs []core.Org
+// 	for _, base := range bases {
+// 		org := core.Org{OrgBase: base}
+
+// 		switch base.OrgType {
+// 		case core.OrgTypePhys:
+// 			org.PhysFace = physMap[base.OrgTypeId]
+// 		case core.OrgTypeJur:
+// 			org.JurFace = jurMap[base.OrgTypeId]
+// 		case core.OrgTypeIP:
+// 			org.IPFace = ipMap[base.OrgTypeId]
+// 		}
+
+// 		orgs = append(orgs, org)
+// 	}
+
+// 	return orgs, nil
+// }
+
 func (r *Repo) GetUsersOrgs(ctx context.Context, userID int) ([]core.Org, error) {
-	var orgIDs []core.Org
-	err := r.db.SelectContext(ctx, &orgIDs, `
-		SELECT id
-		FROM organizations WHERE owner = $1
-	`, userID)
-	if err != nil {
+	type row struct {
+		core.OrgBase
+		PhysRaw sql.NullString `db:"phys_face"`
+		JurRaw  sql.NullString `db:"jur_face"`
+		IPRaw   sql.NullString `db:"ip_face"`
+	}
+
+	var rows []row
+	if err := r.db.SelectContext(ctx, &rows, `
+		SELECT
+			o.id, o.name, o.owner, o.avatar_path, o.email, o.balance, o.type, o.org_type_id, o.created_at, o.is_banned,
+			CASE WHEN o.type = 'phys' THEN row_to_json(
+				(
+					SELECT p2 FROM (
+						SELECT
+							p.id,
+							p.BIC,
+							p.checking_account,
+							p.correspondent_account,
+							p.FIO,
+							p.INN,
+							p.pasport_series  AS passport_series,
+							p.pasport_number  AS passport_number,
+							p.pasport_givenby AS passport_givenby,
+							p.registration_address,
+							p.post_address,
+							p.pasport_page_with_photo_path,
+							p.pasport_page_with_propiska_path,
+							p.svid_o_postanovke_na_uchet_phys_litsa_path
+					)
+					AS p2
+				)
+			) END AS phys_face,
+			CASE WHEN o.type = 'jur'  THEN row_to_json(j) END AS jur_face,
+			CASE WHEN o.type = 'ip'   THEN row_to_json(i) END AS ip_face
+		FROM organizations o
+		LEFT JOIN physical_face_project_account p ON o.org_type_id = p.id AND o.type = 'phys'
+		LEFT JOIN juridical_face_project_accout   j ON o.org_type_id = j.id AND o.type = 'jur'
+		LEFT JOIN ip_project_account              i ON o.org_type_id = i.id AND o.type = 'ip'
+		WHERE o.owner = $1
+	`, userID); err != nil {
 		r.log.Error("failed to get user's organisations", "user_id", userID, "error", err)
 		return nil, err
 	}
 
-	var orgs []core.Org
-	for _, orgID := range orgIDs {
-		org, err := r.Get(ctx, orgID.ID)
-		if err != nil {
-			r.log.Error("failed to get organisation details", "org_id", orgID.ID, "error", err)
-			return nil, err
+	orgs := make([]core.Org, 0, len(rows))
+	for _, rw := range rows {
+		org := core.Org{OrgBase: rw.OrgBase}
+		switch rw.OrgType {
+		case core.OrgTypePhys:
+			if rw.PhysRaw.Valid {
+				var face core.PhysFace
+				if err := json.Unmarshal([]byte(rw.PhysRaw.String), &face); err != nil {
+					return nil, err
+				}
+				org.PhysFace = &face
+			}
+		case core.OrgTypeJur:
+			if rw.JurRaw.Valid {
+				var face core.JurFace
+				if err := json.Unmarshal([]byte(rw.JurRaw.String), &face); err != nil {
+					return nil, err
+				}
+				org.JurFace = &face
+			}
+		case core.OrgTypeIP:
+			if rw.IPRaw.Valid {
+				var face core.IPFace
+				if err := json.Unmarshal([]byte(rw.IPRaw.String), &face); err != nil {
+					return nil, err
+				}
+				org.IPFace = &face
+			}
 		}
-		orgs = append(orgs, *org)
+		orgs = append(orgs, org)
 	}
 
 	return orgs, nil

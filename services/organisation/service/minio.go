@@ -162,7 +162,7 @@ func (s *service) DeleteDoc(ctx context.Context, orgID int, userID int, docType 
 		return core.ErrOrgNotFound
 	}
 	if org.OwnerId != userID {
-		s.log.Error("not enough rights to upload org doc", "user_id", userID, "org_id", orgID)
+		s.log.Error("not enough rights to delete org doc", "user_id", userID, "org_id", orgID)
 		return core.ErrNotAuthorized
 	}
 	if !docType.IsValidForOrgType(org.OrgType) {

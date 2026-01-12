@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -19,6 +20,123 @@ type Handler struct {
 
 func NewHandler(s service.Service, log slog.Logger) *Handler {
 	return &Handler{service: s, log: log}
+}
+
+func validatePhysFace(p *core.PhysFace) error {
+	if p.BIC == "" {
+		return fmt.Errorf("поле BIC обязательно")
+	}
+	if p.CheckingAccount == "" {
+		return fmt.Errorf("поле расчетный счет обязательно")
+	}
+	if p.CorrespondentAccount == "" {
+		return fmt.Errorf("поле корреспондентский счет обязательно")
+	}
+	if p.FIO == "" {
+		return fmt.Errorf("поле ФИО обязательно")
+	}
+	if p.INN == "" {
+		return fmt.Errorf("поле ИНН обязательно")
+	}
+	if p.PassportSeries == 0 {
+		return fmt.Errorf("поле серия паспорта обязательно")
+	}
+	if p.PassportNumber == 0 {
+		return fmt.Errorf("поле номер паспорта обязательно")
+	}
+	if p.PassportGivenBy == "" {
+		return fmt.Errorf("поле кем выдан паспорт обязательно")
+	}
+	if p.RegistrationAddress == "" {
+		return fmt.Errorf("поле адрес регистрации обязательно")
+	}
+	if p.PostAddress == "" {
+		return fmt.Errorf("поле почтовый адрес обязательно")
+	}
+	return nil
+}
+
+func validateJurFace(j *core.JurFace) error {
+	if j.ActsOnBase == "" {
+		return fmt.Errorf("поле на основании обязательно")
+	}
+	if j.Position == "" {
+		return fmt.Errorf("поле должность обязательно")
+	}
+	if j.BIC == "" {
+		return fmt.Errorf("поле BIC обязательно")
+	}
+	if j.CheckingAccount == "" {
+		return fmt.Errorf("поле расчетный счет обязательно")
+	}
+	if j.CorrespondentAccount == "" {
+		return fmt.Errorf("поле корреспондентский счет обязательно")
+	}
+	if j.FullOrganisationName == "" {
+		return fmt.Errorf("поле полное наименование организации обязательно")
+	}
+	if j.ShortOrganisationName == "" {
+		return fmt.Errorf("поле короткое наименование организации обязательно")
+	}
+	if j.INN == "" {
+		return fmt.Errorf("поле ИНН обязательно")
+	}
+	if j.OGRN == "" {
+		return fmt.Errorf("поле ОГРН обязательно")
+	}
+	if j.KPP == "" {
+		return fmt.Errorf("поле КПП обязательно")
+	}
+	if j.JurAddress == "" {
+		return fmt.Errorf("поле юридический адрес обязательно")
+	}
+	if j.FactAddress == "" {
+		return fmt.Errorf("поле фактический адрес обязательно")
+	}
+	if j.PostAddress == "" {
+		return fmt.Errorf("поле почтовый адрес обязательно")
+	}
+	return nil
+}
+
+func validateIPFace(ip *core.IPFace) error {
+	if ip.BIC == "" {
+		return fmt.Errorf("поле BIC обязательно")
+	}
+	if ip.RasSchot == "" {
+		return fmt.Errorf("поле расчетный счет обязательно")
+	}
+	if ip.KorSchot == "" {
+		return fmt.Errorf("поле корреспондентский счет обязательно")
+	}
+	if ip.FIO == "" {
+		return fmt.Errorf("поле ФИО обязательно")
+	}
+	if ip.IpSvidSerial == 0 {
+		return fmt.Errorf("поле серия свидетельства обязательно")
+	}
+	if ip.IpSvidNumber == 0 {
+		return fmt.Errorf("поле номер свидетельства обязательно")
+	}
+	if ip.IpSvidGivenBy == "" {
+		return fmt.Errorf("поле кем выдано свидетельство обязательно")
+	}
+	if ip.INN == "" {
+		return fmt.Errorf("поле ИНН обязательно")
+	}
+	if ip.OGRN == "" {
+		return fmt.Errorf("поле ОГРН обязательно")
+	}
+	if ip.JurAddress == "" {
+		return fmt.Errorf("поле юридический адрес обязательно")
+	}
+	if ip.FactAddress == "" {
+		return fmt.Errorf("поле фактический адрес обязательно")
+	}
+	if ip.PostAddress == "" {
+		return fmt.Errorf("поле почтовый адрес обязательно")
+	}
+	return nil
 }
 
 type CreateOrgRequest struct {
@@ -56,16 +174,31 @@ func CreateOrgHandler(h *Handler) http.HandlerFunc {
 				http.Error(w, "Поля ip_face обязательны для типа организации ip", http.StatusBadRequest)
 				return
 			}
+			if err := validateIPFace(req.IPFace); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+
 		case core.OrgTypePhys:
 			if req.PhysFace == nil {
 				http.Error(w, "Поля phys_face обязательны для типа организации phys", http.StatusBadRequest)
 				return
 			}
+			if err := validatePhysFace(req.PhysFace); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+
 		case core.OrgTypeJur:
 			if req.JurFace == nil {
 				http.Error(w, "Поля jur_face обязательны для типа организации jur", http.StatusBadRequest)
 				return
 			}
+			if err := validateJurFace(req.JurFace); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+
 		default:
 			http.Error(w, "invalid org_type", http.StatusBadRequest)
 			return
@@ -127,7 +260,7 @@ func UpdateOrgHandler(h *Handler) http.HandlerFunc {
 		orgId, err := strconv.Atoi(orgIdStr)
 		if err != nil {
 			h.log.Error("invalid org id", "id", orgIdStr, "error", err)
-			http.Error(w, "Некорретный id", http.StatusBadRequest)
+			http.Error(w, "Некорректный id", http.StatusBadRequest)
 			return
 		}
 
@@ -137,6 +270,36 @@ func UpdateOrgHandler(h *Handler) http.HandlerFunc {
 			http.Error(w, "bad request", http.StatusBadRequest)
 			return
 		}
+
+		if req.Name == "" || req.Email == "" {
+			http.Error(w, "Название и электронная почта обязательны", http.StatusBadRequest)
+			return
+		}
+
+		switch req.OrgType {
+		case core.OrgTypeIP:
+			if req.IPFace != nil {
+				if err := validateIPFace(req.IPFace); err != nil {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+					return
+				}
+			}
+		case core.OrgTypePhys:
+			if req.PhysFace != nil {
+				if err := validatePhysFace(req.PhysFace); err != nil {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+					return
+				}
+			}
+		case core.OrgTypeJur:
+			if req.JurFace != nil {
+				if err := validateJurFace(req.JurFace); err != nil {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+					return
+				}
+			}
+		}
+
 		org := core.Org{
 			OrgBase: core.OrgBase{
 				ID:      orgId,
@@ -213,7 +376,7 @@ func BanOrgHandler(h *Handler) http.HandlerFunc {
 		ban, err := strconv.ParseBool(banStr)
 		if err != nil {
 			h.log.Error("invalid ban value", "value", banStr, "error", err)
-			http.Error(w, "Некорретное значение ban", http.StatusBadRequest)
+			http.Error(w, "Некорректное значение ban", http.StatusBadRequest)
 			return
 		}
 

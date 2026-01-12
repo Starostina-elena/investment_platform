@@ -22,7 +22,7 @@ func UploadAvatarHandler(h *Handler) http.HandlerFunc {
 		orgId, err := strconv.Atoi(orgIdStr)
 		if err != nil {
 			h.log.Error("invalid org id", "id", orgIdStr, "error", err)
-			http.Error(w, "Некорретный id", http.StatusBadRequest)
+			http.Error(w, "Некорректный id", http.StatusBadRequest)
 			return
 		}
 
@@ -84,7 +84,7 @@ func DeleteAvatarHandler(h *Handler) http.HandlerFunc {
 		orgId, err := strconv.Atoi(orgIdStr)
 		if err != nil {
 			h.log.Error("invalid org id", "id", orgIdStr, "error", err)
-			http.Error(w, "Некорретный id", http.StatusBadRequest)
+			http.Error(w, "Некорректный id", http.StatusBadRequest)
 			return
 		}
 
