@@ -58,6 +58,7 @@ services:
     container_name: organisation
     depends_on:
       - db
+      - minio
     ports:
       - "12551:8102"
     environment:
@@ -67,6 +68,12 @@ services:
       DB_PASSWORD: secret_password
       DB_NAME: venture-platform-db
       APP_PORT: 8102
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      MINIO_USE_SSL: "false"
+      MINIO_BUCKET: avatars
+      MINIO_DOCS_BUCKET: orgdocs
     restart: unless-stopped
 
   transactions:
