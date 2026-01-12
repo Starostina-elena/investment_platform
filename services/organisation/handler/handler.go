@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/Starostina-elena/investment_platform/services/organisation/core"
 	"github.com/Starostina-elena/investment_platform/services/organisation/middleware"
@@ -185,5 +186,44 @@ func GetUserOrgsHandler(h *Handler) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(orgs)
+	}
+}
+
+func BanOrgHandler(h *Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims := middleware.FromContext(r.Context())
+		if claims == nil {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		if !claims.Admin || claims.Banned {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+
+		orgIdStr := r.PathValue("org_id")
+		orgID, err := strconv.Atoi(orgIdStr)
+		if err != nil {
+			h.log.Error("invalid org id", "id", orgIdStr, "error", err)
+			http.Error(w, "Некорректный id", http.StatusBadRequest)
+			return
+		}
+
+		banStr := strings.TrimSpace(r.URL.Query().Get("ban"))
+		ban, err := strconv.ParseBool(banStr)
+		if err != nil {
+			h.log.Error("invalid ban value", "value", banStr, "error", err)
+			http.Error(w, "Некорретное значение ban", http.StatusBadRequest)
+			return
+		}
+
+		err = h.service.BanOrg(r.Context(), orgID, ban)
+		if err != nil {
+			h.log.Error("failed to ban/unban org", "org_id", orgID, "banned", ban, "error", err)
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
 	}
 }

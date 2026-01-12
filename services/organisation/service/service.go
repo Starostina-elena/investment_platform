@@ -22,6 +22,7 @@ type Service interface {
 	DeleteDoc(ctx context.Context, orgID int, userID int, docType core.OrgDocType) error
 	DownloadDoc(ctx context.Context, orgID int, userID int, isAdmin bool, docType core.OrgDocType) ([]byte, string, error)
 	GetUsersOrgs(ctx context.Context, userID int) ([]core.Org, error)
+	BanOrg(ctx context.Context, orgID int, banned bool) error
 }
 
 type service struct {
@@ -107,4 +108,13 @@ func (s *service) GetUsersOrgs(ctx context.Context, userID int) ([]core.Org, err
 	}
 
 	return orgs, nil
+}
+
+func (s *service) BanOrg(ctx context.Context, orgID int, banned bool) error {
+	err := s.repo.BanOrg(ctx, orgID, banned)
+	if err != nil {
+		s.log.Error("failed to ban/unban organisation", "error", err, "org_id", orgID, "banned", banned)
+		return err
+	}
+	return nil
 }

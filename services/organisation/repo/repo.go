@@ -26,6 +26,7 @@ type RepoInterface interface {
 	UpdateDocPath(ctx context.Context, orgID int, docType core.OrgDocType, path string) error
 	GetDocPath(ctx context.Context, orgID int, docType core.OrgDocType) (string, error)
 	GetUsersOrgs(ctx context.Context, userID int) ([]core.Org, error)
+	BanOrg(ctx context.Context, orgID int, banned bool) error
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -359,4 +360,9 @@ func (r *Repo) GetUsersOrgs(ctx context.Context, userID int) ([]core.Org, error)
 	}
 
 	return orgs, nil
+}
+
+func (r *Repo) BanOrg(ctx context.Context, orgID int, banned bool) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE organizations SET is_banned = $1 WHERE id = $2`, banned, orgID)
+	return err
 }

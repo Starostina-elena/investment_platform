@@ -21,6 +21,8 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 	router.Handle("GET /{org_id}/docs/{doc_type}", middleware.AuthMiddleware(handler.DownloadDocHandler(h)))
 	router.Handle("DELETE /{org_id}/docs/{doc_type}", middleware.AuthMiddleware(handler.DeleteDocHandler(h)))
 
+	router.Handle("POST /{org_id}/active", middleware.AuthMiddleware(handler.BanOrgHandler(h)))
+
 	router.Handle("GET /my", middleware.AuthMiddleware(handler.GetUserOrgsHandler(h)))
 
 	router.Handle("GET /ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
