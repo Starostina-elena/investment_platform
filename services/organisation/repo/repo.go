@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/jmoiron/sqlx"
@@ -22,6 +23,8 @@ type RepoInterface interface {
 	Get(ctx context.Context, id int) (*core.Org, error)
 	Update(ctx context.Context, o *core.Org) (*core.Org, error)
 	UpdateAvatarPath(ctx context.Context, orgID int, avatarPath *string) error
+	UpdateDocPath(ctx context.Context, orgID int, docType core.OrgDocType, path string) error
+	GetDocPath(ctx context.Context, orgID int, docType core.OrgDocType) (string, error)
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -241,4 +244,94 @@ func (r *Repo) Update(ctx context.Context, o *core.Org) (*core.Org, error) {
 func (r *Repo) UpdateAvatarPath(ctx context.Context, orgID int, avatarPath *string) error {
 	_, err := r.db.ExecContext(ctx, `UPDATE organizations SET avatar_path = $1 WHERE id = $2`, avatarPath, orgID)
 	return err
+}
+
+func (r *Repo) UpdateDocPath(ctx context.Context, orgID int, docType core.OrgDocType, path string) error {
+	query, err := buildDocUpdateQuery(docType)
+	if err != nil {
+		return err
+	}
+	_, err = r.db.ExecContext(ctx, query, path, orgID)
+	return err
+}
+
+func (r *Repo) GetDocPath(ctx context.Context, orgID int, docType core.OrgDocType) (string, error) {
+	query, err := buildDocSelectQuery(docType)
+	if err != nil {
+		return "", err
+	}
+	var path sql.NullString
+	if err := r.db.QueryRowContext(ctx, query, orgID).Scan(&path); err != nil {
+		return "", err
+	}
+	if !path.Valid || path.String == "" {
+		return "", nil
+	}
+	return path.String, nil
+}
+
+func buildDocUpdateQuery(docType core.OrgDocType) (string, error) {
+	switch docType {
+	case core.DocPhysPassportPhoto:
+		return `UPDATE physical_face_project_account SET pasport_page_with_photo_path = $1 WHERE id = (SELECT org_type_id FROM organizations WHERE id = $2)`, nil
+	case core.DocPhysPassportPropiska:
+		return `UPDATE physical_face_project_account SET pasport_page_with_propiska_path = $1 WHERE id = (SELECT org_type_id FROM organizations WHERE id = $2)`, nil
+	case core.DocPhysUchet:
+		return `UPDATE physical_face_project_account SET svid_o_postanovke_na_uchet_phys_litsa_path = $1 WHERE id = (SELECT org_type_id FROM organizations WHERE id = $2)`, nil
+	case core.DocJurRegSvid:
+		return `UPDATE juridical_face_project_accout SET svid_o_registratsii_jur_litsa_path = $1 WHERE id = (SELECT org_type_id FROM organizations WHERE id = $2)`, nil
+	case core.DocJurUchet:
+		return `UPDATE juridical_face_project_accout SET svid_o_postanovke_na_nalog_uchet_path = $1 WHERE id = (SELECT org_type_id FROM organizations WHERE id = $2)`, nil
+	case core.DocJurAppointmentProtocol:
+		return `UPDATE juridical_face_project_accout SET protocol_o_nasznachenii_litsa_path = $1 WHERE id = (SELECT org_type_id FROM organizations WHERE id = $2)`, nil
+	case core.DocJurUSN:
+		return `UPDATE juridical_face_project_accout SET usn_path = $1 WHERE id = (SELECT org_type_id FROM organizations WHERE id = $2)`, nil
+	case core.DocJurUstav:
+		return `UPDATE juridical_face_project_accout SET ustav_path = $1 WHERE id = (SELECT org_type_id FROM organizations WHERE id = $2)`, nil
+	case core.DocIPUchet:
+		return `UPDATE ip_project_account SET svid_o_postanovke_na_nalog_uchet_path = $1 WHERE id = (SELECT org_type_id FROM organizations WHERE id = $2)`, nil
+	case core.DocIPPassportPhoto:
+		return `UPDATE ip_project_account SET ip_pasport_photo_page_path = $1 WHERE id = (SELECT org_type_id FROM organizations WHERE id = $2)`, nil
+	case core.DocIPPassportPropiska:
+		return `UPDATE ip_project_account SET ip_pasport_propiska_path = $1 WHERE id = (SELECT org_type_id FROM organizations WHERE id = $2)`, nil
+	case core.DocIPUSN:
+		return `UPDATE ip_project_account SET usn_path = $1 WHERE id = (SELECT org_type_id FROM organizations WHERE id = $2)`, nil
+	case core.DocIPOGRNIP:
+		return `UPDATE ip_project_account SET ogrnip_path = $1 WHERE id = (SELECT org_type_id FROM organizations WHERE id = $2)`, nil
+	default:
+		return "", fmt.Errorf("unknown doc type: %s", docType)
+	}
+}
+
+func buildDocSelectQuery(docType core.OrgDocType) (string, error) {
+	switch docType {
+	case core.DocPhysPassportPhoto:
+		return `SELECT pasport_page_with_photo_path FROM physical_face_project_account WHERE id = (SELECT org_type_id FROM organizations WHERE id = $1)`, nil
+	case core.DocPhysPassportPropiska:
+		return `SELECT pasport_page_with_propiska_path FROM physical_face_project_account WHERE id = (SELECT org_type_id FROM organizations WHERE id = $1)`, nil
+	case core.DocPhysUchet:
+		return `SELECT svid_o_postanovke_na_uchet_phys_litsa_path FROM physical_face_project_account WHERE id = (SELECT org_type_id FROM organizations WHERE id = $1)`, nil
+	case core.DocJurRegSvid:
+		return `SELECT svid_o_registratsii_jur_litsa_path FROM juridical_face_project_accout WHERE id = (SELECT org_type_id FROM organizations WHERE id = $1)`, nil
+	case core.DocJurUchet:
+		return `SELECT svid_o_postanovke_na_nalog_uchet_path FROM juridical_face_project_accout WHERE id = (SELECT org_type_id FROM organizations WHERE id = $1)`, nil
+	case core.DocJurAppointmentProtocol:
+		return `SELECT protocol_o_nasznachenii_litsa_path FROM juridical_face_project_accout WHERE id = (SELECT org_type_id FROM organizations WHERE id = $1)`, nil
+	case core.DocJurUSN:
+		return `SELECT usn_path FROM juridical_face_project_accout WHERE id = (SELECT org_type_id FROM organizations WHERE id = $1)`, nil
+	case core.DocJurUstav:
+		return `SELECT ustav_path FROM juridical_face_project_accout WHERE id = (SELECT org_type_id FROM organizations WHERE id = $1)`, nil
+	case core.DocIPUchet:
+		return `SELECT svid_o_postanovke_na_nalog_uchet_path FROM ip_project_account WHERE id = (SELECT org_type_id FROM organizations WHERE id = $1)`, nil
+	case core.DocIPPassportPhoto:
+		return `SELECT ip_pasport_photo_page_path FROM ip_project_account WHERE id = (SELECT org_type_id FROM organizations WHERE id = $1)`, nil
+	case core.DocIPPassportPropiska:
+		return `SELECT ip_pasport_propiska_path FROM ip_project_account WHERE id = (SELECT org_type_id FROM organizations WHERE id = $1)`, nil
+	case core.DocIPUSN:
+		return `SELECT usn_path FROM ip_project_account WHERE id = (SELECT org_type_id FROM organizations WHERE id = $1)`, nil
+	case core.DocIPOGRNIP:
+		return `SELECT ogrnip_path FROM ip_project_account WHERE id = (SELECT org_type_id FROM organizations WHERE id = $1)`, nil
+	default:
+		return "", fmt.Errorf("unknown doc type: %s", docType)
+	}
 }

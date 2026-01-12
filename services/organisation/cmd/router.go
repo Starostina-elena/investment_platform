@@ -17,6 +17,10 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 	router.Handle("POST /{org_id}/avatar/upload", middleware.AuthMiddleware(handler.UploadAvatarHandler(h)))
 	router.Handle("DELETE /{org_id}/avatar/", middleware.AuthMiddleware(handler.DeleteAvatarHandler(h)))
 
+	router.Handle("POST /{org_id}/docs/{doc_type}", middleware.AuthMiddleware(handler.UploadDocHandler(h)))
+	router.Handle("GET /{org_id}/docs/{doc_type}", middleware.AuthMiddleware(handler.DownloadDocHandler(h)))
+	router.Handle("DELETE /{org_id}/docs/{doc_type}", middleware.AuthMiddleware(handler.DeleteDocHandler(h)))
+
 	router.Handle("GET /ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("pong"))

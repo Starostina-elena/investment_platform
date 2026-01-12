@@ -84,6 +84,55 @@ type IPFace struct {
 	OGRNIPPath                      string `json:"-" db:"ogrnip_path"`
 }
 
+type OrgDocType string
+
+const (
+	DocPhysPassportPhoto      OrgDocType = "phys_passport_photo"
+	DocPhysPassportPropiska   OrgDocType = "phys_passport_propiska"
+	DocPhysUchet              OrgDocType = "phys_svid_uchet"
+	DocJurRegSvid             OrgDocType = "jur_reg_svid"
+	DocJurUchet               OrgDocType = "jur_svid_uchet"
+	DocJurAppointmentProtocol OrgDocType = "jur_appointment_protocol"
+	DocJurUSN                 OrgDocType = "jur_usn"
+	DocJurUstav               OrgDocType = "jur_ustav"
+	DocIPUchet                OrgDocType = "ip_svid_uchet"
+	DocIPPassportPhoto        OrgDocType = "ip_passport_photo"
+	DocIPPassportPropiska     OrgDocType = "ip_passport_propiska"
+	DocIPUSN                  OrgDocType = "ip_usn"
+	DocIPOGRNIP               OrgDocType = "ip_ogrnip"
+)
+
+func IsValidDocType(docType OrgDocType) bool {
+	validTypes := map[OrgDocType]bool{
+		DocPhysPassportPhoto:      true,
+		DocPhysPassportPropiska:   true,
+		DocPhysUchet:              true,
+		DocJurRegSvid:             true,
+		DocJurUchet:               true,
+		DocJurAppointmentProtocol: true,
+		DocJurUSN:                 true,
+		DocJurUstav:               true,
+		DocIPUchet:                true,
+		DocIPPassportPhoto:        true,
+		DocIPPassportPropiska:     true,
+		DocIPUSN:                  true,
+		DocIPOGRNIP:               true,
+	}
+	return validTypes[docType]
+}
+
+func (d OrgDocType) IsValidForOrgType(orgType OrgType) bool {
+	switch orgType {
+	case OrgTypePhys:
+		return d == DocPhysPassportPhoto || d == DocPhysPassportPropiska || d == DocPhysUchet
+	case OrgTypeJur:
+		return d == DocJurRegSvid || d == DocJurUchet || d == DocJurAppointmentProtocol || d == DocJurUSN || d == DocJurUstav
+	case OrgTypeIP:
+		return d == DocIPUchet || d == DocIPPassportPhoto || d == DocIPPassportPropiska || d == DocIPUSN || d == DocIPOGRNIP
+	}
+	return false
+}
+
 type Org struct {
 	OrgBase
 	PhysFace *PhysFace `json:"phys_face,omitempty"`

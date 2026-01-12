@@ -73,6 +73,7 @@ services:
       MINIO_SECRET_KEY: minioadmin123
       MINIO_USE_SSL: "false"
       MINIO_BUCKET: avatars
+      MINIO_DOCS_BUCKET: orgdocs
     restart: unless-stopped
 
   transactions:

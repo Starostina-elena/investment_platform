@@ -38,14 +38,15 @@ func openMinio() *storage.MinioStorage {
 	accessKey := os.Getenv("MINIO_ACCESS_KEY")
 	secretKey := os.Getenv("MINIO_SECRET_KEY")
 	useSSL := os.Getenv("MINIO_USE_SSL") == "true"
-	bucketName := os.Getenv("MINIO_BUCKET")
+	avatarBucket := os.Getenv("MINIO_BUCKET")
+	docsBucket := os.Getenv("MINIO_DOCS_BUCKET")
 
 	var minioStorage *storage.MinioStorage
 	var err error
 
 	maxRetries := 10
 	for i := 0; i < maxRetries; i++ {
-		minioStorage, err = storage.NewMinioStorage(endpoint, accessKey, secretKey, useSSL, bucketName)
+		minioStorage, err = storage.NewMinioStorage(endpoint, accessKey, secretKey, useSSL, avatarBucket, docsBucket)
 		if err == nil {
 			log.Printf("Successfully connected to MinIO on attempt %d", i+1)
 			return minioStorage

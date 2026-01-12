@@ -18,6 +18,9 @@ type Service interface {
 	UploadAvatar(ctx context.Context, orgID int, userID int, file multipart.File, fileHeader *multipart.FileHeader) (string, error)
 	DeleteAvatar(ctx context.Context, orgID int, userID int, avatarPath string) error
 	UpdateAvatarPath(ctx context.Context, orgID int, avatarPath string) error
+	UploadDoc(ctx context.Context, orgID int, userID int, docType core.OrgDocType, file multipart.File, fileHeader *multipart.FileHeader) (string, error)
+	DeleteDoc(ctx context.Context, orgID int, userID int, docType core.OrgDocType) error
+	DownloadDoc(ctx context.Context, orgID int, userID int, isAdmin bool, docType core.OrgDocType) ([]byte, string, error)
 }
 
 type service struct {
