@@ -21,6 +21,7 @@ type Service interface {
 	UploadDoc(ctx context.Context, orgID int, userID int, docType core.OrgDocType, file multipart.File, fileHeader *multipart.FileHeader) (string, error)
 	DeleteDoc(ctx context.Context, orgID int, userID int, docType core.OrgDocType) error
 	DownloadDoc(ctx context.Context, orgID int, userID int, isAdmin bool, docType core.OrgDocType) ([]byte, string, error)
+	GetUsersOrgs(ctx context.Context, userID int) ([]core.Org, error)
 }
 
 type service struct {
@@ -92,4 +93,18 @@ func (s *service) UpdateAvatarPath(ctx context.Context, orgID int, avatarPath st
 		pathPtr = &avatarPath
 	}
 	return s.repo.UpdateAvatarPath(ctx, orgID, pathPtr)
+}
+
+func (s *service) GetUsersOrgs(ctx context.Context, userID int) ([]core.Org, error) {
+	orgs, err := s.repo.GetUsersOrgs(ctx, userID)
+	if err != nil {
+		s.log.Error("failed to get user's organisations", "error", err, "user_id", userID)
+		return nil, err
+	}
+
+	for i := range orgs {
+		orgs[i].SetIsRegistrationCompleted()
+	}
+
+	return orgs, nil
 }

@@ -167,3 +167,23 @@ func UpdateOrgHandler(h *Handler) http.HandlerFunc {
 		_ = json.NewEncoder(w).Encode(updatedOrg)
 	}
 }
+
+func GetUserOrgsHandler(h *Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims := middleware.FromContext(r.Context())
+		if claims == nil {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		orgs, err := h.service.GetUsersOrgs(r.Context(), claims.UserID)
+		if err != nil {
+			h.log.Error("failed to get user's orgs", "user_id", claims.UserID, "error", err)
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(orgs)
+	}
+}

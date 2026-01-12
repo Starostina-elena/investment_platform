@@ -25,6 +25,7 @@ type RepoInterface interface {
 	UpdateAvatarPath(ctx context.Context, orgID int, avatarPath *string) error
 	UpdateDocPath(ctx context.Context, orgID int, docType core.OrgDocType, path string) error
 	GetDocPath(ctx context.Context, orgID int, docType core.OrgDocType) (string, error)
+	GetUsersOrgs(ctx context.Context, userID int) ([]core.Org, error)
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -334,4 +335,28 @@ func buildDocSelectQuery(docType core.OrgDocType) (string, error) {
 	default:
 		return "", fmt.Errorf("unknown doc type: %s", docType)
 	}
+}
+
+func (r *Repo) GetUsersOrgs(ctx context.Context, userID int) ([]core.Org, error) {
+	var orgIDs []core.Org
+	err := r.db.SelectContext(ctx, &orgIDs, `
+		SELECT id
+		FROM organizations WHERE owner = $1
+	`, userID)
+	if err != nil {
+		r.log.Error("failed to get user's organisations", "user_id", userID, "error", err)
+		return nil, err
+	}
+
+	var orgs []core.Org
+	for _, orgID := range orgIDs {
+		org, err := r.Get(ctx, orgID.ID)
+		if err != nil {
+			r.log.Error("failed to get organisation details", "org_id", orgID.ID, "error", err)
+			return nil, err
+		}
+		orgs = append(orgs, *org)
+	}
+
+	return orgs, nil
 }
