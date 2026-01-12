@@ -27,6 +27,10 @@ func FromContext(ctx context.Context) *UserClaims {
 	return nil
 }
 
+func SetClaimsInContext(ctx context.Context, claims *UserClaims) context.Context {
+	return context.WithValue(ctx, ctxUserKey, claims)
+}
+
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authz := r.Header.Get("Authorization")
