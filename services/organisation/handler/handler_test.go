@@ -34,6 +34,10 @@ func (m *mockService) Get(ctx context.Context, id int) (*core.Org, error) {
 	return nil, nil
 }
 
+func (m *mockService) GetPublicInfoOrg(ctx context.Context, id int) (*core.Org, error) {
+	return nil, nil
+}
+
 func (m *mockService) Update(ctx context.Context, o core.Org, userRequestedId int) (*core.Org, error) {
 	if m.updateFunc != nil {
 		return m.updateFunc(ctx, o, userRequestedId)
