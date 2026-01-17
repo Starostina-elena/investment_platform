@@ -52,12 +52,19 @@ func GetUserHandler(h *Handler) http.HandlerFunc {
 			return
 		}
 
+		userRequested := middleware.FromContext(r.Context())
+		if !userRequested.Admin && userRequested.UserID != id {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+
 		u, err := h.service.Get(r.Context(), id)
 		if err != nil {
 			h.log.Error("failed to get user", "id", id, "error", err)
 			http.Error(w, "Пользователь не найден", http.StatusNotFound)
 			return
 		}
+
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(u)
 	}

@@ -12,7 +12,7 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 
 	router.Handle("POST /create", handler.CreateUserHandler(h))
 	router.Handle("POST /update", middleware.AuthMiddleware(handler.UpdateUserHandler(h)))
-	router.Handle("GET /{id}", handler.GetUserHandler(h))
+	router.Handle("GET /{id}", middleware.AuthMiddleware(handler.GetUserHandler(h)))
 
 	router.Handle("POST /login", handler.LoginHandler(h))
 	router.Handle("POST /refresh", handler.RefreshHandler(h))
