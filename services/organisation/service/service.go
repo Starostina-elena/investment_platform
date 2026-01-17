@@ -14,6 +14,7 @@ import (
 type Service interface {
 	Create(ctx context.Context, org core.Org) (*core.Org, error)
 	Get(ctx context.Context, id int) (*core.Org, error)
+	GetPublicInfoOrg(ctx context.Context, id int) (*core.Org, error)
 	Update(ctx context.Context, org core.Org, userRequestedId int) (*core.Org, error)
 	UploadAvatar(ctx context.Context, orgID int, userID int, file multipart.File, fileHeader *multipart.FileHeader) (string, error)
 	DeleteAvatar(ctx context.Context, orgID int, userID int, avatarPath string) error
@@ -56,6 +57,43 @@ func (s *service) Get(ctx context.Context, id int) (*core.Org, error) {
 	}
 
 	org.SetIsRegistrationCompleted()
+
+	return org, nil
+}
+
+func (s *service) GetPublicInfoOrg(ctx context.Context, id int) (*core.Org, error) {
+	org, err := s.repo.Get(ctx, id)
+	if err != nil {
+		s.log.Error("failed to get public info of organisation", "error", err)
+		return nil, core.ErrOrgNotFound
+	}
+
+	org.SetIsRegistrationCompleted()
+
+	org.Balance = 0.0
+	switch org.OrgType {
+	case core.OrgTypePhys:
+		org.PhysFace.INN = ""
+		org.PhysFace.PassportSeries = 0
+		org.PhysFace.PassportNumber = 0
+		org.PhysFace.PassportGivenBy = ""
+		org.PhysFace.PostAddress = ""
+		org.PhysFace.RegistrationAddress = ""
+	case core.OrgTypeJur:
+		org.JurFace.INN = ""
+		org.JurFace.KPP = ""
+		org.JurFace.JurAddress = ""
+		org.JurFace.FactAddress = ""
+		org.JurFace.PostAddress = ""
+	case core.OrgTypeIP:
+		org.IPFace.IpSvidSerial = 0
+		org.IPFace.IpSvidNumber = 0
+		org.IPFace.IpSvidGivenBy = ""
+		org.IPFace.INN = ""
+		org.IPFace.JurAddress = ""
+		org.IPFace.FactAddress = ""
+		org.IPFace.PostAddress = ""
+	}
 
 	return org, nil
 }

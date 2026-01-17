@@ -238,12 +238,47 @@ func GetOrgHandler(h *Handler) http.HandlerFunc {
 			http.Error(w, "Некорректный id", http.StatusBadRequest)
 			return
 		}
+		o, err := h.service.GetPublicInfoOrg(r.Context(), id)
+		if err != nil {
+			h.log.Error("org not found", "id", id, "error", err)
+			http.Error(w, "Организация не найдена", http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(o)
+	}
+}
+
+func GetFullOrgHandler(h *Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idStr := r.PathValue("id")
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			h.log.Error("invalid org id", "id", idStr, "error", err)
+			http.Error(w, "Некорректный id", http.StatusBadRequest)
+			return
+		}
+
+		claims := middleware.FromContext(r.Context())
+		if claims == nil {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+
 		o, err := h.service.Get(r.Context(), id)
 		if err != nil {
 			h.log.Error("org not found", "id", id, "error", err)
 			http.Error(w, "Организация не найдена", http.StatusNotFound)
 			return
 		}
+
+		if o.OwnerId != claims.UserID && !claims.Admin {
+			h.log.Error("user not authorized to view full org", "org_id", id, "user_id", claims.UserID)
+			http.Error(w, "Нет доступа к полной информации об организации", http.StatusForbidden)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(o)
 	}
 }
