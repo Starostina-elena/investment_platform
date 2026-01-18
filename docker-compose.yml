@@ -105,6 +105,7 @@ services:
       DB_USER: comrade
       DB_PASSWORD: secret_password
       DB_NAME: venture-platform-db
+      ORG_SERVICE_URL: http://organisation:8102
       APP_PORT: 8104
     restart: unless-stopped
 

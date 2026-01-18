@@ -24,6 +24,7 @@ type Service interface {
 	DownloadDoc(ctx context.Context, orgID int, userID int, isAdmin bool, docType core.OrgDocType) ([]byte, string, error)
 	GetUsersOrgs(ctx context.Context, userID int) ([]core.Org, error)
 	BanOrg(ctx context.Context, orgID int, banned bool) error
+	CheckUserOrgPermission(ctx context.Context, orgID int, userID int, permission core.OrgPermission) (bool, error)
 }
 
 type service struct {

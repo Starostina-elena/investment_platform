@@ -26,6 +26,8 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 
 	router.Handle("GET /my", middleware.AuthMiddleware(handler.GetUserOrgsHandler(h)))
 
+	router.Handle("GET /{org_id}/rights/{user_id}/{permission}", handler.CheckUserOrgPermissionHandler(h))
+
 	router.Handle("GET /ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("pong"))

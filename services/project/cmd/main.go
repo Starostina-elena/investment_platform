@@ -13,6 +13,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 
+	"github.com/Starostina-elena/investment_platform/services/project/clients"
 	"github.com/Starostina-elena/investment_platform/services/project/handler"
 	"github.com/Starostina-elena/investment_platform/services/project/repo"
 	"github.com/Starostina-elena/investment_platform/services/project/service"
@@ -32,6 +33,10 @@ func openDB() *sqlx.DB {
 	return db
 }
 
+func openOrgClient(log slog.Logger) *clients.OrgClient {
+	return clients.NewOrgClient(os.Getenv("ORG_SERVICE_URL"), log)
+}
+
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	logger.Info("starting project service")
@@ -40,7 +45,8 @@ func main() {
 	defer db.Close()
 
 	repo := repo.NewRepo(db, *logger)
-	service := service.NewService(repo, *logger)
+	orgClient := openOrgClient(*logger)
+	service := service.NewService(repo, orgClient, *logger)
 	handler := handler.NewHandler(service, *logger)
 
 	router := getRouter(handler)
