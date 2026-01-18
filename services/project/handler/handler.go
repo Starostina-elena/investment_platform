@@ -274,3 +274,38 @@ func BanProjectHandler(h *Handler) http.HandlerFunc {
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
+
+func MarkProjectCompletedHandler(h *Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims := middleware.FromContext(r.Context())
+		if claims == nil {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		projectIDStr := r.PathValue("id")
+		projectID, err := strconv.Atoi(projectIDStr)
+		if err != nil {
+			h.log.Error("invalid project id", "id", projectIDStr, "error", err)
+			http.Error(w, "Некорректный id", http.StatusBadRequest)
+			return
+		}
+
+		completedStr := strings.TrimSpace(r.URL.Query().Get("completed"))
+		completed, err := strconv.ParseBool(completedStr)
+		if err != nil {
+			h.log.Error("invalid completed value", "value", completedStr, "error", err)
+			http.Error(w, "Некорректное значение completed", http.StatusBadRequest)
+			return
+		}
+
+		err = h.service.MarkProjectCompleted(r.Context(), projectID, claims.UserID, completed)
+		if err != nil {
+			h.log.Error("failed to mark project as completed", "project_id", projectID, "error", err)
+			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}

@@ -18,6 +18,7 @@ type Service interface {
 	GetByCreator(ctx context.Context, creatorID int) ([]core.Project, error)
 	UpdatePicturePath(ctx context.Context, projectID int, picturePath string) error
 	BanProject(ctx context.Context, projectID int, banned bool) error
+	MarkProjectCompleted(ctx context.Context, projectID int, userID int, completed bool) error
 }
 
 type service struct {
@@ -108,4 +109,16 @@ func (s *service) UpdatePicturePath(ctx context.Context, projectID int, pictureP
 
 func (s *service) BanProject(ctx context.Context, projectID int, banned bool) error {
 	return s.repo.BanProject(ctx, projectID, banned)
+}
+
+func (s *service) MarkProjectCompleted(ctx context.Context, projectID int, userID int, completed bool) error {
+	existingProject, err := s.repo.Get(ctx, projectID)
+	if err != nil {
+		return err
+	}
+	allowed, err := s.orgClient.CheckUserOrgPermission(ctx, existingProject.CreatorID, userID, "project_management")
+	if err != nil || !allowed {
+		return core.ErrNotAuthorized
+	}
+	return s.repo.MarkProjectCompleted(ctx, projectID, completed)
 }

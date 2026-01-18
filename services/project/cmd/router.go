@@ -18,6 +18,7 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 	router.Handle("GET /projects/org/{creator_id}", handler.GetProjectsByCreatorHandler(h))
 
 	router.Handle("POST /{id}/ban", middleware.AuthMiddleware(handler.BanProjectHandler(h)))
+	router.Handle("POST /{id}/completed", middleware.AuthMiddleware(handler.MarkProjectCompletedHandler(h)))
 
 	router.Handle("GET /ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
