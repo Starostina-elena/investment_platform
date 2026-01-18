@@ -105,6 +105,12 @@ services:
       DB_USER: comrade
       DB_PASSWORD: secret_password
       DB_NAME: venture-platform-db
+      ORG_SERVICE_URL: http://organisation:8102
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      MINIO_USE_SSL: "false"
+      MINIO_BUCKET: projects
       APP_PORT: 8104
     restart: unless-stopped
 

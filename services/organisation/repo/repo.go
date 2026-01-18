@@ -28,6 +28,7 @@ type RepoInterface interface {
 	GetDocPath(ctx context.Context, orgID int, docType core.OrgDocType) (string, error)
 	GetUsersOrgs(ctx context.Context, userID int) ([]core.Org, error)
 	BanOrg(ctx context.Context, orgID int, banned bool) error
+	GetUserOrgPermissions(ctx context.Context, orgID int, userID int) (map[string]bool, error)
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -339,126 +340,6 @@ func buildDocSelectQuery(docType core.OrgDocType) (string, error) {
 	}
 }
 
-// func (r *Repo) GetUsersOrgs(ctx context.Context, userID int) ([]core.Org, error) {
-// 	var bases []core.OrgBase
-// 	err := r.db.SelectContext(ctx, &bases, `
-// 		SELECT id, name, owner, avatar_path, email, balance, type, org_type_id, created_at, is_banned
-// 		FROM organizations
-// 		WHERE owner = $1
-// 	`, userID)
-// 	if err != nil {
-// 		r.log.Error("failed to get user's organisations", "user_id", userID, "error", err)
-// 		return nil, err
-// 	}
-
-// 	if len(bases) == 0 {
-// 		return []core.Org{}, nil
-// 	}
-
-// 	var physIDs, jurIDs, ipIDs []int
-// 	orgTypeMap := make(map[int]core.OrgType)
-
-// 	for _, base := range bases {
-// 		orgTypeMap[base.OrgTypeId] = base.OrgType
-// 		switch base.OrgType {
-// 		case core.OrgTypePhys:
-// 			physIDs = append(physIDs, base.OrgTypeId)
-// 		case core.OrgTypeJur:
-// 			jurIDs = append(jurIDs, base.OrgTypeId)
-// 		case core.OrgTypeIP:
-// 			ipIDs = append(ipIDs, base.OrgTypeId)
-// 		}
-// 	}
-
-// 	physMap := make(map[int]*core.PhysFace)
-// 	if len(physIDs) > 0 {
-// 		var physFaces []core.PhysFace
-// 		query, args, err := sqlx.In(`
-// 			SELECT id, BIC, checking_account, correspondent_account, FIO, INN, pasport_series,
-// 			pasport_number, pasport_givenby, registration_address, post_address,
-// 			pasport_page_with_photo_path, pasport_page_with_propiska_path,
-// 			svid_o_postanovke_na_uchet_phys_litsa_path
-// 			FROM physical_face_project_account WHERE id IN (?)
-// 		`, physIDs)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		query = r.db.Rebind(query)
-// 		if err := r.db.SelectContext(ctx, &physFaces, query, args...); err != nil {
-// 			r.log.Error("failed to get phys faces", "error", err)
-// 			return nil, err
-// 		}
-// 		for i := range physFaces {
-// 			physMap[physFaces[i].ID] = &physFaces[i]
-// 		}
-// 	}
-
-// 	jurMap := make(map[int]*core.JurFace)
-// 	if len(jurIDs) > 0 {
-// 		var jurFaces []core.JurFace
-// 		query, args, err := sqlx.In(`
-// 			SELECT id, acts_on_base, position, BIC, checking_account, correspondent_account,
-// 			full_organisation_name, short_organisation_name, INN, OGRN, KPP,
-// 			jur_address, fact_address, post_address, svid_o_registratsii_jur_litsa_path,
-// 			svid_o_postanovke_na_nalog_uchet_path, protocol_o_nasznachenii_litsa_path,
-// 			USN_path, ustav_path
-// 			FROM juridical_face_project_accout WHERE id IN (?)
-// 		`, jurIDs)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		query = r.db.Rebind(query)
-// 		if err := r.db.SelectContext(ctx, &jurFaces, query, args...); err != nil {
-// 			r.log.Error("failed to get jur faces", "error", err)
-// 			return nil, err
-// 		}
-// 		for i := range jurFaces {
-// 			jurMap[jurFaces[i].ID] = &jurFaces[i]
-// 		}
-// 	}
-
-// 	ipMap := make(map[int]*core.IPFace)
-// 	if len(ipIDs) > 0 {
-// 		var ipFaces []core.IPFace
-// 		query, args, err := sqlx.In(`
-// 			SELECT id, BIC, ras_schot, kor_schot, FIO, ip_svid_serial, ip_svid_number, ip_svid_givenby,
-// 			INN, OGRN, jur_address, fact_address, post_address,
-// 			svid_o_postanovke_na_nalog_uchet_path, ip_pasport_photo_page_path,
-// 			ip_pasport_propiska_path, USN_path, OGRNIP_path
-// 			FROM ip_project_account WHERE id IN (?)
-// 		`, ipIDs)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		query = r.db.Rebind(query)
-// 		if err := r.db.SelectContext(ctx, &ipFaces, query, args...); err != nil {
-// 			r.log.Error("failed to get ip faces", "error", err)
-// 			return nil, err
-// 		}
-// 		for i := range ipFaces {
-// 			ipMap[ipFaces[i].ID] = &ipFaces[i]
-// 		}
-// 	}
-
-// 	var orgs []core.Org
-// 	for _, base := range bases {
-// 		org := core.Org{OrgBase: base}
-
-// 		switch base.OrgType {
-// 		case core.OrgTypePhys:
-// 			org.PhysFace = physMap[base.OrgTypeId]
-// 		case core.OrgTypeJur:
-// 			org.JurFace = jurMap[base.OrgTypeId]
-// 		case core.OrgTypeIP:
-// 			org.IPFace = ipMap[base.OrgTypeId]
-// 		}
-
-// 		orgs = append(orgs, org)
-// 	}
-
-// 	return orgs, nil
-// }
-
 func (r *Repo) GetUsersOrgs(ctx context.Context, userID int) ([]core.Org, error) {
 	type row struct {
 		core.OrgBase
@@ -543,4 +424,35 @@ func (r *Repo) GetUsersOrgs(ctx context.Context, userID int) ([]core.Org, error)
 func (r *Repo) BanOrg(ctx context.Context, orgID int, banned bool) error {
 	_, err := r.db.ExecContext(ctx, `UPDATE organizations SET is_banned = $1 WHERE id = $2`, banned, orgID)
 	return err
+}
+
+func (r *Repo) GetUserOrgPermissions(ctx context.Context, orgID int, userID int) (map[string]bool, error) {
+	var orgAccMgmt, moneyMgmt, projMgmt bool
+	err := r.db.QueryRowContext(ctx, `
+		SELECT 
+            CASE WHEN o.owner = $1 THEN true ELSE COALESCE(up.org_account_management, false) END,
+            CASE WHEN o.owner = $1 THEN true ELSE COALESCE(up.money_management, false) END,
+            CASE WHEN o.owner = $1 THEN true ELSE COALESCE(up.project_management, false) END
+        FROM organizations o
+        LEFT JOIN user_right_at_org up ON o.id = up.org_id AND up.user_id = $1
+        WHERE o.id = $2
+	`, userID, orgID).Scan(&orgAccMgmt, &moneyMgmt, &projMgmt)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return map[string]bool{
+				"org_account_management": false,
+				"money_management":       false,
+				"project_management":     false,
+			}, nil
+		}
+		r.log.Error("failed to get user organisation permissions", "org_id", orgID, "user_id", userID, "error", err)
+		return nil, err
+	}
+
+	return map[string]bool{
+		"org_account_management": orgAccMgmt,
+		"money_management":       moneyMgmt,
+		"project_management":     projMgmt,
+	}, nil
 }

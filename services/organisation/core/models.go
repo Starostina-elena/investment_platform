@@ -10,6 +10,14 @@ const (
 	OrgTypeIP   OrgType = "ip"
 )
 
+type OrgPermission string
+
+const (
+	OrgAccountManagement OrgPermission = "org_account_management"
+	MoneyManagement      OrgPermission = "money_management"
+	ProjectManagement    OrgPermission = "project_management"
+)
+
 type OrgBase struct {
 	ID                    int       `json:"id"`
 	Name                  string    `json:"name"`

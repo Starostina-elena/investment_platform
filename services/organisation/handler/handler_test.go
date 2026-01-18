@@ -77,6 +77,10 @@ func (m *mockService) GetUsersOrgs(ctx context.Context, userID int) ([]core.Org,
 	return nil, nil
 }
 
+func (m *mockService) CheckUserOrgPermission(ctx context.Context, orgID int, userID int, permission core.OrgPermission) (bool, error) {
+	return false, nil
+}
+
 func TestCreateOrgHandler_Success(t *testing.T) {
 	ms := &mockService{
 		createFunc: func(ctx context.Context, o core.Org) (*core.Org, error) {
