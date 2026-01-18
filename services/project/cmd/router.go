@@ -15,7 +15,8 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 	router.Handle("POST /{id}/update", middleware.AuthMiddleware(handler.UpdateProjectHandler(h)))
 
 	router.Handle("GET /projects", handler.GetProjectListHandler(h))
-	router.Handle("GET /projects/org/{creator_id}", handler.GetProjectsByCreatorHandler(h))
+	router.Handle("GET /projects/org/{creator_id}", handler.GetPublicProjectsByCreatorHandler(h))
+	router.Handle("GET /projects/all/org/{creator_id}", middleware.AuthMiddleware(handler.GetAllProjectsByCreatorHandler(h)))
 
 	router.Handle("POST /{id}/ban", middleware.AuthMiddleware(handler.BanProjectHandler(h)))
 	router.Handle("POST /{id}/completed", middleware.AuthMiddleware(handler.MarkProjectCompletedHandler(h)))

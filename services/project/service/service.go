@@ -18,6 +18,7 @@ type Service interface {
 	Update(ctx context.Context, projectID int, p core.Project, userID int) (*core.Project, error)
 	GetList(ctx context.Context, limit, offset int) ([]core.Project, error)
 	GetByCreator(ctx context.Context, creatorID int) ([]core.Project, error)
+	GetAllByCreator(ctx context.Context, projectID int, userID int, isAdmin bool) ([]core.Project, error)
 	UpdatePicturePath(ctx context.Context, projectID int, picturePath string) error
 	BanProject(ctx context.Context, projectID int, banned bool) error
 	MarkProjectCompleted(ctx context.Context, projectID int, userID int, completed bool) error
@@ -107,6 +108,16 @@ func (s *service) GetList(ctx context.Context, limit, offset int) ([]core.Projec
 
 func (s *service) GetByCreator(ctx context.Context, creatorID int) ([]core.Project, error) {
 	return s.repo.GetByCreator(ctx, creatorID)
+}
+
+func (s *service) GetAllByCreator(ctx context.Context, orgID int, userID int, isAdmin bool) ([]core.Project, error) {
+	if !isAdmin {
+		allowed, err := s.orgClient.CheckUserOrgPermission(ctx, orgID, userID, "project_management")
+		if err != nil || !allowed {
+			return nil, core.ErrNotAuthorized
+		}
+	}
+	return s.repo.GetAllByCreator(ctx, orgID)
 }
 
 func (s *service) UpdatePicturePath(ctx context.Context, projectID int, picturePath string) error {

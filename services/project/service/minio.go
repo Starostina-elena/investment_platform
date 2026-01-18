@@ -12,6 +12,11 @@ import (
 )
 
 func (s *service) UploadPicture(ctx context.Context, projectID int, userID int, file multipart.File, fileHeader *multipart.FileHeader) (string, error) {
+	_, err := file.Seek(0, 0)
+	if err != nil {
+		return "", fmt.Errorf("failed to seek file: %w", err)
+	}
+
 	img, format, err := image.Decode(file)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode image: %w (supported: jpg, png, gif)", err)

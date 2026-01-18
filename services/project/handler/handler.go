@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -12,6 +13,14 @@ import (
 	"github.com/Starostina-elena/investment_platform/services/project/service"
 )
 
+const (
+	MaxNameLength      = 128
+	MaxQuickPeekLength = 128
+	MaxContentLength   = 1024
+	MaxWantedMoney     = 1e9
+	MaxDurationDays    = 36500
+)
+
 type Handler struct {
 	service service.Service
 	log     slog.Logger
@@ -19,6 +28,50 @@ type Handler struct {
 
 func NewHandler(s service.Service, log slog.Logger) *Handler {
 	return &Handler{service: s, log: log}
+}
+
+func ValidateProjectInput(req interface{}) error {
+	switch r := req.(type) {
+	case CreateProjectRequest:
+		if r.Name == "" || r.QuickPeek == "" || r.Content == "" || r.WantedMoney <= 0 || r.DurationDays <= 0 {
+			return fmt.Errorf("название, краткое и полное описание, срок и желаемая сумма обязательны")
+		}
+		if len(r.Name) > MaxNameLength {
+			return fmt.Errorf("название слишком длинное (макс %d символов)", MaxNameLength)
+		}
+		if len(r.QuickPeek) > MaxQuickPeekLength {
+			return fmt.Errorf("краткое описание слишком длинное (макс %d символов)", MaxQuickPeekLength)
+		}
+		if len(r.Content) > MaxContentLength {
+			return fmt.Errorf("полное описание слишком длинное (макс %d символов)", MaxContentLength)
+		}
+		if r.WantedMoney > MaxWantedMoney {
+			return fmt.Errorf("желаемая сумма слишком велика (макс %.0f)", MaxWantedMoney)
+		}
+		if r.DurationDays > MaxDurationDays {
+			return fmt.Errorf("срок слишком велик (макс %d дней)", MaxDurationDays)
+		}
+	case UpdateProjectRequest:
+		if r.Name == "" || r.QuickPeek == "" || r.Content == "" || r.WantedMoney <= 0 || r.DurationDays <= 0 {
+			return fmt.Errorf("название, краткое и полное описание, срок и желаемая сумма обязательны")
+		}
+		if len(r.Name) > MaxNameLength {
+			return fmt.Errorf("название слишком длинное (макс %d символов)", MaxNameLength)
+		}
+		if len(r.QuickPeek) > MaxQuickPeekLength {
+			return fmt.Errorf("краткое описание слишком длинное (макс %d символов)", MaxQuickPeekLength)
+		}
+		if len(r.Content) > MaxContentLength {
+			return fmt.Errorf("полное описание слишком длинное (макс %d символов)", MaxContentLength)
+		}
+		if r.WantedMoney > MaxWantedMoney {
+			return fmt.Errorf("желаемая сумма слишком велика (макс %.0f)", MaxWantedMoney)
+		}
+		if r.DurationDays > MaxDurationDays {
+			return fmt.Errorf("срок слишком велик (макс %d дней)", MaxDurationDays)
+		}
+	}
+	return nil
 }
 
 type CreateProjectRequest struct {
@@ -45,12 +98,9 @@ func CreateProjectHandler(h *Handler) http.HandlerFunc {
 			return
 		}
 
-		if req.Name == "" || req.QuickPeek == "" || req.Content == "" || req.WantedMoney <= 0 || req.DurationDays <= 0 {
-			http.Error(w, "Название, краткое и полное описание, срок и желаемая сумма обязательны", http.StatusBadRequest)
-			return
-		}
-		if len(req.Name) > 128 || len(req.QuickPeek) > 128 || len(req.Content) > 1024 || req.WantedMoney > 1e9 || req.DurationDays > 36500 {
-			http.Error(w, "Превышено максимальное количество символов в одном из полей", http.StatusBadRequest)
+		if err := ValidateProjectInput(req); err != nil {
+			h.log.Warn("invalid project input", "error", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
@@ -142,12 +192,9 @@ func UpdateProjectHandler(h *Handler) http.HandlerFunc {
 			return
 		}
 
-		if req.Name == "" || req.QuickPeek == "" || req.Content == "" || req.WantedMoney <= 0 || req.DurationDays <= 0 {
-			http.Error(w, "Название, краткое и полное описание, срок и желаемая сумма обязательны", http.StatusBadRequest)
-			return
-		}
-		if len(req.Name) > 128 || len(req.QuickPeek) > 128 || len(req.Content) > 1024 || req.WantedMoney > 1e9 || req.DurationDays > 36500 {
-			http.Error(w, "Превышено максимальное количество символов в одном из полей", http.StatusBadRequest)
+		if err := ValidateProjectInput(req); err != nil {
+			h.log.Warn("invalid project input", "error", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
@@ -214,7 +261,7 @@ func GetProjectListHandler(h *Handler) http.HandlerFunc {
 	}
 }
 
-func GetProjectsByCreatorHandler(h *Handler) http.HandlerFunc {
+func GetPublicProjectsByCreatorHandler(h *Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		creatorIDStr := r.PathValue("creator_id")
 		creatorID, err := strconv.Atoi(creatorIDStr)
@@ -226,6 +273,42 @@ func GetProjectsByCreatorHandler(h *Handler) http.HandlerFunc {
 
 		projects, err := h.service.GetByCreator(r.Context(), creatorID)
 		if err != nil {
+			h.log.Error("failed to get projects by creator", "creator_id", creatorID, "error", err)
+			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(projects)
+	}
+}
+
+func GetAllProjectsByCreatorHandler(h *Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims := middleware.FromContext(r.Context())
+		if claims == nil {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		if claims.Banned {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		creatorIDStr := r.PathValue("creator_id")
+		creatorID, err := strconv.Atoi(creatorIDStr)
+		if err != nil {
+			h.log.Error("invalid creator id", "id", creatorIDStr, "error", err)
+			http.Error(w, "Некорректный id создателя", http.StatusBadRequest)
+			return
+		}
+
+		projects, err := h.service.GetAllByCreator(r.Context(), creatorID, claims.UserID, claims.Admin)
+		if err != nil {
+			if err == core.ErrNotAuthorized {
+				h.log.Warn("unauthorized access attempt", "creator_id", creatorID, "user_id", claims.UserID)
+				http.Error(w, "Нет прав для просмотра всех проектов этой организации", http.StatusForbidden)
+				return
+			}
 			h.log.Error("failed to get projects by creator", "creator_id", creatorID, "error", err)
 			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
 			return
