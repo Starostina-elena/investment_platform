@@ -20,6 +20,9 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 	router.Handle("POST /{id}/ban", middleware.AuthMiddleware(handler.BanProjectHandler(h)))
 	router.Handle("POST /{id}/completed", middleware.AuthMiddleware(handler.MarkProjectCompletedHandler(h)))
 
+	router.Handle("POST /{id}/picture/upload", middleware.AuthMiddleware(handler.UploadPictureHandler(h)))
+	router.Handle("DELETE /{id}/picture", middleware.AuthMiddleware(handler.DeletePictureHandler(h)))
+
 	router.Handle("GET /ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("pong"))

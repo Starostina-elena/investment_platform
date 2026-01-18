@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 	"log/slog"
+	"mime/multipart"
 	"time"
 
 	"github.com/Starostina-elena/investment_platform/services/project/clients"
 	"github.com/Starostina-elena/investment_platform/services/project/core"
 	"github.com/Starostina-elena/investment_platform/services/project/repo"
+	"github.com/Starostina-elena/investment_platform/services/project/storage"
 )
 
 type Service interface {
@@ -19,16 +21,20 @@ type Service interface {
 	UpdatePicturePath(ctx context.Context, projectID int, picturePath string) error
 	BanProject(ctx context.Context, projectID int, banned bool) error
 	MarkProjectCompleted(ctx context.Context, projectID int, userID int, completed bool) error
+	UploadPicture(ctx context.Context, projectID int, userID int, file multipart.File, fileHeader *multipart.FileHeader) (string, error)
+	deletePicture(ctx context.Context, projectID int, picturePath string) error
+	DeletePictureFromProject(ctx context.Context, projectID int, userID int) error
 }
 
 type service struct {
 	repo      repo.RepoInterface
 	orgClient *clients.OrgClient
+	minio     *storage.MinioStorage
 	log       slog.Logger
 }
 
-func NewService(r repo.RepoInterface, orgClient *clients.OrgClient, log slog.Logger) Service {
-	return &service{repo: r, orgClient: orgClient, log: log}
+func NewService(r repo.RepoInterface, orgClient *clients.OrgClient, minioStorage *storage.MinioStorage, log slog.Logger) Service {
+	return &service{repo: r, orgClient: orgClient, minio: minioStorage, log: log}
 }
 
 func (s *service) Create(ctx context.Context, p core.Project, creatorID int, userID int) (*core.Project, error) {
