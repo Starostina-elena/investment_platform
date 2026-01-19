@@ -81,6 +81,7 @@ services:
     container_name: transactions
     depends_on:
       - db
+      - notification
     ports:
       - "12552:8103"
     environment:
@@ -90,6 +91,7 @@ services:
       DB_PASSWORD: secret_password
       DB_NAME: venture-platform-db
       APP_PORT: 8103
+      NOTIFICATION_SERVICE_URL: http://notification:8083
     restart: unless-stopped
 
   project:
@@ -145,6 +147,21 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       FROM_EMAIL: ${FROM_EMAIL}
+    restart: unless-stopped
+
+  daemon:
+    build: ./services/daemon
+    container_name: daemon
+    depends_on:
+      - db
+      - notification
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: comrade
+      DB_PASSWORD: secret_password
+      DB_NAME: venture-platform-db
+      NOTIFICATION_SERVICE_URL: http://notification:8083
     restart: unless-stopped
 
   minio:

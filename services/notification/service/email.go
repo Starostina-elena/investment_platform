@@ -62,8 +62,8 @@ func (s *EmailService) buildEmail(req *core.EmailRequest) (string, string, error
 	switch req.Type {
 	case core.NotifTypeDividends:
 		return s.buildDividendsEmail(req)
-	case core.NotifTypeRefund:
-		return s.buildRefundEmail(req)
+	case core.NotifTypeProjectClosed:
+		return s.buildProjectClosedEmail(req)
 	default:
 		return "", "", core.ErrUnknownNotifType
 	}
@@ -107,8 +107,8 @@ func (s *EmailService) buildDividendsEmail(req *core.EmailRequest) (string, stri
 	return subject, buf.String(), nil
 }
 
-func (s *EmailService) buildRefundEmail(req *core.EmailRequest) (string, string, error) {
-	subject := "Возврат средств"
+func (s *EmailService) buildProjectClosedEmail(req *core.EmailRequest) (string, string, error) {
+	subject := "Проект истек"
 	tmpl := `
 <!DOCTYPE html>
 <html>
@@ -117,13 +117,10 @@ func (s *EmailService) buildRefundEmail(req *core.EmailRequest) (string, string,
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
     <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #2196F3;">Возврат средств</h2>
+        <h2 style="color: #FF5722;">Проект истек</h2>
         <p>Здравствуйте!</p>
-        <p>Проект <strong>{{.ProjectName}}</strong> завершен.</p>
-        <p style="font-size: 18px; color: #2196F3;">
-            <strong>Возвращено: {{.Amount}} ₽</strong>
-        </p>
-        <p>Ваши инвестиционные средства возвращены на счет.</p>
+        <p>Проект <strong>{{.ProjectName}}</strong> достиг установленного срока и был закрыт.</p>
+        <p>Ожидайте выплаты дивидендов.</p>
         <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
         <p style="font-size: 12px; color: #888;">
             Это автоматическое уведомление, не отвечайте на него.
@@ -132,7 +129,7 @@ func (s *EmailService) buildRefundEmail(req *core.EmailRequest) (string, string,
 </body>
 </html>
 `
-	t, err := template.New("refund").Parse(tmpl)
+	t, err := template.New("project_closed").Parse(tmpl)
 	if err != nil {
 		return "", "", err
 	}

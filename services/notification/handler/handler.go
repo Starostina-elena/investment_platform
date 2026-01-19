@@ -31,12 +31,16 @@ func SendEmailHandler(h *Handler) http.HandlerFunc {
 			http.Error(w, "invalid email", http.StatusBadRequest)
 			return
 		}
-		if req.Type != core.NotifTypeDividends && req.Type != core.NotifTypeRefund {
+		if req.Type != core.NotifTypeDividends && req.Type != core.NotifTypeProjectClosed {
 			http.Error(w, "unknown notification type", http.StatusBadRequest)
 			return
 		}
-		if req.ProjectName == "" || req.Amount <= 0 {
-			http.Error(w, "invalid project or amount", http.StatusBadRequest)
+		if req.ProjectName == "" {
+			http.Error(w, "invalid project name", http.StatusBadRequest)
+			return
+		}
+		if req.Type != core.NotifTypeProjectClosed && req.Amount <= 0 {
+			http.Error(w, "invalid amount", http.StatusBadRequest)
 			return
 		}
 

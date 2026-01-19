@@ -1,8 +1,8 @@
 package core
 
 const (
-	NotifTypeDividends = "dividends"
-	NotifTypeRefund    = "refund"
+	NotifTypeDividends     = "dividends"
+	NotifTypeProjectClosed = "project_closed"
 )
 
 type EmailRequest struct {
