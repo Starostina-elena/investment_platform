@@ -378,6 +378,50 @@ func BanProjectHandler(h *Handler) http.HandlerFunc {
 	}
 }
 
+func ChangeProjectPublicityHandler(h *Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims := middleware.FromContext(r.Context())
+		if claims == nil {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		if claims.Banned {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+
+		projectIDStr := r.PathValue("id")
+		projectID, err := strconv.Atoi(projectIDStr)
+		if err != nil {
+			h.log.Error("invalid project id", "id", projectIDStr, "error", err)
+			http.Error(w, "Некорректный id", http.StatusBadRequest)
+			return
+		}
+
+		publicStr := strings.TrimSpace(r.URL.Query().Get("public"))
+		isPublic, err := strconv.ParseBool(publicStr)
+		if err != nil {
+			h.log.Error("invalid public value", "value", publicStr, "error", err)
+			http.Error(w, "Некорректное значение public", http.StatusBadRequest)
+			return
+		}
+
+		err = h.service.ChangeProjectPublicity(r.Context(), projectID, claims.UserID, isPublic)
+		if err != nil {
+			if err == core.ErrNotAuthorized {
+				h.log.Warn("unauthorized attempt to change project publicity", "project_id", projectID, "user_id", claims.UserID)
+				http.Error(w, "Нет прав для изменения публичности проекта", http.StatusForbidden)
+				return
+			}
+			h.log.Error("failed to change project publicity", "project_id", projectID, "error", err)
+			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
 func MarkProjectCompletedHandler(h *Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims := middleware.FromContext(r.Context())

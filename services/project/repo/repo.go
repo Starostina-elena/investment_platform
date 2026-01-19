@@ -26,6 +26,7 @@ type RepoInterface interface {
 	GetAllByCreator(ctx context.Context, creatorID int) ([]core.Project, error)
 	UpdatePicturePath(ctx context.Context, projectID int, picturePath *string) error
 	BanProject(ctx context.Context, projectID int, banned bool) error
+	ChangeProjectPublicity(ctx context.Context, projectID int, isPublic bool) error
 	MarkProjectCompleted(ctx context.Context, projectID int, completed bool) error
 	StartPayback(ctx context.Context, projectID int) error
 	GetProjectTransactions(ctx context.Context, projectID int) ([]core.Transaction, error)
@@ -146,6 +147,18 @@ func (r *Repo) BanProject(ctx context.Context, projectID int, banned bool) error
 	)
 	if err != nil {
 		r.log.Error("failed to ban/unban project", "project_id", projectID, "banned", banned, "error", err)
+		return err
+	}
+	return nil
+}
+
+func (r *Repo) ChangeProjectPublicity(ctx context.Context, projectID int, isPublic bool) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE projects SET is_public = $1 WHERE id = $2`,
+		isPublic, projectID,
+	)
+	if err != nil {
+		r.log.Error("failed to change project publicity", "project_id", projectID, "is_public", isPublic, "error", err)
 		return err
 	}
 	return nil

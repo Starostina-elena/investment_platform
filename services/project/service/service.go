@@ -21,6 +21,7 @@ type Service interface {
 	GetAllByCreator(ctx context.Context, projectID int, userID int, isAdmin bool) ([]core.Project, error)
 	UpdatePicturePath(ctx context.Context, projectID int, picturePath string) error
 	BanProject(ctx context.Context, projectID int, banned bool) error
+	ChangeProjectPublicity(ctx context.Context, projectID int, userID int, isPublic bool) error
 	MarkProjectCompleted(ctx context.Context, projectID int, userID int, completed bool) error
 	StartPayback(ctx context.Context, projectID int, userID int) error
 	UploadPicture(ctx context.Context, projectID int, userID int, file multipart.File, fileHeader *multipart.FileHeader) (string, error)
@@ -127,6 +128,18 @@ func (s *service) UpdatePicturePath(ctx context.Context, projectID int, pictureP
 
 func (s *service) BanProject(ctx context.Context, projectID int, banned bool) error {
 	return s.repo.BanProject(ctx, projectID, banned)
+}
+
+func (s *service) ChangeProjectPublicity(ctx context.Context, projectID int, userID int, isPublic bool) error {
+	existingProject, err := s.repo.Get(ctx, projectID)
+	if err != nil {
+		return err
+	}
+	allowed, err := s.orgClient.CheckUserOrgPermission(ctx, existingProject.CreatorID, userID, "project_management")
+	if err != nil || !allowed {
+		return core.ErrNotAuthorized
+	}
+	return s.repo.ChangeProjectPublicity(ctx, projectID, isPublic)
 }
 
 func (s *service) MarkProjectCompleted(ctx context.Context, projectID int, userID int, completed bool) error {
