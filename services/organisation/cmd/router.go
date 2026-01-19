@@ -29,6 +29,8 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 	router.Handle("GET /{org_id}/rights/{user_id}/{permission}", handler.CheckUserOrgPermissionHandler(h))
 	router.Handle("POST /{org_id}/employees/add", middleware.AuthMiddleware(handler.AddEmployeeHandler(h)))
 	router.Handle("GET /{org_id}/employees", handler.GetOrgEmployeesHandler(h))
+	router.Handle("POST /{org_id}/employees/update", middleware.AuthMiddleware(handler.UpdateEmployeePermissionsHandler(h)))
+	router.Handle("DELETE /{org_id}/employees/{user_id}/delete", middleware.AuthMiddleware(handler.DeleteEmployeeHandler(h)))
 
 	router.Handle("GET /ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

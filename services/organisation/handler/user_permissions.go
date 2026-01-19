@@ -129,3 +129,96 @@ func GetOrgEmployeesHandler(h *Handler) http.HandlerFunc {
 		}
 	}
 }
+
+func UpdateEmployeePermissionsHandler(h *Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims := middleware.FromContext(r.Context())
+		if claims == nil {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		orgIDStr := r.PathValue("org_id")
+		orgID, err := strconv.Atoi(orgIDStr)
+		if err != nil {
+			h.log.Error("invalid org id", "id", orgIDStr, "error", err)
+			http.Error(w, "Incorrect org_id", http.StatusBadRequest)
+			return
+		}
+
+		var req AddEmployeeReq
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			h.log.Error("failed to decode request body", "error", err)
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+
+		if req.UserID <= 0 {
+			http.Error(w, "Invalid user_id", http.StatusBadRequest)
+			return
+		}
+
+		if !req.OrgAccMgmt && !req.MoneyMgmt && !req.ProjMgmt {
+			http.Error(w, "At least one permission must be granted", http.StatusBadRequest)
+			return
+		}
+
+		if err := h.service.UpdateEmployeePermissions(r.Context(), orgID, claims.UserID, req.UserID, req.OrgAccMgmt, req.MoneyMgmt, req.ProjMgmt); err != nil {
+			switch err {
+			case core.ErrNotAuthorized:
+				http.Error(w, "forbidden", http.StatusForbidden)
+				return
+			case core.ErrEmployeeNotFound:
+				http.Error(w, "employee not found", http.StatusNotFound)
+				return
+			}
+			h.log.Error("failed to update employee permissions", "error", err)
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func DeleteEmployeeHandler(h *Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims := middleware.FromContext(r.Context())
+		if claims == nil {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		orgIDStr := r.PathValue("org_id")
+		orgID, err := strconv.Atoi(orgIDStr)
+		if err != nil {
+			h.log.Error("invalid org id", "id", orgIDStr, "error", err)
+			http.Error(w, "Incorrect org_id", http.StatusBadRequest)
+			return
+		}
+
+		userIDStr := r.PathValue("user_id")
+		userID, err := strconv.Atoi(userIDStr)
+		if err != nil {
+			h.log.Error("invalid user id", "id", userIDStr, "error", err)
+			http.Error(w, "Incorrect user_id", http.StatusBadRequest)
+			return
+		}
+
+		if err := h.service.DeleteEmployee(r.Context(), orgID, claims.UserID, userID); err != nil {
+			switch err {
+			case core.ErrNotAuthorized:
+				http.Error(w, "forbidden", http.StatusForbidden)
+				return
+			case core.ErrEmployeeNotFound:
+				http.Error(w, "employee not found", http.StatusNotFound)
+				return
+			}
+			h.log.Error("failed to delete employee", "error", err)
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}

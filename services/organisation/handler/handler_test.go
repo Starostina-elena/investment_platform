@@ -89,6 +89,14 @@ func (m *mockService) GetOrgEmployees(ctx context.Context, orgID int) ([]core.Or
 	return nil, nil
 }
 
+func (m *mockService) UpdateEmployeePermissions(ctx context.Context, orgID int, userRequested int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error {
+	return nil
+}
+
+func (m *mockService) DeleteEmployee(ctx context.Context, orgID int, userRequested int, userID int) error {
+	return nil
+}
+
 func TestCreateOrgHandler_Success(t *testing.T) {
 	ms := &mockService{
 		createFunc: func(ctx context.Context, o core.Org) (*core.Org, error) {

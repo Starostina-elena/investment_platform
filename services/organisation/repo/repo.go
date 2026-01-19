@@ -31,6 +31,8 @@ type RepoInterface interface {
 	GetUserOrgPermissions(ctx context.Context, orgID int, userID int) (map[string]bool, error)
 	AddEmployee(ctx context.Context, orgID int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error
 	GetEmployees(ctx context.Context, orgID int) ([]core.OrgEmployee, error)
+	UpdateEmployeePermissions(ctx context.Context, orgID int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error
+	DeleteEmployee(ctx context.Context, orgID int, userID int) error
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -503,4 +505,55 @@ func (r *Repo) GetEmployees(ctx context.Context, orgID int) ([]core.OrgEmployee,
 	}
 
 	return employees, nil
+}
+
+func (r *Repo) UpdateEmployeePermissions(ctx context.Context, orgID int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error {
+	result, err := r.db.ExecContext(ctx,
+		`UPDATE user_right_at_org
+		SET org_account_management = $1,
+		    money_management = $2,
+		    project_management = $3
+		WHERE org_id = $4 AND user_id = $5`,
+		orgAccMgmt, moneyMgmt, projMgmt, orgID, userID,
+	)
+	if err != nil {
+		r.log.Error("failed to update employee permissions", "org_id", orgID, "user_id", userID, "error", err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		r.log.Error("failed to get rows affected", "org_id", orgID, "user_id", userID, "error", err)
+		return err
+	}
+	if rowsAffected == 0 {
+		r.log.Warn("employee not found for update", "org_id", orgID, "user_id", userID)
+		return core.ErrEmployeeNotFound
+	}
+
+	return nil
+}
+
+func (r *Repo) DeleteEmployee(ctx context.Context, orgID int, userID int) error {
+	result, err := r.db.ExecContext(ctx,
+		`DELETE FROM user_right_at_org
+		WHERE org_id = $1 AND user_id = $2`,
+		orgID, userID,
+	)
+	if err != nil {
+		r.log.Error("failed to delete employee", "org_id", orgID, "user_id", userID, "error", err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		r.log.Error("failed to get rows affected", "org_id", orgID, "user_id", userID, "error", err)
+		return err
+	}
+	if rowsAffected == 0 {
+		r.log.Warn("employee not found for deletion", "org_id", orgID, "user_id", userID)
+		return core.ErrEmployeeNotFound
+	}
+
+	return nil
 }

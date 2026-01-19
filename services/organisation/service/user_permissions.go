@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+
 	"github.com/Starostina-elena/investment_platform/services/organisation/core"
 )
 
@@ -27,4 +28,26 @@ func (s *service) AddEmployee(ctx context.Context, orgID int, userRequested int,
 
 func (s *service) GetOrgEmployees(ctx context.Context, orgID int) ([]core.OrgEmployee, error) {
 	return s.repo.GetEmployees(ctx, orgID)
+}
+
+func (s *service) UpdateEmployeePermissions(ctx context.Context, orgID int, userRequested int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error {
+	allowed, err := s.CheckUserOrgPermission(ctx, orgID, userRequested, "org_account_management")
+	if err != nil {
+		return err
+	}
+	if !allowed {
+		return core.ErrNotAuthorized
+	}
+	return s.repo.UpdateEmployeePermissions(ctx, orgID, userID, orgAccMgmt, moneyMgmt, projMgmt)
+}
+
+func (s *service) DeleteEmployee(ctx context.Context, orgID int, userRequested int, userID int) error {
+	allowed, err := s.CheckUserOrgPermission(ctx, orgID, userRequested, "org_account_management")
+	if err != nil {
+		return err
+	}
+	if !allowed {
+		return core.ErrNotAuthorized
+	}
+	return s.repo.DeleteEmployee(ctx, orgID, userID)
 }
