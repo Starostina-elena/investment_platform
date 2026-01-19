@@ -22,6 +22,7 @@ type Service interface {
 	UpdatePicturePath(ctx context.Context, projectID int, picturePath string) error
 	BanProject(ctx context.Context, projectID int, banned bool) error
 	MarkProjectCompleted(ctx context.Context, projectID int, userID int, completed bool) error
+	StartPayback(ctx context.Context, projectID int, userID int) error
 	UploadPicture(ctx context.Context, projectID int, userID int, file multipart.File, fileHeader *multipart.FileHeader) (string, error)
 	deletePicture(ctx context.Context, projectID int, picturePath string) error
 	DeletePictureFromProject(ctx context.Context, projectID int, userID int) error
@@ -138,4 +139,27 @@ func (s *service) MarkProjectCompleted(ctx context.Context, projectID int, userI
 		return core.ErrNotAuthorized
 	}
 	return s.repo.MarkProjectCompleted(ctx, projectID, completed)
+}
+
+func (s *service) StartPayback(ctx context.Context, projectID int, userID int) error {
+	existingProject, err := s.repo.Get(ctx, projectID)
+	if err != nil {
+		return err
+	}
+
+	allowed, err := s.orgClient.CheckUserOrgPermission(ctx, existingProject.CreatorID, userID, "money_management")
+	if err != nil {
+		s.log.Error("failed to check money_management permission", "error", err)
+		return err
+	}
+	if !allowed {
+		return core.ErrNotAuthorized
+	}
+
+	if existingProject.PaybackStarted {
+		s.log.Warn("payback already started", "project_id", projectID)
+		return core.ErrPaybackStarted
+	}
+
+	return s.repo.StartPayback(ctx, projectID)
 }

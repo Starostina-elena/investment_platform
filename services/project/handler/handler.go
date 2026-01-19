@@ -396,7 +396,54 @@ func MarkProjectCompletedHandler(h *Handler) http.HandlerFunc {
 
 		err = h.service.MarkProjectCompleted(r.Context(), projectID, claims.UserID, completed)
 		if err != nil {
+			if err == core.ErrNotAuthorized {
+				h.log.Warn("unauthorized attempt to mark project completed", "project_id", projectID, "user_id", claims.UserID)
+				http.Error(w, "Нет прав для изменения статуса проекта", http.StatusForbidden)
+				return
+			}
+			if err == core.ErrPaybackStarted {
+				h.log.Warn("attempt to change is_completed when payback has started", "project_id", projectID)
+				http.Error(w, "Невозможно изменить статус завершенности проекта после начала возврата средств инвесторам", http.StatusBadRequest)
+				return
+			}
 			h.log.Error("failed to mark project as completed", "project_id", projectID, "error", err)
+			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func StartPaybackHandler(h *Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims := middleware.FromContext(r.Context())
+		if claims == nil {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		projectIDStr := r.PathValue("id")
+		projectID, err := strconv.Atoi(projectIDStr)
+		if err != nil {
+			h.log.Error("invalid project id", "id", projectIDStr, "error", err)
+			http.Error(w, "Некорректный id", http.StatusBadRequest)
+			return
+		}
+
+		err = h.service.StartPayback(r.Context(), projectID, claims.UserID)
+		if err != nil {
+			if err == core.ErrNotAuthorized {
+				h.log.Warn("unauthorized attempt to start payback", "project_id", projectID, "user_id", claims.UserID)
+				http.Error(w, "Нет прав для запуска возврата средств (требуется money_management)", http.StatusForbidden)
+				return
+			}
+			if err == core.ErrPaybackStarted {
+				h.log.Warn("payback already started", "project_id", projectID)
+				http.Error(w, "Возврат средств уже запущен для этого проекта", http.StatusBadRequest)
+				return
+			}
+			h.log.Error("failed to start payback", "project_id", projectID, "error", err)
 			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
 			return
 		}

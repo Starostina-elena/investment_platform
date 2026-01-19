@@ -1,0 +1,2 @@
+ALTER TABLE projects
+    ADD COLUMN payback_started BOOLEAN DEFAULT FALSE NOT NULL;
