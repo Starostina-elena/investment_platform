@@ -443,6 +443,16 @@ func StartPaybackHandler(h *Handler) http.HandlerFunc {
 				http.Error(w, "Возврат средств уже запущен для этого проекта", http.StatusBadRequest)
 				return
 			}
+			if err == core.ErrPaybackNotSupported {
+				h.log.Warn("payback not supported for monetization type", "project_id", projectID)
+				http.Error(w, "Возврат средств не поддерживается для проектов с типом монетизации charity или custom", http.StatusBadRequest)
+				return
+			}
+			if err == core.ErrNotEnoughFunds {
+				h.log.Warn("not enough funds to complete payback", "project_id", projectID)
+				http.Error(w, "Недостаточно средств на проекте для полного возврата инвесторам", http.StatusBadRequest)
+				return
+			}
 			h.log.Error("failed to start payback", "project_id", projectID, "error", err)
 			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
 			return

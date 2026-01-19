@@ -22,3 +22,25 @@ type Project struct {
 	PaybackStartedDate     *time.Time `json:"payback_started_date,omitempty" db:"payback_started_date"`
 	MoneyRequiredToPayback float64    `json:"money_required_to_payback" db:"money_required_to_payback"`
 }
+
+type Transaction struct {
+	ID             int       `db:"id"`
+	FromID         *int      `db:"from_id"`
+	ReceiverID     *int      `db:"reciever_id"`
+	Type           string    `db:"type"`
+	Amount         float64   `db:"amount"`
+	TimeAt         time.Time `db:"time_at"`
+}
+
+type InvestorPayback struct {
+	UserID         int
+	TotalInvested  float64
+	TotalReceived  float64
+	PaybackAmount  float64
+	Investments    []Investment
+}
+
+type Investment struct {
+	Amount    float64
+	InvestedAt time.Time
+}

@@ -161,5 +161,107 @@ func (s *service) StartPayback(ctx context.Context, projectID int, userID int) e
 		return core.ErrPaybackStarted
 	}
 
-	return s.repo.StartPayback(ctx, projectID)
+	if existingProject.MonetizationType == "charity" || existingProject.MonetizationType == "custom" {
+		s.log.Warn("payback not supported for monetization type", "project_id", projectID, "type", existingProject.MonetizationType)
+		return core.ErrPaybackNotSupported
+	}
+
+	err = s.repo.StartPayback(ctx, projectID)
+	if err != nil {
+		s.log.Error("failed to start payback", "error", err)
+		return err
+	}
+
+	transactions, err := s.repo.GetProjectTransactions(ctx, projectID)
+	if err != nil {
+		s.log.Error("failed to get project transactions", "error", err)
+		return err
+	}
+
+	investorPaybacks := s.calculatePaybacks(existingProject, transactions)
+	newMoneyRequired := existingProject.MoneyRequiredToPayback
+	defer func() {
+		_ = s.repo.UpdateMoneyRequiredToPayback(ctx, projectID, newMoneyRequired)
+	}()
+
+	for _, payback := range investorPaybacks {
+		if payback.TotalReceived > 0 {
+			continue
+		}
+		amountToPay := payback.PaybackAmount
+
+		if existingProject.CurrentMoney >= amountToPay {
+			// TODO: вызов микросервиса транзакций для создания транзакции project_to_user
+			// transactionService.CreateTransaction(ctx, projectID, payback.UserID, amountToPay, "project_to_user")
+			existingProject.CurrentMoney -= amountToPay
+			newMoneyRequired -= amountToPay
+			if newMoneyRequired < 0 {
+				newMoneyRequired = 0
+			}
+		} else {
+			s.log.Info("insufficient funds for full payback", "project_id", projectID, "user_id", payback.UserID, "amount_needed", amountToPay, "current_money", existingProject.CurrentMoney)
+			return core.ErrNotEnoughFunds
+		}
+	}
+
+	return nil
+}
+
+func (s *service) calculatePaybacks(project *core.Project, transactions []core.Transaction) []core.InvestorPayback {
+	investorMap := make(map[int]*core.InvestorPayback)
+
+	for _, tx := range transactions {
+		if tx.Type == "user_to_project" && tx.ReceiverID != nil && *tx.ReceiverID == project.ID && tx.FromID != nil {
+			userID := *tx.FromID
+			if userID == project.CreatorID {
+				continue
+			}
+			if _, exists := investorMap[userID]; !exists {
+				investorMap[userID] = &core.InvestorPayback{
+					UserID:        userID,
+					TotalInvested: 0,
+					TotalReceived: 0,
+					Investments:   []core.Investment{},
+				}
+			}
+			investorMap[userID].TotalInvested += tx.Amount
+			investorMap[userID].Investments = append(investorMap[userID].Investments, core.Investment{
+				Amount:     tx.Amount,
+				InvestedAt: tx.TimeAt,
+			})
+		} else if tx.Type == "project_to_user" && tx.FromID != nil && *tx.FromID == project.ID && tx.ReceiverID != nil {
+			userID := *tx.ReceiverID
+			if userID == project.CreatorID {
+				continue
+			}
+			if _, exists := investorMap[userID]; !exists {
+				investorMap[userID] = &core.InvestorPayback{
+					UserID:        userID,
+					TotalInvested: 0,
+					TotalReceived: 0,
+					Investments:   []core.Investment{},
+				}
+			}
+			investorMap[userID].TotalReceived += tx.Amount
+		}
+	}
+
+	result := make([]core.InvestorPayback, 0, len(investorMap))
+	for _, investor := range investorMap {
+		switch project.MonetizationType {
+		case "fixed_percent":
+			investor.PaybackAmount = investor.TotalInvested * (1 + project.Percent/100)
+		case "time_percent":
+			paybackAmount := 0.0
+			now := time.Now()
+			for _, inv := range investor.Investments {
+				days := int(now.Sub(inv.InvestedAt).Hours() / 24)
+				paybackAmount += inv.Amount * (project.Percent / 100) * float64(days)
+			}
+			investor.PaybackAmount = paybackAmount
+		}
+		result = append(result, *investor)
+	}
+
+	return result
 }

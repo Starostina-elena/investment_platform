@@ -28,6 +28,8 @@ type RepoInterface interface {
 	BanProject(ctx context.Context, projectID int, banned bool) error
 	MarkProjectCompleted(ctx context.Context, projectID int, completed bool) error
 	StartPayback(ctx context.Context, projectID int) error
+	GetProjectTransactions(ctx context.Context, projectID int) ([]core.Transaction, error)
+	UpdateMoneyRequiredToPayback(ctx context.Context, projectID int, newAmount float64) error
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -175,7 +177,8 @@ func (r *Repo) MarkProjectCompleted(ctx context.Context, projectID int, complete
 
 func (r *Repo) StartPayback(ctx context.Context, projectID int) error {
 	_, err := r.db.ExecContext(ctx,
-		`UPDATE projects SET payback_started = true, payback_started_date = CURRENT_TIMESTAMP WHERE id = $1`,
+		`UPDATE projects SET payback_started = true,
+		payback_started_date = CURRENT_TIMESTAMP, is_completed = true WHERE id = $1`,
 		projectID,
 	)
 	if err != nil {
@@ -183,5 +186,34 @@ func (r *Repo) StartPayback(ctx context.Context, projectID int) error {
 		return err
 	}
 	r.log.Info("payback started", "project_id", projectID)
+	return nil
+}
+
+func (r *Repo) GetProjectTransactions(ctx context.Context, projectID int) ([]core.Transaction, error) {
+	var transactions []core.Transaction
+	err := r.db.SelectContext(ctx, &transactions,
+		`SELECT id, from_id, reciever_id, type, amount, time_at 
+		FROM transactions 
+		WHERE (from_id = $1 AND type = 'project_to_user') 
+		   OR (reciever_id = $1 AND type = 'user_to_project')
+		ORDER BY time_at ASC`,
+		projectID,
+	)
+	if err != nil {
+		r.log.Error("failed to get project transactions", "project_id", projectID, "error", err)
+		return nil, err
+	}
+	return transactions, nil
+}
+
+func (r *Repo) UpdateMoneyRequiredToPayback(ctx context.Context, projectID int, newAmount float64) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE projects SET money_required_to_payback = $1 WHERE id = $2`,
+		newAmount, projectID,
+	)
+	if err != nil {
+		r.log.Error("failed to update money_required_to_payback", "project_id", projectID, "error", err)
+		return err
+	}
 	return nil
 }
