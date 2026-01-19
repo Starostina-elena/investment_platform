@@ -14,6 +14,10 @@ func UploadAvatarHandler(h *Handler) http.HandlerFunc {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
+		if claims.Banned {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
 		userID := claims.UserID
 
 		err := r.ParseMultipartForm(10 << 20)

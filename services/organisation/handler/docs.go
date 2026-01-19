@@ -19,6 +19,10 @@ func UploadDocHandler(h *Handler) http.HandlerFunc {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
+		if claims.Banned {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
 
 		orgIdStr := r.PathValue("org_id")
 		orgID, err := strconv.Atoi(orgIdStr)
@@ -90,6 +94,10 @@ func DeleteDocHandler(h *Handler) http.HandlerFunc {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
+		if claims.Banned {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
 
 		orgIdStr := r.PathValue("org_id")
 		orgID, err := strconv.Atoi(orgIdStr)
@@ -142,6 +150,10 @@ func DownloadDocHandler(h *Handler) http.HandlerFunc {
 		claims := middleware.FromContext(r.Context())
 		if claims == nil {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		if claims.Banned {
+			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
 

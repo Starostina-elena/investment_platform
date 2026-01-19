@@ -16,6 +16,10 @@ func UploadPictureHandler(h *Handler) http.HandlerFunc {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
+		if claims.Banned {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
 
 		projectIDStr := r.PathValue("id")
 		projectID, err := strconv.Atoi(projectIDStr)
