@@ -6,3 +6,4 @@ var ErrNotAuthorized = errors.New("пользователь не авториз�
 var ErrOrgNotFound = errors.New("организация не найдена")
 var ErrFileNotFound = errors.New("файл не найден")
 var ErrEmployeeNotFound = errors.New("сотрудник не найден")
+var ErrOrgBanned = errors.New("организация заблокирована")

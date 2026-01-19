@@ -222,3 +222,50 @@ func DeleteEmployeeHandler(h *Handler) http.HandlerFunc {
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
+
+func TransferOwnershipHandler(h *Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims := middleware.FromContext(r.Context())
+		if claims == nil {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		orgIDStr := r.PathValue("org_id")
+		orgID, err := strconv.Atoi(orgIDStr)
+		if err != nil {
+			h.log.Error("invalid org id", "id", orgIDStr, "error", err)
+			http.Error(w, "Incorrect org_id", http.StatusBadRequest)
+			return
+		}
+
+		newOwnerIDStr := r.PathValue("new_owner_user_id")
+		newOwnerID, err := strconv.Atoi(newOwnerIDStr)
+		if err != nil {
+			h.log.Error("invalid new owner user id", "id", newOwnerIDStr, "error", err)
+			http.Error(w, "Incorrect new_owner_user_id", http.StatusBadRequest)
+			return
+		}
+
+		if newOwnerID <= 0 {
+			http.Error(w, "Invalid new_owner_user_id", http.StatusBadRequest)
+			return
+		}
+
+		if err := h.service.TransferOwnership(r.Context(), orgID, claims.UserID, newOwnerID); err != nil {
+			switch err {
+			case core.ErrNotAuthorized:
+				http.Error(w, "forbidden", http.StatusForbidden)
+				return
+			case core.ErrOrgBanned:
+				http.Error(w, "organization is banned", http.StatusForbidden)
+				return
+			}
+			h.log.Error("failed to transfer ownership", "error", err)
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}

@@ -97,6 +97,10 @@ func (m *mockService) DeleteEmployee(ctx context.Context, orgID int, userRequest
 	return nil
 }
 
+func (m *mockService) TransferOwnership(ctx context.Context, orgID int, userRequested int, newOwnerID int) error {
+	return nil
+}
+
 func TestCreateOrgHandler_Success(t *testing.T) {
 	ms := &mockService{
 		createFunc: func(ctx context.Context, o core.Org) (*core.Org, error) {

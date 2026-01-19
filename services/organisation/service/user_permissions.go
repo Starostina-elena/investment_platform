@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Starostina-elena/investment_platform/services/organisation/core"
 )
@@ -50,4 +51,29 @@ func (s *service) DeleteEmployee(ctx context.Context, orgID int, userRequested i
 		return core.ErrNotAuthorized
 	}
 	return s.repo.DeleteEmployee(ctx, orgID, userID)
+}
+
+func (s *service) TransferOwnership(ctx context.Context, orgID int, userRequested int, newOwnerID int) error {
+	org, err := s.Get(ctx, orgID)
+	if err != nil {
+		return err
+	}
+	if org.OwnerId != userRequested {
+		s.log.Warn("non-owner tried to transfer ownership", "org_id", orgID, "user_id", userRequested, "owner_id", org.OwnerId)
+		return core.ErrNotAuthorized
+	}
+
+	if org.IsBanned {
+		s.log.Warn("attempt to transfer ownership of banned organisation", "org_id", orgID)
+		return core.ErrOrgBanned
+	}
+
+	if org.OwnerId == newOwnerID {
+		s.log.Warn("attempt to transfer ownership to current owner", "org_id", orgID, "owner_id", org.OwnerId)
+		return fmt.Errorf("new owner is the same as current owner")
+	}
+
+	s.log.Info("transferring ownership", "org_id", orgID, "old_owner", org.OwnerId, "new_owner", newOwnerID)
+
+	return s.repo.TransferOwnership(ctx, orgID, org.OwnerId, newOwnerID)
 }

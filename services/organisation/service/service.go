@@ -29,6 +29,7 @@ type Service interface {
 	GetOrgEmployees(ctx context.Context, orgID int) ([]core.OrgEmployee, error)
 	UpdateEmployeePermissions(ctx context.Context, orgID int, userRequested int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error
 	DeleteEmployee(ctx context.Context, orgID int, userRequested int, userID int) error
+	TransferOwnership(ctx context.Context, orgID int, userRequested int, newOwnerID int) error
 }
 
 type service struct {

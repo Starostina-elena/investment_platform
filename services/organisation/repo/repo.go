@@ -33,6 +33,7 @@ type RepoInterface interface {
 	GetEmployees(ctx context.Context, orgID int) ([]core.OrgEmployee, error)
 	UpdateEmployeePermissions(ctx context.Context, orgID int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error
 	DeleteEmployee(ctx context.Context, orgID int, userID int) error
+	TransferOwnership(ctx context.Context, orgID int, oldOwnerID int, newOwnerID int) error
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -555,5 +556,64 @@ func (r *Repo) DeleteEmployee(ctx context.Context, orgID int, userID int) error 
 		return core.ErrEmployeeNotFound
 	}
 
+	return nil
+}
+
+func (r *Repo) TransferOwnership(ctx context.Context, orgID int, oldOwnerID int, newOwnerID int) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		r.log.Error("failed to begin transaction for ownership transfer", "org_id", orgID, "error", err)
+		return err
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	_, err = tx.ExecContext(ctx,
+		`DELETE FROM user_right_at_org WHERE org_id = $1 AND user_id = $2`,
+		orgID, newOwnerID,
+	)
+	if err != nil {
+		r.log.Error("failed to remove new owner from employees", "org_id", orgID, "new_owner_id", newOwnerID, "error", err)
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx,
+		`INSERT INTO user_right_at_org (org_id, user_id, org_account_management, money_management, project_management) 
+		 VALUES ($1, $2, $3, $4, $5)
+		 ON CONFLICT (org_id, user_id) DO UPDATE SET 
+		 org_account_management = true, money_management = true, project_management = true`,
+		orgID, oldOwnerID, true, true, true,
+	)
+	if err != nil {
+		r.log.Error("failed to add old owner as employee", "org_id", orgID, "old_owner_id", oldOwnerID, "error", err)
+		return err
+	}
+
+	result, err := tx.ExecContext(ctx,
+		`UPDATE organizations SET owner = $1 WHERE id = $2`,
+		newOwnerID, orgID,
+	)
+	if err != nil {
+		r.log.Error("failed to update organization owner", "org_id", orgID, "new_owner_id", newOwnerID, "error", err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		r.log.Error("failed to get rows affected", "org_id", orgID, "error", err)
+		return err
+	}
+	if rowsAffected == 0 {
+		r.log.Warn("organization not found for ownership transfer", "org_id", orgID)
+		return core.ErrOrgNotFound
+	}
+
+	if err = tx.Commit(); err != nil {
+		r.log.Error("failed to commit ownership transfer transaction", "org_id", orgID, "error", err)
+		return err
+	}
+
+	r.log.Info("ownership transferred successfully", "org_id", orgID, "old_owner", oldOwnerID, "new_owner", newOwnerID)
 	return nil
 }
