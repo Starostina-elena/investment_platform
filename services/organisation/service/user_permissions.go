@@ -13,3 +13,18 @@ func (s *service) CheckUserOrgPermission(ctx context.Context, orgID int, userID 
 	}
 	return permissions[string(permission)], nil
 }
+
+func (s *service) AddEmployee(ctx context.Context, orgID int, userRequested int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error {
+	allowed, err := s.CheckUserOrgPermission(ctx, orgID, userRequested, "org_account_management")
+	if err != nil {
+		return err
+	}
+	if !allowed {
+		return core.ErrNotAuthorized
+	}
+	return s.repo.AddEmployee(ctx, orgID, userID, orgAccMgmt, moneyMgmt, projMgmt)
+}
+
+func (s *service) GetOrgEmployees(ctx context.Context, orgID int) ([]core.OrgEmployee, error) {
+	return s.repo.GetEmployees(ctx, orgID)
+}

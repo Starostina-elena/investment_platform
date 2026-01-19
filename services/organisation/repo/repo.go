@@ -29,6 +29,8 @@ type RepoInterface interface {
 	GetUsersOrgs(ctx context.Context, userID int) ([]core.Org, error)
 	BanOrg(ctx context.Context, orgID int, banned bool) error
 	GetUserOrgPermissions(ctx context.Context, orgID int, userID int) (map[string]bool, error)
+	AddEmployee(ctx context.Context, orgID int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error
+	GetEmployees(ctx context.Context, orgID int) ([]core.OrgEmployee, error)
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -455,4 +457,50 @@ func (r *Repo) GetUserOrgPermissions(ctx context.Context, orgID int, userID int)
 		"money_management":       moneyMgmt,
 		"project_management":     projMgmt,
 	}, nil
+}
+
+func (r *Repo) AddEmployee(ctx context.Context, orgID int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error {
+	_, err := r.db.ExecContext(ctx,
+		`INSERT INTO user_right_at_org (org_id, user_id, org_account_management,
+		money_management, project_management) VALUES ($1,$2,$3,$4,$5)`,
+		orgID, userID, orgAccMgmt, moneyMgmt, projMgmt,
+	)
+	if err != nil {
+		r.log.Error("failed to add employee", "org_id", orgID, "user_id", userID, "error", err)
+		return err
+	}
+	return nil
+}
+
+func (r *Repo) GetEmployees(ctx context.Context, orgID int) ([]core.OrgEmployee, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT u.id, u.nickname, u.email, ur.org_account_management,
+		       ur.money_management, ur.project_management
+		FROM users u
+		JOIN user_right_at_org ur ON u.id = ur.user_id
+		WHERE ur.org_id = $1
+	`, orgID)
+	if err != nil {
+		r.log.Error("failed to get organisation employees", "org_id", orgID, "error", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var employees []core.OrgEmployee
+	for rows.Next() {
+		var emp core.OrgEmployee
+		if err := rows.Scan(&emp.UserID, &emp.UserName, &emp.UserEmail,
+			&emp.OrgAccMgmt, &emp.MoneyMgmt, &emp.ProjMgmt); err != nil {
+			r.log.Error("failed to scan organisation employee", "org_id", orgID, "error", err)
+			return nil, err
+		}
+		emp.OrgID = orgID
+		employees = append(employees, emp)
+	}
+	if err := rows.Err(); err != nil {
+		r.log.Error("error iterating over organisation employees", "org_id", orgID, "error", err)
+		return nil, err
+	}
+
+	return employees, nil
 }

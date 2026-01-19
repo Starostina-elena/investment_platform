@@ -12,7 +12,7 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 
 	router.Handle("POST /create", middleware.AuthMiddleware(handler.CreateOrgHandler(h)))
 	router.Handle("GET /{id}", handler.GetOrgHandler(h))
-	router.Handle("GET /full/{id}", middleware.AuthMiddleware(handler.GetFullOrgHandler(h)))
+	router.Handle("GET /{id}/full", middleware.AuthMiddleware(handler.GetFullOrgHandler(h)))
 	router.Handle("POST /{org_id}/update", middleware.AuthMiddleware(handler.UpdateOrgHandler(h)))
 
 	router.Handle("POST /{org_id}/avatar/upload", middleware.AuthMiddleware(handler.UploadAvatarHandler(h)))
@@ -27,6 +27,8 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 	router.Handle("GET /my", middleware.AuthMiddleware(handler.GetUserOrgsHandler(h)))
 
 	router.Handle("GET /{org_id}/rights/{user_id}/{permission}", handler.CheckUserOrgPermissionHandler(h))
+	router.Handle("POST /{org_id}/employees/add", middleware.AuthMiddleware(handler.AddEmployeeHandler(h)))
+	router.Handle("GET /{org_id}/employees", handler.GetOrgEmployeesHandler(h))
 
 	router.Handle("GET /ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

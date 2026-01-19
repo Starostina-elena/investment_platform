@@ -25,6 +25,8 @@ type Service interface {
 	GetUsersOrgs(ctx context.Context, userID int) ([]core.Org, error)
 	BanOrg(ctx context.Context, orgID int, banned bool) error
 	CheckUserOrgPermission(ctx context.Context, orgID int, userID int, permission core.OrgPermission) (bool, error)
+	AddEmployee(ctx context.Context, orgID int, userRequested int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error
+	GetOrgEmployees(ctx context.Context, orgID int) ([]core.OrgEmployee, error)
 }
 
 type service struct {
