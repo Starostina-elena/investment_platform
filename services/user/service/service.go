@@ -73,13 +73,9 @@ func (s *service) Create(ctx context.Context, user core.User) (*core.User, error
 }
 
 func (s *service) Update(ctx context.Context, user core.User) (*core.User, error) {
-	hashed, err := core.HashPassword(user.Password)
-	if err != nil {
-		s.log.Error("failed to hash password", "error", err)
-		return nil, err
+	if user.Password != "" {
+		return nil, errors.New("password change via update is not allowed")
 	}
-	user.PasswordHash = hashed
-	user.Password = ""
 	user_updated, err := s.repo.Update(ctx, user)
 	if err != nil {
 		var pqErr *pq.Error

@@ -52,8 +52,8 @@ func (r *Repo) Create(ctx context.Context, u *core.User) (int, error) {
 
 func (r *Repo) Update(ctx context.Context, user core.User) (*core.User, error) {
 	_, err := r.db.ExecContext(ctx,
-		`UPDATE users SET name=$1, surname=$2, patronymic=$3, nickname=$4, email=$5, password_hash=$6 WHERE id=$7`,
-		user.Name, user.Surname, user.Patronymic, user.Nickname, user.Email, user.PasswordHash, user.ID,
+		`UPDATE users SET name=$1, surname=$2, patronymic=$3, nickname=$4, email=$5 WHERE id=$6`,
+		user.Name, user.Surname, user.Patronymic, user.Nickname, user.Email, user.ID,
 	)
 	if err != nil {
 		return nil, err
