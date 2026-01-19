@@ -50,8 +50,12 @@ func (r *Repo) Create(ctx context.Context, c *core.Comment) (int, error) {
 
 	c.ID = id
 	c.Username = username
-	_ = r.cache.SetComment(ctx, c)
-	_ = r.cache.InvalidateProjectComments(ctx, c.ProjectID)
+	if err := r.cache.SetComment(ctx, c); err != nil {
+		r.log.Error("cache set comment failed", "id", id, "error", err)
+	}
+	if err := r.cache.InvalidateProjectComments(ctx, c.ProjectID); err != nil {
+		r.log.Error("cache invalidate project comments failed", "project_id", c.ProjectID, "error", err)
+	}
 	return id, nil
 }
 
@@ -62,9 +66,9 @@ func (r *Repo) Get(ctx context.Context, id int) (*core.Comment, error) {
 
 	c := &core.Comment{}
 	if err := r.db.GetContext(ctx, c,
-		`SELECT c.id, c.project_id, c.user_id, u.nickname as username, c.body, c.created_at 
+		`SELECT c.id, c.project_id, c.user_id, COALESCE(u.nickname, 'deleted user') as username, c.body, c.created_at 
 		 FROM comments c 
-		 JOIN users u ON c.user_id = u.id 
+		 LEFT JOIN users u ON c.user_id = u.id 
 		 WHERE c.id = $1`, id); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, core.ErrCommentNotFound
@@ -72,17 +76,30 @@ func (r *Repo) Get(ctx context.Context, id int) (*core.Comment, error) {
 		r.log.Error("failed to get comment", "id", id, "error", err)
 		return nil, err
 	}
-	_ = r.cache.SetComment(ctx, c)
+	if err := r.cache.SetComment(ctx, c); err != nil {
+		r.log.Error("cache set comment failed", "id", c.ID, "error", err)
+	}
 	return c, nil
 }
 
 func (r *Repo) Update(ctx context.Context, id int, body string) (*core.Comment, error) {
-	_, err := r.db.ExecContext(ctx, `UPDATE comments SET body = $1 WHERE id = $2`, body, id)
+	current, err := r.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = r.db.ExecContext(ctx, `UPDATE comments SET body = $1 WHERE id = $2`, body, id)
 	if err != nil {
 		r.log.Error("failed to update comment", "id", id, "error", err)
 		return nil, err
 	}
-	_ = r.cache.DeleteComment(ctx, id)
+
+	if err := r.cache.DeleteComment(ctx, id); err != nil {
+		r.log.Error("cache delete comment failed", "id", id, "error", err)
+	}
+	if err := r.cache.InvalidateProjectComments(ctx, current.ProjectID); err != nil {
+		r.log.Error("cache invalidate project comments failed", "project_id", current.ProjectID, "error", err)
+	}
 
 	return r.Get(ctx, id)
 }
@@ -110,9 +127,9 @@ func (r *Repo) GetByProject(ctx context.Context, projectID int, limit, offset in
 
 	var comments []core.Comment
 	err := r.db.SelectContext(ctx, &comments,
-		`SELECT c.id, c.project_id, c.user_id, u.nickname as username, c.body, c.created_at 
+		`SELECT c.id, c.project_id, c.user_id, COALESCE(u.nickname, 'deleted user') as username, c.body, c.created_at 
 		 FROM comments c 
-		 JOIN users u ON c.user_id = u.id 
+		 LEFT JOIN users u ON c.user_id = u.id 
 		 WHERE c.project_id = $1 
 		 ORDER BY c.created_at DESC 
 		 LIMIT $2 OFFSET $3`,
@@ -121,6 +138,8 @@ func (r *Repo) GetByProject(ctx context.Context, projectID int, limit, offset in
 		r.log.Error("failed to get comments by project", "project_id", projectID, "error", err)
 		return nil, err
 	}
-	_ = r.cache.SetProjectComments(ctx, projectID, limit, offset, comments)
+	if err := r.cache.SetProjectComments(ctx, projectID, limit, offset, comments); err != nil {
+		r.log.Error("cache set project comments failed", "project_id", projectID, "limit", limit, "offset", offset, "error", err)
+	}
 	return comments, nil
 }

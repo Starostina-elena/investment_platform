@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/Starostina-elena/investment_platform/services/comment/core"
 	"github.com/Starostina-elena/investment_platform/services/comment/middleware"
@@ -40,6 +41,11 @@ func CreateCommentHandler(h *Handler) http.HandlerFunc {
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+		req.Body = strings.TrimSpace(req.Body)
+		if len(req.Body) == 0 || len(req.Body) > 4096 {
+			http.Error(w, "invalid comment body", http.StatusBadRequest)
 			return
 		}
 
@@ -107,6 +113,11 @@ func UpdateCommentHandler(h *Handler) http.HandlerFunc {
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+		req.Body = strings.TrimSpace(req.Body)
+		if len(req.Body) == 0 || len(req.Body) > 4096 {
+			http.Error(w, "invalid comment body", http.StatusBadRequest)
 			return
 		}
 
@@ -179,8 +190,11 @@ func GetProjectCommentsHandler(h *Handler) http.HandlerFunc {
 		offsetStr := r.URL.Query().Get("offset")
 		offset := 0
 		if offsetStr != "" {
-			if o, err := strconv.Atoi(offsetStr); err == nil && o >= 0 {
+			if o, err := strconv.Atoi(offsetStr); err == nil && o >= 0 && o <= 10000 {
 				offset = o
+			} else if err == nil && o > 10000 {
+				http.Error(w, "offset too large", http.StatusBadRequest)
+				return
 			}
 		}
 
