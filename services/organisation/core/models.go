@@ -18,6 +18,16 @@ const (
 	ProjectManagement    OrgPermission = "project_management"
 )
 
+type OrgEmployee struct {
+	OrgID      int    `json:"org_id" db:"org_id"`
+	UserID     int    `json:"user_id" db:"user_id"`
+	UserEmail  string `json:"user_email" db:"user_email"`
+	UserName   string `json:"nickname" db:"nickname"`
+	OrgAccMgmt bool   `json:"org_account_management" db:"org_account_management"`
+	MoneyMgmt  bool   `json:"money_management" db:"money_management"`
+	ProjMgmt   bool   `json:"project_management" db:"project_management"`
+}
+
 type OrgBase struct {
 	ID                    int       `json:"id"`
 	Name                  string    `json:"name"`

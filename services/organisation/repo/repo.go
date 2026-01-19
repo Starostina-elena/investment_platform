@@ -29,6 +29,11 @@ type RepoInterface interface {
 	GetUsersOrgs(ctx context.Context, userID int) ([]core.Org, error)
 	BanOrg(ctx context.Context, orgID int, banned bool) error
 	GetUserOrgPermissions(ctx context.Context, orgID int, userID int) (map[string]bool, error)
+	AddEmployee(ctx context.Context, orgID int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error
+	GetEmployees(ctx context.Context, orgID int) ([]core.OrgEmployee, error)
+	UpdateEmployeePermissions(ctx context.Context, orgID int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error
+	DeleteEmployee(ctx context.Context, orgID int, userID int) error
+	TransferOwnership(ctx context.Context, orgID int, oldOwnerID int, newOwnerID int) error
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -455,4 +460,160 @@ func (r *Repo) GetUserOrgPermissions(ctx context.Context, orgID int, userID int)
 		"money_management":       moneyMgmt,
 		"project_management":     projMgmt,
 	}, nil
+}
+
+func (r *Repo) AddEmployee(ctx context.Context, orgID int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error {
+	_, err := r.db.ExecContext(ctx,
+		`INSERT INTO user_right_at_org (org_id, user_id, org_account_management,
+		money_management, project_management) VALUES ($1,$2,$3,$4,$5)`,
+		orgID, userID, orgAccMgmt, moneyMgmt, projMgmt,
+	)
+	if err != nil {
+		r.log.Error("failed to add employee", "org_id", orgID, "user_id", userID, "error", err)
+		return err
+	}
+	return nil
+}
+
+func (r *Repo) GetEmployees(ctx context.Context, orgID int) ([]core.OrgEmployee, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT u.id, u.nickname, u.email, ur.org_account_management,
+		       ur.money_management, ur.project_management
+		FROM users u
+		JOIN user_right_at_org ur ON u.id = ur.user_id
+		WHERE ur.org_id = $1
+	`, orgID)
+	if err != nil {
+		r.log.Error("failed to get organisation employees", "org_id", orgID, "error", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var employees []core.OrgEmployee
+	for rows.Next() {
+		var emp core.OrgEmployee
+		if err := rows.Scan(&emp.UserID, &emp.UserName, &emp.UserEmail,
+			&emp.OrgAccMgmt, &emp.MoneyMgmt, &emp.ProjMgmt); err != nil {
+			r.log.Error("failed to scan organisation employee", "org_id", orgID, "error", err)
+			return nil, err
+		}
+		emp.OrgID = orgID
+		employees = append(employees, emp)
+	}
+	if err := rows.Err(); err != nil {
+		r.log.Error("error iterating over organisation employees", "org_id", orgID, "error", err)
+		return nil, err
+	}
+
+	return employees, nil
+}
+
+func (r *Repo) UpdateEmployeePermissions(ctx context.Context, orgID int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error {
+	result, err := r.db.ExecContext(ctx,
+		`UPDATE user_right_at_org
+		SET org_account_management = $1,
+		    money_management = $2,
+		    project_management = $3
+		WHERE org_id = $4 AND user_id = $5`,
+		orgAccMgmt, moneyMgmt, projMgmt, orgID, userID,
+	)
+	if err != nil {
+		r.log.Error("failed to update employee permissions", "org_id", orgID, "user_id", userID, "error", err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		r.log.Error("failed to get rows affected", "org_id", orgID, "user_id", userID, "error", err)
+		return err
+	}
+	if rowsAffected == 0 {
+		r.log.Warn("employee not found for update", "org_id", orgID, "user_id", userID)
+		return core.ErrEmployeeNotFound
+	}
+
+	return nil
+}
+
+func (r *Repo) DeleteEmployee(ctx context.Context, orgID int, userID int) error {
+	result, err := r.db.ExecContext(ctx,
+		`DELETE FROM user_right_at_org
+		WHERE org_id = $1 AND user_id = $2`,
+		orgID, userID,
+	)
+	if err != nil {
+		r.log.Error("failed to delete employee", "org_id", orgID, "user_id", userID, "error", err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		r.log.Error("failed to get rows affected", "org_id", orgID, "user_id", userID, "error", err)
+		return err
+	}
+	if rowsAffected == 0 {
+		r.log.Warn("employee not found for deletion", "org_id", orgID, "user_id", userID)
+		return core.ErrEmployeeNotFound
+	}
+
+	return nil
+}
+
+func (r *Repo) TransferOwnership(ctx context.Context, orgID int, oldOwnerID int, newOwnerID int) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		r.log.Error("failed to begin transaction for ownership transfer", "org_id", orgID, "error", err)
+		return err
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	_, err = tx.ExecContext(ctx,
+		`DELETE FROM user_right_at_org WHERE org_id = $1 AND user_id = $2`,
+		orgID, newOwnerID,
+	)
+	if err != nil {
+		r.log.Error("failed to remove new owner from employees", "org_id", orgID, "new_owner_id", newOwnerID, "error", err)
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx,
+		`INSERT INTO user_right_at_org (org_id, user_id, org_account_management, money_management, project_management) 
+		 VALUES ($1, $2, $3, $4, $5)
+		 ON CONFLICT (org_id, user_id) DO UPDATE SET 
+		 org_account_management = true, money_management = true, project_management = true`,
+		orgID, oldOwnerID, true, true, true,
+	)
+	if err != nil {
+		r.log.Error("failed to add old owner as employee", "org_id", orgID, "old_owner_id", oldOwnerID, "error", err)
+		return err
+	}
+
+	result, err := tx.ExecContext(ctx,
+		`UPDATE organizations SET owner = $1 WHERE id = $2`,
+		newOwnerID, orgID,
+	)
+	if err != nil {
+		r.log.Error("failed to update organization owner", "org_id", orgID, "new_owner_id", newOwnerID, "error", err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		r.log.Error("failed to get rows affected", "org_id", orgID, "error", err)
+		return err
+	}
+	if rowsAffected == 0 {
+		r.log.Warn("organization not found for ownership transfer", "org_id", orgID)
+		return core.ErrOrgNotFound
+	}
+
+	if err = tx.Commit(); err != nil {
+		r.log.Error("failed to commit ownership transfer transaction", "org_id", orgID, "error", err)
+		return err
+	}
+
+	r.log.Info("ownership transferred successfully", "org_id", orgID, "old_owner", oldOwnerID, "new_owner", newOwnerID)
+	return nil
 }

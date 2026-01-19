@@ -25,13 +25,18 @@ var allowedDocMimeTypes = map[string]bool{
 const MaxDocSize = 50 << 20 // 50 MB
 
 func (s *service) UploadAvatar(ctx context.Context, orgID int, userID int, file multipart.File, fileHeader *multipart.FileHeader) (string, error) {
-	org, err := s.Get(ctx, orgID)
+	authorized, err := s.CheckUserOrgPermission(ctx, orgID, userID, "org_account_management")
+	if err != nil {
+		s.log.Error("failed to check user org permission", "error", err)
+		return "", core.ErrNotAuthorized
+	}
+	if !authorized {
+		return "", core.ErrNotAuthorized
+	}
+
+	_, err = s.Get(ctx, orgID)
 	if err != nil {
 		return "", core.ErrOrgNotFound
-	}
-	if org.OwnerId != userID {
-		s.log.Error("user is not the creator of the organisation", "user_id", userID, "org_id", orgID)
-		return "", core.ErrNotAuthorized
 	}
 
 	img, format, err := image.Decode(file)
@@ -72,9 +77,9 @@ func (s *service) DeleteAvatar(ctx context.Context, orgID int, userID int, avata
 	if err != nil {
 		return core.ErrOrgNotFound
 	}
-	if org.OwnerId != userID {
-		s.log.Error("user is not the creator of the organisation", "user_id", userID, "org_id", orgID)
-		return core.ErrNotAuthorized
+
+	if org.AvatarPath == nil {
+		return nil
 	}
 
 	if err := s.repo.UpdateAvatarPath(ctx, orgID, nil); err != nil {
@@ -82,11 +87,11 @@ func (s *service) DeleteAvatar(ctx context.Context, orgID int, userID int, avata
 		return err
 	}
 
-	err = s.minio.DeleteAvatar(ctx, avatarPath)
+	err = s.minio.DeleteAvatar(ctx, *org.AvatarPath)
 
 	if err != nil {
-		s.log.Error("failed to delete avatar from storage", "error", err, "user_id", userID, "org_id", orgID, "path", avatarPath)
-		if err2 := s.repo.UpdateAvatarPath(ctx, orgID, &avatarPath); err2 != nil {
+		s.log.Error("failed to delete avatar from storage", "error", err, "user_id", userID, "org_id", orgID, "path", *org.AvatarPath)
+		if err2 := s.repo.UpdateAvatarPath(ctx, orgID, org.AvatarPath); err2 != nil {
 			s.log.Error("failed to rollback avatar path after deletion failure", "error", err2, "user_id", userID, "org_id", orgID)
 		}
 		return err
@@ -96,13 +101,18 @@ func (s *service) DeleteAvatar(ctx context.Context, orgID int, userID int, avata
 }
 
 func (s *service) UploadDoc(ctx context.Context, orgID int, userID int, docType core.OrgDocType, file multipart.File, fileHeader *multipart.FileHeader) (string, error) {
+	authorized, err := s.CheckUserOrgPermission(ctx, orgID, userID, "org_account_management")
+	if err != nil {
+		s.log.Error("failed to check user org permission", "error", err)
+		return "", core.ErrNotAuthorized
+	}
+	if !authorized {
+		return "", core.ErrNotAuthorized
+	}
+
 	org, err := s.Get(ctx, orgID)
 	if err != nil {
 		return "", core.ErrOrgNotFound
-	}
-	if org.OwnerId != userID {
-		s.log.Error("not enough rights to upload org doc", "user_id", userID, "org_id", orgID)
-		return "", core.ErrNotAuthorized
 	}
 
 	if !docType.IsValidForOrgType(org.OrgType) {
@@ -157,14 +167,20 @@ func (s *service) UploadDoc(ctx context.Context, orgID int, userID int, docType 
 }
 
 func (s *service) DeleteDoc(ctx context.Context, orgID int, userID int, docType core.OrgDocType) error {
+	authorized, err := s.CheckUserOrgPermission(ctx, orgID, userID, "org_account_management")
+	if err != nil {
+		s.log.Error("failed to check user org permission", "error", err)
+		return core.ErrNotAuthorized
+	}
+	if !authorized {
+		return core.ErrNotAuthorized
+	}
+
 	org, err := s.Get(ctx, orgID)
 	if err != nil {
 		return core.ErrOrgNotFound
 	}
-	if org.OwnerId != userID {
-		s.log.Error("not enough rights to delete org doc", "user_id", userID, "org_id", orgID)
-		return core.ErrNotAuthorized
-	}
+
 	if !docType.IsValidForOrgType(org.OrgType) {
 		s.log.Warn("invalid doc type for org type", "user_id", userID, "org_id", orgID, "doc_type", docType, "org_type", org.OrgType)
 		return fmt.Errorf("document type %s is not valid for organization type %s", docType, org.OrgType)
@@ -197,13 +213,20 @@ func (s *service) DeleteDoc(ctx context.Context, orgID int, userID int, docType 
 }
 
 func (s *service) DownloadDoc(ctx context.Context, orgID int, userID int, isAdmin bool, docType core.OrgDocType) ([]byte, string, error) {
-	org, err := s.Get(ctx, orgID)
+	if !isAdmin {
+		authorized, err := s.CheckUserOrgPermission(ctx, orgID, userID, "org_account_management")
+		if err != nil {
+			s.log.Error("failed to check user org permission", "error", err)
+			return nil, "", core.ErrNotAuthorized
+		}
+		if !authorized {
+			return nil, "", core.ErrNotAuthorized
+		}
+	}
+
+	_, err := s.Get(ctx, orgID)
 	if err != nil {
 		return nil, "", core.ErrOrgNotFound
-	}
-	if org.OwnerId != userID && !isAdmin {
-		s.log.Error("this user is not allowed to download org doc", "user_id", userID, "org_id", orgID)
-		return nil, "", core.ErrNotAuthorized
 	}
 
 	path, err := s.repo.GetDocPath(ctx, orgID, docType)

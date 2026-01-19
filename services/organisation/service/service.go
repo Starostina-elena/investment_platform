@@ -15,7 +15,7 @@ type Service interface {
 	Create(ctx context.Context, org core.Org) (*core.Org, error)
 	Get(ctx context.Context, id int) (*core.Org, error)
 	GetPublicInfoOrg(ctx context.Context, id int) (*core.Org, error)
-	Update(ctx context.Context, org core.Org, userRequestedId int) (*core.Org, error)
+	Update(ctx context.Context, org core.Org) (*core.Org, error)
 	UploadAvatar(ctx context.Context, orgID int, userID int, file multipart.File, fileHeader *multipart.FileHeader) (string, error)
 	DeleteAvatar(ctx context.Context, orgID int, userID int, avatarPath string) error
 	UpdateAvatarPath(ctx context.Context, orgID int, avatarPath string) error
@@ -25,6 +25,11 @@ type Service interface {
 	GetUsersOrgs(ctx context.Context, userID int) ([]core.Org, error)
 	BanOrg(ctx context.Context, orgID int, banned bool) error
 	CheckUserOrgPermission(ctx context.Context, orgID int, userID int, permission core.OrgPermission) (bool, error)
+	AddEmployee(ctx context.Context, orgID int, userRequested int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error
+	GetOrgEmployees(ctx context.Context, orgID int) ([]core.OrgEmployee, error)
+	UpdateEmployeePermissions(ctx context.Context, orgID int, userRequested int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error
+	DeleteEmployee(ctx context.Context, orgID int, userRequested int, userID int) error
+	TransferOwnership(ctx context.Context, orgID int, userRequested int, newOwnerID int) error
 }
 
 type service struct {
@@ -99,15 +104,11 @@ func (s *service) GetPublicInfoOrg(ctx context.Context, id int) (*core.Org, erro
 	return org, nil
 }
 
-func (s *service) Update(ctx context.Context, org core.Org, userRequestedId int) (*core.Org, error) {
+func (s *service) Update(ctx context.Context, org core.Org) (*core.Org, error) {
 	oldOrg, err := s.repo.Get(ctx, org.ID)
 	if err != nil {
 		s.log.Error("failed to get organisation for update", "error", err)
 		return nil, core.ErrOrgNotFound
-	}
-	if oldOrg.OwnerId != userRequestedId {
-		s.log.Error("user not authorized to update organisation", "org_id", org.ID, "user_id", userRequestedId)
-		return nil, core.ErrNotAuthorized
 	}
 
 	org.OrgType = oldOrg.OrgType

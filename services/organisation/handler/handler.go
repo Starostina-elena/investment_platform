@@ -265,16 +265,23 @@ func GetFullOrgHandler(h *Handler) http.HandlerFunc {
 			return
 		}
 
+		if !claims.Admin {
+			authorized, err := h.service.CheckUserOrgPermission(r.Context(), id, claims.UserID, "org_account_management")
+			if err != nil {
+				h.log.Error("failed to check user org permission", "error", err)
+				http.Error(w, "internal error", http.StatusInternalServerError)
+				return
+			}
+			if !authorized {
+				http.Error(w, "Нет прав для просмотра полной информации об организации", http.StatusForbidden)
+				return
+			}
+		}
+
 		o, err := h.service.Get(r.Context(), id)
 		if err != nil {
 			h.log.Error("org not found", "id", id, "error", err)
 			http.Error(w, "Организация не найдена", http.StatusNotFound)
-			return
-		}
-
-		if o.OwnerId != claims.UserID && !claims.Admin {
-			h.log.Error("user not authorized to view full org", "org_id", id, "user_id", claims.UserID)
-			http.Error(w, "Нет доступа к полной информации об организации", http.StatusForbidden)
 			return
 		}
 
@@ -299,6 +306,17 @@ func UpdateOrgHandler(h *Handler) http.HandlerFunc {
 			return
 		}
 
+		authorized, err := h.service.CheckUserOrgPermission(r.Context(), orgId, claims.UserID, "org_account_management")
+		if err != nil {
+			h.log.Error("failed to check user org permission", "error", err)
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		if !authorized {
+			http.Error(w, "Нет прав для обновления информации об организации", http.StatusForbidden)
+			return
+		}
+
 		var req CreateOrgRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			h.log.Error("failed to decode request", "error", err)
@@ -318,6 +336,9 @@ func UpdateOrgHandler(h *Handler) http.HandlerFunc {
 					http.Error(w, err.Error(), http.StatusBadRequest)
 					return
 				}
+			} else {
+				http.Error(w, "Поля ip_face обязательны для типа организации ip", http.StatusBadRequest)
+				return
 			}
 		case core.OrgTypePhys:
 			if req.PhysFace != nil {
@@ -325,6 +346,9 @@ func UpdateOrgHandler(h *Handler) http.HandlerFunc {
 					http.Error(w, err.Error(), http.StatusBadRequest)
 					return
 				}
+			} else {
+				http.Error(w, "Поля phys_face обязательны для типа организации phys", http.StatusBadRequest)
+				return
 			}
 		case core.OrgTypeJur:
 			if req.JurFace != nil {
@@ -332,6 +356,9 @@ func UpdateOrgHandler(h *Handler) http.HandlerFunc {
 					http.Error(w, err.Error(), http.StatusBadRequest)
 					return
 				}
+			} else {
+				http.Error(w, "Поля jur_face обязательны для типа организации jur", http.StatusBadRequest)
+				return
 			}
 		}
 
@@ -347,7 +374,7 @@ func UpdateOrgHandler(h *Handler) http.HandlerFunc {
 			IPFace:   req.IPFace,
 		}
 
-		updatedOrg, err := h.service.Update(r.Context(), org, claims.UserID)
+		updatedOrg, err := h.service.Update(r.Context(), org)
 		if err != nil {
 			h.log.Error("failed to update org", "error", err)
 			switch err {

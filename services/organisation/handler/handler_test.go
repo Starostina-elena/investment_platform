@@ -17,7 +17,7 @@ import (
 type mockService struct {
 	createFunc func(ctx context.Context, o core.Org) (*core.Org, error)
 	getFunc    func(ctx context.Context, id int) (*core.Org, error)
-	updateFunc func(ctx context.Context, o core.Org, userRequestedId int) (*core.Org, error)
+	updateFunc func(ctx context.Context, o core.Org) (*core.Org, error)
 }
 
 func (m *mockService) Create(ctx context.Context, o core.Org) (*core.Org, error) {
@@ -38,9 +38,9 @@ func (m *mockService) GetPublicInfoOrg(ctx context.Context, id int) (*core.Org, 
 	return nil, nil
 }
 
-func (m *mockService) Update(ctx context.Context, o core.Org, userRequestedId int) (*core.Org, error) {
+func (m *mockService) Update(ctx context.Context, o core.Org) (*core.Org, error) {
 	if m.updateFunc != nil {
-		return m.updateFunc(ctx, o, userRequestedId)
+		return m.updateFunc(ctx, o)
 	}
 	return nil, nil
 }
@@ -79,6 +79,26 @@ func (m *mockService) GetUsersOrgs(ctx context.Context, userID int) ([]core.Org,
 
 func (m *mockService) CheckUserOrgPermission(ctx context.Context, orgID int, userID int, permission core.OrgPermission) (bool, error) {
 	return false, nil
+}
+
+func (m *mockService) AddEmployee(ctx context.Context, orgID int, userRequested int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error {
+	return nil
+}
+
+func (m *mockService) GetOrgEmployees(ctx context.Context, orgID int) ([]core.OrgEmployee, error) {
+	return nil, nil
+}
+
+func (m *mockService) UpdateEmployeePermissions(ctx context.Context, orgID int, userRequested int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error {
+	return nil
+}
+
+func (m *mockService) DeleteEmployee(ctx context.Context, orgID int, userRequested int, userID int) error {
+	return nil
+}
+
+func (m *mockService) TransferOwnership(ctx context.Context, orgID int, userRequested int, newOwnerID int) error {
+	return nil
 }
 
 func TestCreateOrgHandler_Success(t *testing.T) {

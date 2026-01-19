@@ -35,6 +35,18 @@ func UploadDocHandler(h *Handler) http.HandlerFunc {
 			return
 		}
 
+		authorized, err := h.service.CheckUserOrgPermission(r.Context(), orgID, claims.UserID, "org_account_management")
+		if err != nil {
+			h.log.Error("failed to check user org permission", "error", err)
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		if !authorized {
+			h.log.Warn("unauthorized doc upload attempt", "user_id", claims.UserID, "org_id", orgID, "doc_type", docType)
+			http.Error(w, "Недостаточно прав", http.StatusForbidden)
+			return
+		}
+
 		err = r.ParseMultipartForm(51 << 20)
 		if err != nil {
 			h.log.Error("failed to parse multipart form", "error", err)
@@ -91,6 +103,18 @@ func DeleteDocHandler(h *Handler) http.HandlerFunc {
 		if !core.IsValidDocType(docType) {
 			h.log.Warn("invalid doc type attempted", "doc_type", docType, "user_id", claims.UserID, "org_id", orgID)
 			http.Error(w, "Некорректный тип документа", http.StatusBadRequest)
+			return
+		}
+
+		authorized, err := h.service.CheckUserOrgPermission(r.Context(), orgID, claims.UserID, "org_account_management")
+		if err != nil {
+			h.log.Error("failed to check user org permission", "error", err)
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		if !authorized {
+			h.log.Warn("unauthorized doc delete attempt", "user_id", claims.UserID, "org_id", orgID, "doc_type", docType)
+			http.Error(w, "Недостаточно прав", http.StatusForbidden)
 			return
 		}
 

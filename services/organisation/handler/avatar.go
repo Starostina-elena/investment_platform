@@ -26,6 +26,18 @@ func UploadAvatarHandler(h *Handler) http.HandlerFunc {
 			return
 		}
 
+		authorized, err := h.service.CheckUserOrgPermission(r.Context(), orgId, userID, "org_account_management")
+		if err != nil {
+			h.log.Error("failed to check user org permission", "error", err)
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		if !authorized {
+			h.log.Warn("unauthorized avatar upload attempt", "user_id", userID, "org_id", orgId)
+			http.Error(w, "Нет прав для загрузки аватара", http.StatusForbidden)
+			return
+		}
+
 		err = r.ParseMultipartForm(10 << 20)
 		if err != nil {
 			h.log.Error("failed to parse multipart form", "error", err)
@@ -88,24 +100,24 @@ func DeleteAvatarHandler(h *Handler) http.HandlerFunc {
 			return
 		}
 
-		org, err := h.service.Get(r.Context(), orgId)
+		authorized, err := h.service.CheckUserOrgPermission(r.Context(), orgId, userID, "org_account_management")
 		if err != nil {
-			h.log.Error("org not found", "id", orgId, "error", err)
-			http.Error(w, "Организация не найдена", http.StatusNotFound)
+			h.log.Error("failed to check user org permission", "error", err)
+			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
-		if org.OwnerId != userID {
-			h.log.Error("user not authorized to delete avatar", "org_id", orgId, "user_id", userID)
+		if !authorized {
+			h.log.Warn("unauthorized avatar delete attempt", "user_id", userID, "org_id", orgId)
 			http.Error(w, "Нет прав для удаления аватара", http.StatusForbidden)
 			return
 		}
-		if org.AvatarPath == nil {
-			http.Error(w, "no avatar to delete", http.StatusNotFound)
-			return
-		}
 
-		if err := h.service.DeleteAvatar(r.Context(), orgId, userID, *org.AvatarPath); err != nil {
-			h.log.Error("failed to delete avatar from storage", "error", err, "path", *org.AvatarPath)
+		if err := h.service.DeleteAvatar(r.Context(), orgId, userID, ""); err != nil {
+			h.log.Error("failed to delete avatar from storage", "error", err)
+			if err == core.ErrOrgNotFound {
+				http.Error(w, "organisation not found", http.StatusNotFound)
+				return
+			}
 			http.Error(w, "failed to delete avatar", http.StatusInternalServerError)
 			return
 		}
