@@ -17,6 +17,7 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 	router.Handle("POST /login", handler.LoginHandler(h))
 	router.Handle("POST /refresh", handler.RefreshHandler(h))
 	router.Handle("POST /logout", handler.LogoutHandler(h))
+	router.Handle("POST /password/change", middleware.AuthMiddleware(handler.ChangePasswordHandler(h)))
 
 	router.Handle("POST /{user_id}/admin", middleware.AuthMiddleware(handler.SetAdminHandler(h)))
 	router.Handle("POST /{user_id}/active", middleware.AuthMiddleware(handler.BanUserHandler(h)))

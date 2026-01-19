@@ -26,9 +26,11 @@ type RepoInterface interface {
 	CreateRefreshToken(ctx context.Context, userID int, tokenHash string, expiresAt time.Time) (int, error)
 	GetRefreshTokenByHash(ctx context.Context, tokenHash string) (*core.RefreshToken, error)
 	RevokeRefreshToken(ctx context.Context, id int) error
+	RevokeAllRefreshTokens(ctx context.Context, userID int) error
 	SetAdmin(ctx context.Context, userID int, isAdmin bool) error
 	BanUser(ctx context.Context, userID int, isBanned bool) error
 	UpdateAvatarPath(ctx context.Context, userID int, avatarPath *string) error
+	UpdatePassword(ctx context.Context, userID int, passwordHash string) error
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -106,6 +108,11 @@ func (r *Repo) RevokeRefreshToken(ctx context.Context, id int) error {
 	return err
 }
 
+func (r *Repo) RevokeAllRefreshTokens(ctx context.Context, userID int) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE refresh_tokens SET revoked = true WHERE user_id = $1`, userID)
+	return err
+}
+
 func (r *Repo) SetAdmin(ctx context.Context, userID int, isAdmin bool) error {
 	_, err := r.db.ExecContext(ctx, `UPDATE users SET is_admin = $1 WHERE id = $2`, isAdmin, userID)
 	return err
@@ -118,5 +125,10 @@ func (r *Repo) BanUser(ctx context.Context, userID int, isBanned bool) error {
 
 func (r *Repo) UpdateAvatarPath(ctx context.Context, userID int, avatarPath *string) error {
 	_, err := r.db.ExecContext(ctx, `UPDATE users SET avatar_path = $1 WHERE id = $2`, avatarPath, userID)
+	return err
+}
+
+func (r *Repo) UpdatePassword(ctx context.Context, userID int, passwordHash string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE users SET password_hash = $1 WHERE id = $2`, passwordHash, userID)
 	return err
 }

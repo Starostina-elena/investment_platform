@@ -21,12 +21,14 @@ type Service interface {
 	GetByEmail(ctx context.Context, email string) (*core.User, error)
 	GenerateRefreshToken(ctx context.Context, userID int, ttl time.Duration) (string, error)
 	RevokeRefreshToken(ctx context.Context, tokenHash string) error
+	RevokeAllRefreshTokens(ctx context.Context, userID int) error
 	AuthenticateByRefresh(ctx context.Context, rawToken string) (*core.User, error)
 	SetAdmin(ctx context.Context, userID int, isAdmin bool) error
 	BanUser(ctx context.Context, userID int, isBanned bool) error
 	UpdateAvatarPath(ctx context.Context, userID int, avatarPath string) error
 	UploadAvatar(ctx context.Context, userID int, file multipart.File, fileHeader *multipart.FileHeader) (string, error)
 	DeleteAvatar(ctx context.Context, userID int, avatarPath string) error
+	ChangePassword(ctx context.Context, userID int, oldPassword string, newPassword string) (*core.User, error)
 }
 
 type service struct {
@@ -132,6 +134,10 @@ func (s *service) RevokeRefreshToken(ctx context.Context, tokenHash string) erro
 	return s.repo.RevokeRefreshToken(ctx, rt.ID)
 }
 
+func (s *service) RevokeAllRefreshTokens(ctx context.Context, userID int) error {
+	return s.repo.RevokeAllRefreshTokens(ctx, userID)
+}
+
 func (s *service) AuthenticateByRefresh(ctx context.Context, rawToken string) (*core.User, error) {
 	hash := auth.HashToken(rawToken)
 	rt, err := s.repo.GetRefreshTokenByHash(ctx, hash)
@@ -167,4 +173,41 @@ func (s *service) UpdateAvatarPath(ctx context.Context, userID int, avatarPath s
 		pathPtr = &avatarPath
 	}
 	return s.repo.UpdateAvatarPath(ctx, userID, pathPtr)
+}
+
+func (s *service) ChangePassword(ctx context.Context, userID int, oldPassword string, newPassword string) (*core.User, error) {
+	user, err := s.repo.Get(ctx, userID)
+	if err != nil {
+		s.log.Error("failed to get user for password change", "user_id", userID, "error", err)
+		return nil, err
+	}
+
+	if err := core.VerifyPassword(user.PasswordHash, oldPassword); err != nil {
+		s.log.Info("password change: invalid old password", "user_id", userID)
+		return nil, errors.New("invalid old password")
+	}
+
+	hashed, err := core.HashPassword(newPassword)
+	if err != nil {
+		s.log.Error("failed to hash new password", "error", err)
+		return nil, err
+	}
+
+	if err := s.repo.UpdatePassword(ctx, userID, hashed); err != nil {
+		s.log.Error("failed to update password", "user_id", userID, "error", err)
+		return nil, err
+	}
+
+	if err := s.repo.RevokeAllRefreshTokens(ctx, userID); err != nil {
+		s.log.Error("failed to revoke refresh tokens", "user_id", userID, "error", err)
+	}
+
+	updatedUser, err := s.repo.Get(ctx, userID)
+	if err != nil {
+		s.log.Error("failed to get updated user", "user_id", userID, "error", err)
+		return nil, err
+	}
+
+	s.log.Info("password changed successfully", "user_id", userID)
+	return updatedUser, nil
 }
