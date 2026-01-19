@@ -15,6 +15,7 @@ type loginReq struct {
 }
 type loginResp struct {
 	AccessToken string `json:"access_token"`
+	UserID      int    `json:"user_id"`
 	ExpiresIn   int64  `json:"expires_in"`
 }
 
@@ -66,7 +67,7 @@ func LoginHandler(h *Handler) http.HandlerFunc {
 		http.SetCookie(w, cookie)
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		_ = json.NewEncoder(w).Encode(loginResp{AccessToken: token, ExpiresIn: int64(ttl.Seconds())})
+		_ = json.NewEncoder(w).Encode(loginResp{AccessToken: token, UserID: u.ID, ExpiresIn: int64(ttl.Seconds())})
 	}
 }
 
