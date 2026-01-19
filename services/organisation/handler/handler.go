@@ -155,6 +155,10 @@ func CreateOrgHandler(h *Handler) http.HandlerFunc {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
+		if claims.Banned {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
 
 		var req CreateOrgRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -295,6 +299,10 @@ func UpdateOrgHandler(h *Handler) http.HandlerFunc {
 		claims := middleware.FromContext(r.Context())
 		if claims == nil {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		if claims.Banned {
+			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
 

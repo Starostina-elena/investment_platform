@@ -92,6 +92,10 @@ func CreateProjectHandler(h *Handler) http.HandlerFunc {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
+		if claims.Banned {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
 
 		var req CreateProjectRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -186,6 +190,10 @@ func UpdateProjectHandler(h *Handler) http.HandlerFunc {
 		claims := middleware.FromContext(r.Context())
 		if claims == nil {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		if claims.Banned {
+			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
 
@@ -375,6 +383,10 @@ func MarkProjectCompletedHandler(h *Handler) http.HandlerFunc {
 		claims := middleware.FromContext(r.Context())
 		if claims == nil {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		if claims.Banned {
+			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
 

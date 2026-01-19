@@ -28,6 +28,10 @@ func CreateCommentHandler(h *Handler) http.HandlerFunc {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
+		if claims.Banned {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
 
 		projIDStr := r.PathValue("proj_id")
 		projID, err := strconv.Atoi(projIDStr)
@@ -83,6 +87,10 @@ func UpdateCommentHandler(h *Handler) http.HandlerFunc {
 		claims := middleware.FromContext(r.Context())
 		if claims == nil {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		if claims.Banned {
+			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
 

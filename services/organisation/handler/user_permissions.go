@@ -60,6 +60,10 @@ func AddEmployeeHandler(h *Handler) http.HandlerFunc {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
+		if claims.Banned {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
 
 		orgIDStr := r.PathValue("org_id")
 		orgID, err := strconv.Atoi(orgIDStr)
@@ -137,6 +141,10 @@ func UpdateEmployeePermissionsHandler(h *Handler) http.HandlerFunc {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
+		if claims.Banned {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
 
 		orgIDStr := r.PathValue("org_id")
 		orgID, err := strconv.Atoi(orgIDStr)
@@ -188,6 +196,10 @@ func DeleteEmployeeHandler(h *Handler) http.HandlerFunc {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
+		if claims.Banned {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
 
 		orgIDStr := r.PathValue("org_id")
 		orgID, err := strconv.Atoi(orgIDStr)
@@ -228,6 +240,10 @@ func TransferOwnershipHandler(h *Handler) http.HandlerFunc {
 		claims := middleware.FromContext(r.Context())
 		if claims == nil {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		if claims.Banned {
+			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
 
