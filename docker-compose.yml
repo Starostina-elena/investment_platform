@@ -133,6 +133,20 @@ services:
       REDIS_PORT: 6379
     restart: unless-stopped
 
+  notification:
+    build: ./services/notification
+    container_name: notification
+    ports:
+      - "12555:8083"
+    environment:
+      APP_PORT: 8083
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      FROM_EMAIL: ${FROM_EMAIL}
+    restart: unless-stopped
+
   minio:
     image: minio/minio:latest
     container_name: venture_minio
