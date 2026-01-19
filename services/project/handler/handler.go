@@ -75,12 +75,14 @@ func ValidateProjectInput(req interface{}) error {
 }
 
 type CreateProjectRequest struct {
-	Name         string  `json:"name"`
-	CreatorID    int     `json:"creator_id"`
-	QuickPeek    string  `json:"quick_peek"`
-	Content      string  `json:"content"`
-	WantedMoney  float64 `json:"wanted_money"`
-	DurationDays int     `json:"duration_days"`
+	Name             string  `json:"name"`
+	CreatorID        int     `json:"creator_id"`
+	QuickPeek        string  `json:"quick_peek"`
+	Content          string  `json:"content"`
+	WantedMoney      float64 `json:"wanted_money"`
+	DurationDays     int     `json:"duration_days"`
+	MonetizationType string  `json:"monetization_type"`
+	Percent          float64 `json:"percent"`
 }
 
 func CreateProjectHandler(h *Handler) http.HandlerFunc {
@@ -104,13 +106,23 @@ func CreateProjectHandler(h *Handler) http.HandlerFunc {
 			return
 		}
 
+		if req.MonetizationType == "fixed_percent" || req.MonetizationType == "time_percent" {
+			if req.Percent <= 0 {
+				req.Percent = 5.0
+			}
+		} else {
+			req.Percent = 0.0
+		}
+
 		p := core.Project{
-			Name:         req.Name,
-			CreatorID:    req.CreatorID,
-			QuickPeek:    req.QuickPeek,
-			Content:      req.Content,
-			WantedMoney:  req.WantedMoney,
-			DurationDays: req.DurationDays,
+			Name:             req.Name,
+			CreatorID:        req.CreatorID,
+			QuickPeek:        req.QuickPeek,
+			Content:          req.Content,
+			WantedMoney:      req.WantedMoney,
+			DurationDays:     req.DurationDays,
+			MonetizationType: req.MonetizationType,
+			Percent:          req.Percent,
 		}
 
 		proj, err := h.service.Create(r.Context(), p, req.CreatorID, claims.UserID)
@@ -384,7 +396,64 @@ func MarkProjectCompletedHandler(h *Handler) http.HandlerFunc {
 
 		err = h.service.MarkProjectCompleted(r.Context(), projectID, claims.UserID, completed)
 		if err != nil {
+			if err == core.ErrNotAuthorized {
+				h.log.Warn("unauthorized attempt to mark project completed", "project_id", projectID, "user_id", claims.UserID)
+				http.Error(w, "Нет прав для изменения статуса проекта", http.StatusForbidden)
+				return
+			}
+			if err == core.ErrPaybackStarted {
+				h.log.Warn("attempt to change is_completed when payback has started", "project_id", projectID)
+				http.Error(w, "Невозможно изменить статус завершенности проекта после начала возврата средств инвесторам", http.StatusBadRequest)
+				return
+			}
 			h.log.Error("failed to mark project as completed", "project_id", projectID, "error", err)
+			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func StartPaybackHandler(h *Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims := middleware.FromContext(r.Context())
+		if claims == nil {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		projectIDStr := r.PathValue("id")
+		projectID, err := strconv.Atoi(projectIDStr)
+		if err != nil {
+			h.log.Error("invalid project id", "id", projectIDStr, "error", err)
+			http.Error(w, "Некорректный id", http.StatusBadRequest)
+			return
+		}
+
+		err = h.service.StartPayback(r.Context(), projectID, claims.UserID)
+		if err != nil {
+			if err == core.ErrNotAuthorized {
+				h.log.Warn("unauthorized attempt to start payback", "project_id", projectID, "user_id", claims.UserID)
+				http.Error(w, "Нет прав для запуска возврата средств (требуется money_management)", http.StatusForbidden)
+				return
+			}
+			if err == core.ErrPaybackStarted {
+				h.log.Warn("payback already started", "project_id", projectID)
+				http.Error(w, "Возврат средств уже запущен для этого проекта", http.StatusBadRequest)
+				return
+			}
+			if err == core.ErrPaybackNotSupported {
+				h.log.Warn("payback not supported for monetization type", "project_id", projectID)
+				http.Error(w, "Возврат средств не поддерживается для проектов с типом монетизации charity или custom", http.StatusBadRequest)
+				return
+			}
+			if err == core.ErrNotEnoughFunds {
+				h.log.Warn("not enough funds to complete payback", "project_id", projectID)
+				http.Error(w, "Недостаточно средств на проекте для полного возврата инвесторам", http.StatusBadRequest)
+				return
+			}
+			h.log.Error("failed to start payback", "project_id", projectID, "error", err)
 			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
 			return
 		}
