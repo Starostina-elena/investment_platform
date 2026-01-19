@@ -141,6 +141,14 @@ func (m *mockService) UploadAvatar(ctx context.Context, userID int, file multipa
 	return "userpic_1.webp", nil
 }
 
+func (m *mockService) ChangePassword(ctx context.Context, userID int, oldPassword string, newPassword string) (*core.User, error) {
+	return &core.User{ID: userID, Email: "", Nickname: ""}, nil
+}
+
+func (m *mockService) RevokeAllRefreshTokens(ctx context.Context, userID int) error {
+	return nil
+}
+
 func mockLogger() *slog.Logger {
 	return slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
 		Level: slog.LevelError,

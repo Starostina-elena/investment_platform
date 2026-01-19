@@ -87,6 +87,10 @@ func UpdateUserHandler(h *Handler) http.HandlerFunc {
 		if err != nil {
 			h.log.Error("failed to update user", "id", user.ID, "error", err)
 			h.log.Error("failed to create user", "error", err)
+			if err.Error() == "password change via update is not allowed" {
+				http.Error(w, "password change is not allowed via this endpoint", http.StatusBadRequest)
+				return
+			}
 			if err == core.ErrNicknameExists || err == core.ErrEmailExists {
 				http.Error(w, err.Error(), http.StatusConflict)
 				return
