@@ -12,7 +12,9 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/redis/go-redis/v9"
 
+	"github.com/Starostina-elena/investment_platform/services/comment/cache"
 	"github.com/Starostina-elena/investment_platform/services/comment/handler"
 	"github.com/Starostina-elena/investment_platform/services/comment/repo"
 	"github.com/Starostina-elena/investment_platform/services/comment/service"
@@ -32,6 +34,21 @@ func openDB() *sqlx.DB {
 	return db
 }
 
+func openRedis() *redis.Client {
+	host := os.Getenv("REDIS_HOST")
+	if host == "" {
+		host = "localhost"
+	}
+	port := os.Getenv("REDIS_PORT")
+	if port == "" {
+		port = "6379"
+	}
+	client := redis.NewClient(&redis.Options{
+		Addr: host + ":" + port,
+	})
+	return client
+}
+
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	logger.Info("starting comment service")
@@ -39,7 +56,12 @@ func main() {
 	db := openDB()
 	defer db.Close()
 
-	repo := repo.NewRepo(db, *logger)
+	redisClient := openRedis()
+	defer redisClient.Close()
+
+	cacheLayer := cache.NewCache(redisClient, *logger)
+
+	repo := repo.NewRepo(db, cacheLayer, *logger)
 	service := service.NewService(repo, *logger)
 	handler := handler.NewHandler(service, *logger)
 
