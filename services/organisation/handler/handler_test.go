@@ -17,7 +17,7 @@ import (
 type mockService struct {
 	createFunc func(ctx context.Context, o core.Org) (*core.Org, error)
 	getFunc    func(ctx context.Context, id int) (*core.Org, error)
-	updateFunc func(ctx context.Context, o core.Org, userRequestedId int) (*core.Org, error)
+	updateFunc func(ctx context.Context, o core.Org) (*core.Org, error)
 }
 
 func (m *mockService) Create(ctx context.Context, o core.Org) (*core.Org, error) {
@@ -38,9 +38,9 @@ func (m *mockService) GetPublicInfoOrg(ctx context.Context, id int) (*core.Org, 
 	return nil, nil
 }
 
-func (m *mockService) Update(ctx context.Context, o core.Org, userRequestedId int) (*core.Org, error) {
+func (m *mockService) Update(ctx context.Context, o core.Org) (*core.Org, error) {
 	if m.updateFunc != nil {
-		return m.updateFunc(ctx, o, userRequestedId)
+		return m.updateFunc(ctx, o)
 	}
 	return nil, nil
 }
