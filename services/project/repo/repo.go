@@ -36,9 +36,9 @@ func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
 func (r *Repo) Create(ctx context.Context, p *core.Project) (int, error) {
 	var id int
 	row := r.db.QueryRowxContext(ctx,
-		`INSERT INTO projects (name, creator_id, quick_peek, content, wanted_money, duration_days, is_public, monetization_type) 
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
-		p.Name, p.CreatorID, p.QuickPeek, p.Content, p.WantedMoney, p.DurationDays, p.IsPublic, p.MonetizationType,
+		`INSERT INTO projects (name, creator_id, quick_peek, content, wanted_money, duration_days, is_public, monetization_type, percent) 
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
+		p.Name, p.CreatorID, p.QuickPeek, p.Content, p.WantedMoney, p.DurationDays, p.IsPublic, p.MonetizationType, p.Percent,
 	)
 	if err := row.Scan(&id); err != nil {
 		r.log.Error("failed to insert project", "error", err)
@@ -52,7 +52,7 @@ func (r *Repo) Get(ctx context.Context, id int) (*core.Project, error) {
 	if err := r.db.GetContext(ctx, p, `
 		SELECT id, name, creator_id, quick_peek, quick_peek_picture_path, content, 
 		       is_public, is_completed, current_money, wanted_money, duration_days, 
-		       created_at, is_banned, monetization_type
+		       created_at, is_banned, monetization_type, percent
 		FROM projects WHERE id = $1`, id); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, core.ErrProjectNotFound
@@ -82,7 +82,7 @@ func (r *Repo) GetList(ctx context.Context, limit, offset int) ([]core.Project, 
 	if err := r.db.SelectContext(ctx, &projects,
 		`SELECT id, name, creator_id, quick_peek, quick_peek_picture_path, content, 
 		       is_public, is_completed, current_money, wanted_money, duration_days, 
-		       created_at, is_banned, monetization_type
+		       created_at, is_banned, monetization_type, percent
 		FROM projects
 		WHERE is_public = true AND is_banned = false AND is_completed = false
 		ORDER BY created_at DESC, id ASC LIMIT $1 OFFSET $2`,
@@ -99,7 +99,7 @@ func (r *Repo) GetByCreator(ctx context.Context, creatorID int) ([]core.Project,
 	if err := r.db.SelectContext(ctx, &projects, `
 		SELECT id, name, creator_id, quick_peek, quick_peek_picture_path, content, 
 		       is_public, is_completed, current_money, wanted_money, duration_days, 
-		       created_at, is_banned, monetization_type
+		       created_at, is_banned, monetization_type, percent
 		FROM projects WHERE creator_id = $1 AND is_banned = false AND is_public = true ORDER BY created_at DESC, id ASC`, creatorID); err != nil {
 		r.log.Error("failed to get projects by creator", "creator_id", creatorID, "error", err)
 		return nil, err
@@ -112,7 +112,7 @@ func (r *Repo) GetAllByCreator(ctx context.Context, creatorID int) ([]core.Proje
 	if err := r.db.SelectContext(ctx, &projects, `
 		SELECT id, name, creator_id, quick_peek, quick_peek_picture_path, content, 
 		       is_public, is_completed, current_money, wanted_money, duration_days, 
-		       created_at, is_banned, monetization_type
+		       created_at, is_banned, monetization_type, percent
 		FROM projects WHERE creator_id = $1 ORDER BY created_at DESC, id ASC`, creatorID); err != nil {
 		r.log.Error("failed to get all projects by creator", "creator_id", creatorID, "error", err)
 		return nil, err

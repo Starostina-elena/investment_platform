@@ -75,13 +75,14 @@ func ValidateProjectInput(req interface{}) error {
 }
 
 type CreateProjectRequest struct {
-	Name              string  `json:"name"`
-	CreatorID         int     `json:"creator_id"`
-	QuickPeek         string  `json:"quick_peek"`
-	Content           string  `json:"content"`
-	WantedMoney       float64 `json:"wanted_money"`
-	DurationDays      int     `json:"duration_days"`
-	MonetizationType  string  `json:"monetization_type"`
+	Name             string  `json:"name"`
+	CreatorID        int     `json:"creator_id"`
+	QuickPeek        string  `json:"quick_peek"`
+	Content          string  `json:"content"`
+	WantedMoney      float64 `json:"wanted_money"`
+	DurationDays     int     `json:"duration_days"`
+	MonetizationType string  `json:"monetization_type"`
+	Percent          float64 `json:"percent"`
 }
 
 func CreateProjectHandler(h *Handler) http.HandlerFunc {
@@ -105,14 +106,23 @@ func CreateProjectHandler(h *Handler) http.HandlerFunc {
 			return
 		}
 
+		if req.MonetizationType == "fixed_percent" || req.MonetizationType == "time_percent" {
+			if req.Percent <= 0 {
+				req.Percent = 5.0
+			}
+		} else {
+			req.Percent = 0.0
+		}
+
 		p := core.Project{
-			Name:              req.Name,
-			CreatorID:         req.CreatorID,
-			QuickPeek:         req.QuickPeek,
-			Content:           req.Content,
-			WantedMoney:       req.WantedMoney,
-			DurationDays:      req.DurationDays,
-			MonetizationType:  req.MonetizationType,
+			Name:             req.Name,
+			CreatorID:        req.CreatorID,
+			QuickPeek:        req.QuickPeek,
+			Content:          req.Content,
+			WantedMoney:      req.WantedMoney,
+			DurationDays:     req.DurationDays,
+			MonetizationType: req.MonetizationType,
+			Percent:          req.Percent,
 		}
 
 		proj, err := h.service.Create(r.Context(), p, req.CreatorID, claims.UserID)

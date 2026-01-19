@@ -17,4 +17,5 @@ type Project struct {
 	CreatedAt         time.Time `json:"created_at" db:"created_at"`
 	IsBanned          bool      `json:"is_banned" db:"is_banned"`
 	MonetizationType  string    `json:"monetization_type" db:"monetization_type"`
+	Percent           float64   `json:"percent,omitempty" db:"percent"`
 }

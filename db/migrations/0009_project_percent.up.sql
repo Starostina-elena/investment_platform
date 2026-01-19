@@ -1,0 +1,2 @@
+ALTER TABLE projects
+    ADD COLUMN percent DECIMAL(5, 2) DEFAULT 0.00;
