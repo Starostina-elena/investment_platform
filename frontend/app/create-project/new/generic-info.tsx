@@ -105,7 +105,7 @@ export default function GenericInfo({project, setProject, children}: {
                         {Object.keys(CATEGORIES).map(e => (
                             <Fragment key={e}>
                                 <option value={e}>{e}</option>
-                                {CATEGORIES[e].map(sub => (
+                                {CATEGORIES[e as keyof typeof CATEGORIES].map(sub => (
                                     <option key={sub} value={sub}>-- {sub.toLowerCase()}</option>
                                 ))}
                             </Fragment>
