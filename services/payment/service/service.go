@@ -168,13 +168,21 @@ func (s *Service) InitWithdrawal(ctx context.Context, entityType string, entityI
 	switch destType {
 	case "bank_card":
 		dest = yookassa.PayoutDestination{
-			Type:       "bank_card",
-			CardNumber: destination,
+			Type: "bank_card",
+			Card: &yookassa.PayoutCard{
+				Number: destination,
+			},
 		}
 	case "yoo_money":
+		yooMoneyDest := &yookassa.PayoutYooMoney{}
+		if len(destination) >= 10 && len(destination) <= 11 {
+			yooMoneyDest.Phone = destination
+		} else {
+			yooMoneyDest.AccountNumber = destination
+		}
 		dest = yookassa.PayoutDestination{
-			Type:       "yoo_money",
-			YooMoneyID: destination,
+			Type:     "yoo_money",
+			YooMoney: yooMoneyDest,
 		}
 	default:
 		return "", fmt.Errorf("invalid destination type: %s", destType)

@@ -144,17 +144,25 @@ func (c *Client) GetPayment(paymentID string) (*CreatePaymentResponse, error) {
 }
 
 type PayoutDestination struct {
-	Type         string `json:"type"` // "bank_card" или "yoo_money"
-	CardNumber   string `json:"card_number,omitempty"`
-	YooMoneyID   string `json:"yoo_money_id,omitempty"`
-	BankAccount  string `json:"bank_account,omitempty"`
+	Type     string          `json:"type"`                // "bank_card" или "yoo_money"
+	Card     *PayoutCard     `json:"card,omitempty"`      // для bank_card
+	YooMoney *PayoutYooMoney `json:"yoo_money,omitempty"` // для yoo_money
+}
+
+type PayoutCard struct {
+	Number string `json:"number"`
+}
+
+type PayoutYooMoney struct {
+	Phone         string `json:"phone,omitempty"`
+	AccountNumber string `json:"account_number,omitempty"`
 }
 
 type CreatePayoutRequest struct {
-	Amount              Amount              `json:"amount"`
-	Description         string              `json:"description"`
-	PayoutDestination   PayoutDestination   `json:"payout_destination"`
-	PayoutMetadata      map[string]string   `json:"metadata,omitempty"`
+	Amount            Amount            `json:"amount"`
+	Description       string            `json:"description"`
+	PayoutDestination PayoutDestination `json:"payout_destination_data"`
+	PayoutMetadata    map[string]string `json:"metadata,omitempty"`
 }
 
 type PayoutResponse struct {
@@ -175,6 +183,7 @@ func (c *Client) CreatePayout(amount string, description string, destination Pay
 	}
 
 	bodyBytes, _ := json.Marshal(reqBody)
+	fmt.Printf("YooKassa CreatePayout request JSON:\n%s\n", string(bodyBytes))
 	req, err := http.NewRequest("POST", payoutURL, bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		return nil, err
