@@ -1,99 +1,76 @@
 .preview {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
     font-size: inherit;
     cursor: pointer;
-    background-color: #656662; /* Темно-серый фон карточки */
+    background-color: #656662; /* Темно-серый */
     border: 1px solid #4a4a4a;
     border-radius: 8px;
-    overflow: hidden; /* Чтобы картинка не вылезала за скругления */
+    overflow: hidden;
     transition: transform 0.2s, box-shadow 0.2s;
-    height: 100%; /* Чтобы карточки в гриде были одной высоты */
+    height: 100%;
 }
 
 .preview:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-    border-color: #DB935B; /* Бледно-коричневая рамка при наведении */
+    border-color: #DB935B;
 }
 
 .preview_image {
     width: 100%;
-    /* Добавляем явную высоту или соотношение сторон, которое поддерживается всеми браузерами */
-    height: 200px; /* Фиксированная высота */
-    /* ИЛИ */
-    aspect-ratio: 16 / 9;
-
-    position: relative; /* Обязательно для Image fill */
-    background-color: #333;
-    overflow: hidden; /* Обрезаем лишнее */
-    border-radius: 8px 8px 0 0; /* Скругление сверху */
+    aspect-ratio: 16 / 9; /* Фиксируем пропорции! */
+    position: relative;
+    background-color: #555;
 }
 
-/* И сам Image внутри */
-.preview_image img {
-    object-fit: cover;
+/* Важно: заставляем картинку заполнить контейнер */
+.image_element {
+    object-fit: cover !important;
     width: 100% !important;
     height: 100% !important;
     position: absolute !important;
 }
 
-.image_element {
-    object-fit: cover; /* Ключевое свойство: обрезает лишнее, сохраняя пропорции */
-    width: 100%;
-    height: 100%;
-}
-
 .preview_content {
-    padding: 0 1.5rem 1.5rem 1.5rem;
+    padding: 1.2rem;
     display: flex;
     flex-direction: column;
-    flex-grow: 1; /* Растягиваем контент */
+    flex-grow: 1; /* Оставшееся место */
 }
 
 .preview_name {
-    margin-top: 0.5rem;
     font-size: 1.25rem;
     font-family: var(--font-montserrat);
     font-weight: 800;
     color: #FFFFFF;
     line-height: 1.2;
-    /* Ограничение заголовка в 2 строки */
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
 }
 
 .preview_description {
-    margin-top: 0.5rem;
     font-size: 0.9rem;
     color: #e0e0e0;
-    /* Ограничение описания в 3 строки */
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
     margin-bottom: 1rem;
+    flex-grow: 1; /* Отталкивает прогресс-бар вниз */
 }
 
 .progress_bar {
     height: 6px;
     background-color: #4a4a4a;
     border-radius: 3px;
-    margin-top: auto; /* Прижимаем к низу */
     overflow: hidden;
+    margin-bottom: 0.5rem;
 }
 
 .progress_fill {
     height: 100%;
-    background-color: #825e9c; /* Фиолетовый прогресс */
+    background-color: #DB935B; /* Бледно-коричневый */
     border-radius: 3px;
 }
 
 .money_info {
-    margin-top: 0.5rem;
     font-size: 0.85rem;
     color: #ccc;
     display: flex;

@@ -5,14 +5,12 @@ import {useSearchParams, useRouter} from 'next/navigation';
 import {GetProjects, Project} from "@/api/project";
 import ProjectPreviewNew from "@/app/components/project-preview-new";
 import Spinner from "@/app/components/spinner";
-import {Input} from "@/app/components/ui/input";
-import {Button} from "@/app/components/ui/button";
 import {CATEGORIES} from "@/app/globals";
-import styles from "@/app/page.module.css"; // Переиспользуем стили главной
+import styles from "./projects.module.css"; // Свои стили для каталога
 
 export default function ProjectsPage() {
     return (
-        <Suspense fallback={<div className="flex justify-center p-20"><Spinner/></div>}>
+        <Suspense fallback={<div style={{display: 'flex', justifyContent: 'center', padding: '10rem'}}><Spinner/></div>}>
             <Catalog />
         </Suspense>
     );
@@ -37,10 +35,8 @@ function Catalog() {
         setLoading(true);
         GetProjects(100, 0, searchQuery, selectedCategory)
             .then(data => {
-                // Если бэкенд не умеет фильтровать, делаем это тут (временный фолбек)
+                // Временная фильтрация на фронте, если бэкенд отдает все подряд
                 let filtered = data;
-                /*
-                // Раскомментируй, если бэкенд тупой и возвращает всё подряд
                 if (searchQuery) {
                     const lowerQ = searchQuery.toLowerCase();
                     filtered = filtered.filter(p => p.name.toLowerCase().includes(lowerQ) || p.quick_peek.toLowerCase().includes(lowerQ));
@@ -48,11 +44,10 @@ function Catalog() {
                 if (selectedCategory) {
                     filtered = filtered.filter(p => p.category === selectedCategory);
                 }
-                */
                 setProjects(filtered);
             })
             .finally(() => setLoading(false));
-    }, [searchParams]); // Перезагружаем при изменении URL
+    }, [searchParams]);
 
     // Обновление URL при поиске
     const handleSearch = (e: React.FormEvent) => {
@@ -74,58 +69,58 @@ function Catalog() {
     };
 
     return (
-        <div className="min-h-screen bg-[#130622] text-white pt-10 pb-20 px-4 md:px-10">
-            <h1 className="text-4xl font-bold mb-8 text-center font-soyuz">Каталог проектов</h1>
+        <div className={styles.container}>
+            <h1 className={styles.title}>Каталог проектов</h1>
 
             {/* Фильтры и поиск */}
-            <div className="max-w-6xl mx-auto mb-12 space-y-6">
+            <div className={styles.filters_container}>
 
                 {/* Строка поиска */}
-                <form onSubmit={handleSearch} className="flex gap-4">
-                    <Input
+                <form onSubmit={handleSearch} className={styles.search_form}>
+                    <input
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Найти проект..."
-                        className="bg-[#1e0e31] border-gray-600 text-white text-lg h-12"
+                        className={styles.search_input}
                     />
-                    <Button type="submit" className="bg-[#825e9c] text-black font-bold h-12 px-8">
+                    <button type="submit" className={styles.search_button}>
                         Найти
-                    </Button>
+                    </button>
                 </form>
 
-                {/* Категории (Основные группы) */}
-                <div className="flex flex-wrap gap-2 justify-center">
-                    <Button
-                        variant={selectedCategory === '' ? "default" : "outline"}
-                        className={`rounded-full ${selectedCategory === '' ? 'bg-light-green text-black' : 'text-gray-300 border-gray-600'}`}
+                {/* Категории */}
+                <div className={styles.categories_list}>
+                    <button
+                        className={`${styles.category_btn} ${selectedCategory === '' ? styles.category_btn_active : ''}`}
                         onClick={() => handleCategoryClick('')}
                     >
                         Все
-                    </Button>
+                    </button>
                     {Object.keys(CATEGORIES).map(cat => (
-                        <Button
+                        <button
                             key={cat}
-                            variant={selectedCategory === cat ? "default" : "outline"}
-                            className={`rounded-full ${selectedCategory === cat ? 'bg-[#825e9c] text-black border-none' : 'text-gray-300 border-gray-600 hover:bg-white/10'}`}
+                            className={`${styles.category_btn} ${selectedCategory === cat ? styles.category_btn_active : ''}`}
                             onClick={() => handleCategoryClick(cat)}
                         >
                             {cat}
-                        </Button>
+                        </button>
                     ))}
                 </div>
             </div>
 
             {/* Сетка проектов */}
             {loading ? (
-                <div className="flex justify-center py-20"><Spinner /></div>
+                <div style={{display: 'flex', justifyContent: 'center', padding: '5rem'}}>
+                    <Spinner />
+                </div>
             ) : projects.length > 0 ? (
-                <div className={styles.projects_container}>
+                <div className={styles.grid_container}>
                     {projects.map(project => (
                         <ProjectPreviewNew key={project.id} project={project} />
                     ))}
                 </div>
             ) : (
-                <div className="text-center py-20 text-gray-500 text-xl">
+                <div className={styles.empty_state}>
                     Ничего не найдено по вашему запросу 😔
                 </div>
             )}
