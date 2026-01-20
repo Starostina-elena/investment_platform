@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Camera, MapPin, Mail, Edit3, Save, X, Hash, Wallet } from 'lucide-react';
+import { Camera, MapPin, Mail, Edit3, Save, X, Hash, Wallet, LogOut, Building2 } from 'lucide-react'; // Добавил иконки
 import { Button } from '@/app/components/ui/button';
 import { Input } from "@/app/components/ui/input";
 import styles from '@/app/user-profile/page.module.css';
@@ -19,7 +19,8 @@ import InvestmentsList from "@/app/components/investments-list";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import AdminBanControl from "@/app/components/admin-ban-control";
 import BannedBanner from "@/app/components/banned-banner";
-import {Card, CardContent, CardHeader, CardTitle} from "@/app/components/ui/card";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface UserViewProps {
     user: User;
@@ -33,14 +34,16 @@ export default function UserView({ user, isOwner }: UserViewProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [message, setMessage] = useState<Message | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const { Login, token } = useUserStore();
+
+    // Получаем Logout
+    const { Login, Logout, token } = useUserStore();
+    const router = useRouter();
 
     // Стейт для инвестиций
     const [activeInvestments, setActiveInvestments] = useState<Investment[]>([]);
     const [archivedInvestments, setArchivedInvestments] = useState<Investment[]>([]);
     const [loadingInvestments, setLoadingInvestments] = useState(false);
 
-    // Загрузка инвестиций (только если это МОЙ профиль, т.к. инфа приватная)
     useEffect(() => {
         if (isOwner) {
             setLoadingInvestments(true);
@@ -88,6 +91,11 @@ export default function UserView({ user, isOwner }: UserViewProps) {
         if (file) setAvatarFile(file);
     };
 
+    const handleLogout = () => {
+        Logout();
+        router.push("/login");
+    };
+
     return (
         <div className={styles.container}>
             {/* Баннер бана */}
@@ -113,11 +121,13 @@ export default function UserView({ user, isOwner }: UserViewProps) {
                                 {/* Фото */}
                                 <div className={styles.profilePhoto}>
                                     <div className={styles.photoContainer}>
-                                        <div className={styles.photoPlaceholder}>
+                                        <div className={styles.photoPlaceholder} style={{position: 'relative', background: '#fff'}}>
+                                            {/* Добавил unoptimized, чтобы избежать проблем с доменами */}
                                             <Image
                                                 src={avatarSrc}
                                                 alt={formData.nickname}
                                                 fill
+                                                unoptimized
                                                 style={{objectFit: 'cover'}}
                                             />
                                         </div>
@@ -130,7 +140,7 @@ export default function UserView({ user, isOwner }: UserViewProps) {
                                                 <Camera size={18} />
                                             </button>
                                         )}
-                                        <input type="file" ref={fileInputRef} hidden onChange={handleFileChange} />
+                                        <input type="file" ref={fileInputRef} hidden onChange={handleFileChange} accept="image/*" />
                                     </div>
                                 </div>
 
@@ -185,16 +195,42 @@ export default function UserView({ user, isOwner }: UserViewProps) {
                                     </div>
                                 </div>
 
-                                {/* Кнопки */}
+                                {/* Кнопки Владельца */}
                                 {isOwner && (
-                                    <div className="px-6 mt-6 pb-4">
+                                    <div className="px-6 mt-6 pb-4 flex flex-col gap-3">
                                         {!isEditing ? (
-                                            <Button
-                                                className="w-full bg-[#656662] hover:bg-[#505050] text-white font-bold uppercase tracking-wider"
-                                                onClick={() => setIsEditing(true)}
-                                            >
-                                                <Edit3 className="w-4 h-4 mr-2" /> Редактировать
-                                            </Button>
+                                            <>
+                                                {/* Редактировать */}
+                                                <Button
+                                                    className="w-full bg-[#656662] hover:bg-[#505050] text-white font-bold uppercase tracking-wider"
+                                                    onClick={() => setIsEditing(true)}
+                                                >
+                                                    <Edit3 className="w-4 h-4 mr-2" /> Редактировать
+                                                </Button>
+
+                                                {/* Создать организацию */}
+                                                <Link href="/organisation/create" className="w-full">
+                                                    <Button variant="outline" className="w-full border-[#825e9c] text-[#825e9c] hover:bg-[#825e9c] hover:text-white font-bold uppercase tracking-wider">
+                                                        <Building2 className="w-4 h-4 mr-2" /> Создать орг-цию
+                                                    </Button>
+                                                </Link>
+
+                                                {/* Мои организации */}
+                                                <Link href="/organisation/my" className="w-full">
+                                                    <Button variant="outline" className="w-full border-gray-400 text-gray-600 hover:bg-gray-100 font-bold uppercase tracking-wider">
+                                                        Мои организации
+                                                    </Button>
+                                                </Link>
+
+                                                {/* Выйти */}
+                                                <Button
+                                                    variant="ghost"
+                                                    className="w-full text-red-500 hover:bg-red-50 hover:text-red-700 mt-2"
+                                                    onClick={handleLogout}
+                                                >
+                                                    <LogOut className="w-4 h-4 mr-2" /> Выйти
+                                                </Button>
+                                            </>
                                         ) : (
                                             <div className="flex gap-2">
                                                 <Button variant="outline" onClick={handleCancel} className="flex-1 border-gray-400 hover:bg-gray-100 text-black">
