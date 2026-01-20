@@ -67,7 +67,7 @@ export default function ProjectView({project: initialProject}: {project: Project
                         </div>
                         <div className={styles.project_meta}>
                             {project.location && <div className={styles.location}>{project.location}</div>}
-                            <div className={styles.category}>{project.category || 'Технологии'}</div>
+                            <div className={styles.category}>{''}</div>
                         </div>
                     </div>
                     <div className={styles.project_details}>
