@@ -4,7 +4,6 @@ import styles from './header.module.css';
 import search from "@/public/search.svg"
 import Image from "next/image";
 import logo from "@/public/logo.png"
-import CategoriesDropdown from "@/app/components/categories-dropdown";
 import {useRef, useState} from "react";
 import burger_icon from "@/public/burger.svg";
 import cross from "@/public/cross.svg";
@@ -54,15 +53,6 @@ const Header = () => {
     return (
         <>
             <header className={styles.header_container} ref={header} style={filtersOpened ? {position: 'fixed'} : {}}>
-                <div className={styles.categories_wrapper}>
-                    <button className={styles.burger + ' ' + (filtersOpened ? styles.burger_open : "")}
-                            onClick={() => setFiltersOpened(!filtersOpened)}>
-                        <hr/>
-                        <hr/>
-                        <hr/>
-                    </button>
-                    {filtersOpened && <CategoriesDropdown/>}
-                </div>
                 <Link href="/" className={styles.logo_link}>
                     <Image src={logo} alt="Логотип" fill={true}/>
                 </Link>
