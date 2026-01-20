@@ -66,8 +66,7 @@ export default function ProjectView({project: initialProject}: {project: Project
                             <Image fill={true} alt="Фото проекта" className={styles.project_image} src={imageSrc}/>
                         </div>
                         <div className={styles.project_meta}>
-                            {project.location && <div className={styles.location}>{project.location}</div>}
-                            <div className={styles.category}>{project.monetization_type || ""}</div>
+                            <div className={styles.category}>{getMonetizationLabel(project.monetization_type, project.percent)}</div>
                         </div>
                     </div>
                     <div className={styles.project_details}>
