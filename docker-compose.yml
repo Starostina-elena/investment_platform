@@ -13,6 +13,8 @@ services:
       - ./db:/docker-entrypoint-initdb.d
       - pgdata:/var/lib/postgresql/data
     platform: linux/arm64
+    networks:
+      - app-network
 
   app:
     build: .
@@ -30,6 +32,8 @@ services:
       DB_NAME: venture-platform-db
     restart: unless-stopped
     entrypoint: ["/venture-platform"]
+    networks:
+      - app-network
 
   user:
     build: ./services/user
@@ -184,6 +188,8 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       FROM_EMAIL: ${FROM_EMAIL}
     restart: unless-stopped
+    networks:
+      - app-network
 
   daemon:
     build: ./services/daemon
@@ -199,6 +205,8 @@ services:
       DB_NAME: venture-platform-db
       NOTIFICATION_SERVICE_URL: http://notification:8083
     restart: unless-stopped
+    networks:
+      - app-network
 
   frontend:
     build:
@@ -238,6 +246,8 @@ services:
     ports:
       - "6379:6379"
     restart: unless-stopped
+    networks:
+      - app-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -250,6 +260,8 @@ services:
     ports:
       - "1025:1025"   # SMTP
       - "8025:8025"   # Web UI
+    networks:
+      - app-network
 
   nginx:
     image: nginx:alpine
@@ -266,6 +278,7 @@ services:
       - comment
     networks:
       - app-network
+    restart: on-failure
 
 volumes:
   pgdata:

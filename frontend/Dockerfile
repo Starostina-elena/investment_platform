@@ -5,7 +5,7 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* yarn.lock* ./
 # Если используете npm:
-RUN npm ci
+RUN npm install --legacy-peer-deps --no-audit
 # Если yarn: RUN yarn install --frozen-lockfile
 
 # Этап 2: Сборка приложения
