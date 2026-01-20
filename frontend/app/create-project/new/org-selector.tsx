@@ -25,7 +25,7 @@ export default function OrgSelector({project, setProject, userOrgs, children}: O
                     к которому будут привязаны банковские реквизиты для сбора средств.
                 </p>
                 <Link href="/organisation/create">
-                    <Button className="bg-light-blue text-black font-bold text-lg px-8 py-6">
+                    <Button className="bg-[#825e9c] text-black font-bold text-lg px-8 py-6">
                         Зарегистрировать организацию
                     </Button>
                 </Link>

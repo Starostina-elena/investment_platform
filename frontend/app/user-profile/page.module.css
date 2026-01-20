@@ -1,0 +1,318 @@
+.container {
+  min-height: 100vh;
+  background-color: var(--dark-violet);
+    border-radius: 10px;
+
+}
+.container > *{
+
+    border-radius: 5px;
+}
+
+.header {
+  position: relative;
+}
+
+.coverImage {
+  height: 16rem;
+  background: linear-gradient(to right, #2563eb, #1d4ed8, #1e40af);
+  position: relative;
+  overflow: hidden;
+}
+
+.coverPattern {
+  position: absolute;
+  inset: 0;
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300"><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grid)"/></svg>');
+  opacity: 0.2;
+}
+
+.coverButton {
+  position: absolute;
+    border-radius: 5px;
+  right: 1rem;
+  top: 1rem;
+  background-color: var(--light-green);
+  color: floralwhite;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.profileSection {
+  max-width: 112rem;
+
+    border-radius: 5px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  margin-top: -4rem;
+  position: relative;
+  z-index: 10;
+}
+
+@media (min-width: 640px) {
+  .profileSection {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .profileSection {
+    padding: 0 2rem;
+  }
+}
+
+.profileGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .profileGrid {
+    flex-direction: row;
+  }
+}
+
+.leftColumn {
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .leftColumn {
+    width: 20rem;
+  }
+}
+
+.profileCard {
+  background-color: var(--dark-violet-form);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+    border-radius: 5px;
+}
+
+.profilePhoto {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.photoContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.photoPlaceholder {
+  width: 8rem;
+  height: 8rem;
+  background-color: #e5e7eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.photoInner {
+  width: 4rem;
+  height: 4rem;
+  background-color: #d1d5db;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photoCore {
+  width: 2rem;
+  height: 2rem;
+  background-color: #9ca3af;
+  border-radius: 50%;
+}
+
+.nameSection {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.userName {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: ghostwhite;
+  margin-bottom: 0.5rem;
+}
+
+.statusSelect {
+  width: 8rem;
+  margin: 0 auto;
+}
+
+.contactInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.contactItem {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.contactLabel {
+  font-weight: 500;
+  margin-right: 0.5rem;
+}
+
+.downloadButton {
+  margin-top: 1.5rem;
+  width: 100%;
+    background-color: var(--light-blue);
+    color: black;
+}
+
+.mainContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1280px) {
+  .contentGrid {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.leftContentColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1280px) {
+  .leftContentColumn {
+    grid-column: span 2;
+  }
+}
+
+.rightContentColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.achievementGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.achievementBadge {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.5rem;
+  border-width: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  transition: all 0.2s;
+}
+
+.achievementBadge:hover {
+  transform: scale(1.05);
+}
+
+.achievementUnlocked {
+  background-color: var(--light-green);
+  border-color: #fde047;
+  color: #ca8a04;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.achievementLocked {
+  background-color: var(--light-cyan);
+  border-color: #e5e7eb;
+  color: #9ca3af;
+}
+
+.achievementDescription {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.activityEmpty {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.activityTitle {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.activityDescription {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+.activityButton {
+  background-color: #2563eb;
+}
+
+.activityButton:hover {
+  background-color: #1d4ed8;
+}
+
+.eventsLink {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.eventsLinkText {
+  color: #2563eb;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.createProjectButton {
+  background-color: var(--light-cyan);
+}
+
+.createProjectButton:hover {
+  background-color: #1d4ed8;
+}
+
+.emptyState {
+  color: #6b7280;
+}
+
+.descHeader {
+    color: var(--light-green);
+}
+.descText {
+    color: lightgreen;
+    /*font-size: 0.875rem;*/
+}
+
+.selector{
+    background-color: var(--light-blue);
+}
+
+.uploadAvatarBtn {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}

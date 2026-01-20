@@ -1,0 +1,167 @@
+.auth_options {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-around;
+}
+
+.auth_options h2 {
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 1rem;
+    color: white;
+}
+
+.registration_form .auth_options h2:first-child, .login_form .auth_options h2:last-child {
+    font-weight: 700;
+}
+
+.registration_form, .login_form {
+    max-width: 320px;
+    margin: 0 auto;
+    padding: 20px;
+    background: var(--dark-violet-form);
+    border-radius: 10px;
+    border: 4px solid var(--light-green);
+}
+
+.registration_form hr, .login_form hr {
+    display: block;
+    height: 1px;
+    border: 0;
+    border-top: 3px solid var(--light-green);
+}
+
+.input_field:first-of-type {
+    margin-top: 15px;
+}
+
+.input_field {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.input_field:invalid[aria-invalid] {
+    border-color: #ef5e5e;
+}
+
+.birth_date_selects {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    justify-content: space-between;
+}
+
+.birth_date_selects select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    width: 100%;
+}
+
+.gender_group {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 1fr 1fr 1fr;
+    margin-bottom: 30px;
+}
+
+.gender_group label {
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    border: 1px solid #ccc;
+    border-width: 1px 0;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    justify-content: center;
+    line-height: 2.5rem;
+}
+
+.gender_group label:has(input:checked) {
+    background-color: #ebebeb;
+}
+
+.gender_group label:first-child {
+    border-radius: 4px 0 0 4px;
+    border-width: 1px;
+}
+
+.gender_group label:last-child {
+    border-radius: 0 4px 4px 0;
+    border-width: 1px;
+}
+
+.gender_group input[type='radio'] {
+    appearance: none;
+    border-radius: 50%;
+    background: white;
+    display: none;
+}
+
+.submit_button {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--light-blue);
+    color: black;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.submit_button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.submit_button:hover {
+    filter: brightness(1.1);
+}
+
+.agreement_text {
+    font-size: 0.75rem;
+    margin-top: 10px;
+    color: whitesmoke;
+    line-height: 1.4;
+}
+
+.field_label {
+    font-size: 0.875rem;
+    margin-bottom: 5px;
+    color: #3c3c3b;
+}
+
+.password_field {
+    position:  relative;
+}
+
+.forgot_link {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+    text-decoration: none;
+    font-size: 12px;
+}
+
+@media screen and (max-width: 321px) {
+    .registration_form, .login_form {
+        padding: 15px;
+    }
+
+    .birth_date_selects {
+        gap: 3px;
+    }
+
+    .birth_date_selects select {
+        width: fit-content;
+    }
+}

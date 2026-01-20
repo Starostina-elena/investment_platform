@@ -1,0 +1,76 @@
+.page_container {
+    display: grid;
+    grid-template-columns: 1fr max-content;
+    gap: 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 3rem;
+    background-color: var(--dark-violet);
+    color: white;
+
+}
+
+.controls {
+    display: flex;
+    justify-content: space-between;
+}
+
+.controls_btn {
+    background: var(--dark-violet);
+    color: var(--light-blue);
+    border: 2px solid var(--light-green);
+    padding: 12px 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.controls_btn:hover {
+    background: var(--light-blue);
+    color: white;
+}
+
+.controls_btn_next {
+    margin-left: auto;
+}
+
+.controls_btn_next::after {
+    content: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4LjE4IiBoZWlnaHQ9IjEyLjEyIiB2aWV3Qm94PSIwIDAgOC4xODIgMTIuMTIxIj48cGF0aCBmaWxsPSJub25lIiBzdHJva2U9IiMwMEFFRjQiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLW1pdGVybGltaXQ9IjEwIiBkPSJNMS4wNiAxLjA2bDUgNS01IDUiLz48L3N2Zz4%3D);
+    margin-left: 10px;
+    position: relative;
+    top: 1px;
+}
+
+.controls_btn_next:hover::after {
+    content: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjEyIiB2aWV3Qm94PSIwIDAgOCAxMiI%2BPHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkZGIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1taXRlcmxpbWl0PSIxMCIgZD0iTS45NyAxbDUgNS01IDUiLz48L3N2Zz4%3D);
+}
+
+.controls_btn_prev::before {
+    content: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4LjE4IiBoZWlnaHQ9IjEyLjEyIiB2aWV3Qm94PSIwIDAgOC4xODIgMTIuMTIxIj48cGF0aCBmaWxsPSJub25lIiBzdHJva2U9IiMwMEFFRjQiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLW1pdGVybGltaXQ9IjEwIiBkPSJNMS4wNiAxLjA2bDUgNS01IDUiLz48L3N2Zz4%3D);
+    margin: 0 10px 0 0;
+    position: relative;
+    top: -2px;
+    transform: rotate(180deg);
+    display: inline-block;
+}
+
+.controls_btn_prev:hover::before {
+    content: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjEyIiB2aWV3Qm94PSIwIDAgOCAxMiI%2BPHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkZGIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1taXRlcmxpbWl0PSIxMCIgZD0iTS45NyAxbDUgNS01IDUiLz48L3N2Zz4%3D);
+}
+
+@media screen and (max-width: 768px) {
+    .page_container {
+        padding: 1.5rem 0.7rem;
+    }
+}
+
+@media screen and (max-width: 576px) {
+    .page_container {
+        grid-template-columns: 1fr;
+    }
+
+    .page_container > *:nth-child(n + 2) {
+        display: none;
+    }
+}

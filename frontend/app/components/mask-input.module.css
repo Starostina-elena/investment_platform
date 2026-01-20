@@ -1,0 +1,58 @@
+.container {
+    position: relative;
+    width: fit-content;
+}
+
+.input {
+    cursor: text;
+    z-index: 2;
+}
+
+.display {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    min-height: 40px;
+    align-items: center;
+    transition: border 0.2s;
+}
+
+.display.filled {
+    border: none;
+    padding: 0;
+    min-height: auto;
+}
+
+.digit {
+    font-family: monospace;
+    font-size: 16px;
+    text-align: center;
+    position: relative;
+    padding: 4px 8px;
+    min-width: 24px;
+}
+
+.digit::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #666;
+    transition: transform 0.2s;
+}
+
+.digit:not(:empty)::after {
+    transform: scaleX(0);
+}
+
+.digit:first-child {
+    margin-left: 0;
+}
+
+.digit:last-child {
+    margin-right: 0;
+}

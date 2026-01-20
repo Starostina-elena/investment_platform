@@ -1,0 +1,97 @@
+.footer {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1fr;
+    background: #000000; /* Черный */
+    color: #FFFFFF;
+    gap: 5rem;
+    padding: 4rem 4rem 0;
+    font-size: 1rem;
+}
+
+.copyright {
+    grid-column: span 3;
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.column_title {
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.footer_column {
+    display: flex;
+    flex-direction: column;
+}
+
+.social_link {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0;
+    gap: 0.5rem;
+}
+
+.logo {
+    height: 1.2rem;
+}
+
+.subscribe_text {
+    margin-top: 1.8rem;
+    font-size: 1.2rem;
+}
+
+.subscribe {
+    margin-top: 1.8rem;
+    display: flex;
+    flex-direction: row;
+    gap: 1.5rem;
+}
+
+.subscribe label {
+    position: relative;
+    width: -webkit-fill-available;
+}
+
+.subscribe input {
+    background: #656662; /* Серый */
+    border: 1px solid #989694;
+    color: #FFFFFF;
+}
+.subscribe button {
+    background: #DB935B; /* Бледно-коричневый */
+    color: #000000;
+    border-color: #b57a4a;
+}
+
+.subscribe_policy {
+    font-size: 0.8rem;
+    margin-top: 0.8rem;
+}
+
+@media screen and (max-width: 1024px) {
+    .subscribe {
+        flex-direction: column;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .footer {
+        grid-template-columns: 1.6fr 1fr;
+        gap: 3rem;
+        padding: 4rem 2rem 0;
+    }
+
+    .copyright {
+        grid-column: span 2;
+    }
+}
+
+@media screen and (max-width: 425px) {
+    .footer {
+        grid-template-columns: 1fr;
+    }
+
+    .copyright {
+        grid-column: span 1;
+    }
+}

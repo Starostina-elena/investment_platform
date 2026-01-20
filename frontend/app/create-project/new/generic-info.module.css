@@ -1,0 +1,277 @@
+.main_content {
+    background: white;
+    background-color: var(--dark-violet-form);
+    border-radius: 8px;
+    padding: 2.5rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: grid;
+    gap: 2rem;
+}
+
+.page_title {
+    font-size: 1.5rem;
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.welcome_text {
+    color: #666;
+    margin-bottom: 40px;
+}
+
+.form_group {
+    display: grid;
+    gap: 10px;
+}
+
+.label {
+    font-weight: 500;
+    color: whitesmoke;
+}
+
+.hint {
+    display: block;
+    font-size: 0.750rem;
+    color: #999;
+    margin-top: 5px;
+}
+
+.input_field {
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    width: 100%;
+}
+
+.textarea_field {
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    resize: vertical;
+    min-height: 100px;
+}
+
+.select_field {
+    padding: 0.750rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    width: 100%;
+}
+
+.cover_wrapper {
+    position: relative;
+    border: 1px dashed #ccc;
+    border-radius: 4px;
+    padding: 3rem;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.cover_wrapper:hover {
+    background-color: #f2fbfe;
+}
+
+.cover_preview {
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+}
+
+.upload_img_placeholder {
+    position: relative;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16/9;
+    max-width: 30vw;
+    margin: auto;
+}
+
+.upload_btn {
+    padding: 12px 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--light-blue);
+}
+
+.upload_btn input {
+    display: none;
+}
+
+.file_info {
+    display: block;
+    font-size: 0.750rem;
+    color: #999;
+    margin-top: 10px;
+}
+
+.duration_options {
+    display: flex;
+    margin-bottom: 10px;
+}
+
+.option_btn {
+    padding: 8px 16px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-right: none;
+}
+
+.option_btn:first-child {
+    border-radius: 4px 0 0 4px;
+}
+
+.option_btn:last-child {
+    border-radius: 0 4px 4px 0;
+    border-right: 1px solid #ccc;
+}
+
+.option_btn input {
+    display: none;
+}
+
+.option_btn:has(input:checked) {
+    background: var(--light-blue);
+    color: white;
+}
+
+.days_input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.number_field {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0.750rem;
+    font-size: 0.875rem;
+}
+
+.number_field[type='number'] {
+    width: 100px;
+}
+
+.days_label {
+    color: #666;
+    display: none;
+}
+
+.number_field[type='number']+.days_label {
+    display: block;
+}
+
+.info_text {
+    display: block;
+    font-size: 0.750rem;
+    color: #999;
+    margin-top: 5px;
+}
+
+.amount_container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.amount_field {
+    width: 150px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0.750rem;
+    font-size: 0.875rem;
+}
+
+.currency_symbol {
+    font-size: 1.25rem;
+    color: #666;
+}
+
+.commission_info {
+    display: block;
+    font-size: 0.750rem;
+    color: #999;
+    margin-top: 10px;
+}
+
+.checkbox_container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.checkbox_label {
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.privacy_info {
+    display: block;
+    font-size: 12px;
+    color: #999;
+    margin-top: 10px;
+}
+
+.sidebar {
+    background: #f5f5f5;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.author_block {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.author_info strong {
+    display: block;
+    font-size: 0.875rem;
+    color: #333;
+}
+
+.author_info span {
+    font-size: 0.750rem;
+    color: #999;
+}
+
+.progress_bar {
+    background: #fff;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.bar {
+    height: 8px;
+    background: #eee;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.fill {
+    height: 100%;
+    background: var(--light-blue);
+    border-radius: inherit;
+    width: 0%;
+}
+
+@media screen and (max-width: 425px) {
+    .cover_wrapper {
+        padding: 1rem;
+    }
+}

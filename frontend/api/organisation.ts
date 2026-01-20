@@ -128,3 +128,14 @@ export async function UploadOrgAvatar(id: number, file: File, setMessage: (msg: 
         return null;
     }
 }
+
+export async function BanOrganisation(orgId: number, ban: boolean, setMessage: (msg: Message) => void): Promise<boolean> {
+    try {
+        await api.post(`/org/${orgId}/active?ban=${ban}`);
+        setMessage({isError: false, message: ban ? "Организация заблокирована" : "Организация разблокирована"});
+        return true;
+    } catch (e: any) {
+        DefaultErrorHandler(setMessage)(e);
+        return false;
+    }
+}

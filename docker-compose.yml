@@ -39,6 +39,8 @@ services:
       - minio
     ports:
       - "12550:8101"
+    networks:
+      - app-network
     environment:
       DB_HOST: db
       DB_PORT: 5432
@@ -61,6 +63,8 @@ services:
       - minio
     ports:
       - "12551:8102"
+    networks:
+      - app-network
     environment:
       DB_HOST: db
       DB_PORT: 5432
@@ -84,6 +88,8 @@ services:
       - notification
     ports:
       - "12552:8103"
+    networks:
+      - app-network
     environment:
       DB_HOST: db
       DB_PORT: 5432
@@ -101,6 +107,8 @@ services:
       - db
     ports:
       - "12553:8104"
+    networks:
+      - app-network
     environment:
       DB_HOST: db
       DB_PORT: 5432
@@ -124,6 +132,8 @@ services:
       - redis
     ports:
       - "12554:8105"
+    networks:
+      - app-network
     environment:
       DB_HOST: db
       DB_PORT: 5432
@@ -147,6 +157,8 @@ services:
       - YOOKASSA_SHOP_ID=${YOOKASSA_SHOP_ID}
       - YOOKASSA_SECRET_KEY=$(YOOKASSA_SHOP_SEC_KEY}
       - TRANSACTION_SERVICE_URL=http://transactions:8103
+    networks:
+      - app-network
     depends_on:
       - db
       - transactions
@@ -182,6 +194,17 @@ services:
       NOTIFICATION_SERVICE_URL: http://notification:8083
     restart: unless-stopped
 
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend_app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - nginx
+    networks:
+      - app-network
+
   minio:
     image: minio/minio:latest
     container_name: venture_minio
@@ -195,6 +218,8 @@ services:
       - minio_data:/data
     command: server /data --console-address ":9001"
     restart: unless-stopped
+    networks:
+      - app-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
@@ -220,6 +245,26 @@ services:
       - "1025:1025"   # SMTP
       - "8025:8025"   # Web UI
 
+  nginx:
+    image: nginx:alpine
+    container_name: venture-gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - user
+      - organisation
+      - project
+      - transactions
+      - comment
+    networks:
+      - app-network
+
 volumes:
   pgdata:
   minio_data:
+
+networks:
+  app-network:
+    driver: bridge

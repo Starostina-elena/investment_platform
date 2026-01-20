@@ -1,0 +1,27 @@
+.navbar {
+    color: rgb(255, 255, 255);
+    font-size: 1.2rem;
+    padding: 0.75rem 0.5rem;
+    background-color: rgb(46, 46, 46);
+    position: relative;
+    width: 100%;
+    margin: auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 1.25rem;
+    justify-content: space-evenly;
+}
+
+.nav_link {
+    padding: 8px;
+    display: inline-block;
+    border-radius: 6px;
+    margin-left: 20px;
+}
+
+.nav_link_active {
+    background-color: rgb(29, 29, 27);
+    font-weight: 700;
+}

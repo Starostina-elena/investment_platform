@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    /* --- Палитра из Брендбука --- */
+    --c-black: #000000;
+    --c-white: #FFFFFF;
+    --c-pale-brown: #DB935B;
+    --c-pale-red: #934f4f;
+    --c-pale-violet: #825e9c;
+    --c-light-grey: #989694;
+    --c-dark-grey: #656662;
+
+    /* --- Маппинг на системные переменные --- */
+    --background: var(--c-light-grey);
+    --foreground: var(--c-black);
+
+    /* Для карточек и форм используем темно-серый */
+    --card: var(--c-dark-grey);
+    --card-foreground: var(--c-white);
+
+    --popover: var(--c-dark-grey);
+    --popover-foreground: var(--c-white);
+
+    /* Основные кнопки - Бледно-фиолетовый (как в примере "Создать сбор") */
+    --primary: var(--c-pale-violet);
+    --primary-foreground: var(--c-white);
+
+    /* Вторичные кнопки - Бледно-коричневый (как "Я - меценат") */
+    --secondary: var(--c-pale-brown);
+    --secondary-foreground: var(--c-black);
+
+    /* Акцентные/Третьи кнопки - Бледно-красный (как "Выгодно вложиться") */
+    --muted: var(--c-pale-red);
+    --muted-foreground: var(--c-white);
+
+    --accent: var(--c-pale-brown);
+    --accent-foreground: var(--c-black);
+
+    --destructive: var(--c-pale-red);
+    --destructive-foreground: var(--c-white);
+
+    --border: #4a4a4a;
+    --input: #4a4a4a;
+    --ring: var(--c-pale-brown);
+
+    --radius: 0.5rem;
+}
+
+/* Глобальные стили */
+html,
+body {
+    max-width: 100vw;
+    overflow-x: hidden;
+    background: var(--background);
+    color: var(--foreground);
+    /* Calibri как основной шрифт */
+    font-family: 'Calibri', 'Arial', sans-serif;
+}
+
+/* Заголовки - Montserrat ExtraBold */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-montserrat), sans-serif;
+    font-weight: 800;
+    text-transform: uppercase; /* Как в Haettenschweiler часто делают */
+    letter-spacing: 0.05em;
+}
+
+/* Скроллбар */
+* {
+    scrollbar-color: var(--c-pale-brown) var(--c-dark-grey);
+    scrollbar-width: thin;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+
+a:hover {
+    opacity: 0.8;
+}

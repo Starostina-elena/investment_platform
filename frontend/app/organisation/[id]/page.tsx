@@ -16,6 +16,8 @@ import {Message} from "@/api/api";
 
 // Заглушка для аватара орги
 import orgPlaceholder from "@/public/image_bg.png";
+import AdminBanControl from "@/app/components/admin-ban-control";
+import BannedBanner from "@/app/components/banned-banner";
 
 export default function OrganisationPage() {
     const params = useParams();
@@ -58,7 +60,7 @@ export default function OrganisationPage() {
     return (
         <div className={styles.container} style={{padding: '2rem'}}>
             <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-
+                {org.is_banned && <BannedBanner type="Организация" />}
                 {/* Левая колонка - Аватар и статус */}
                 <div className="lg:col-span-1">
                     <div className="bg-[#1e0e31] p-6 rounded-lg shadow-lg text-center">
@@ -81,6 +83,13 @@ export default function OrganisationPage() {
                             <p><strong>Тип:</strong> {org.org_type.toUpperCase()}</p>
                             <p><strong>Создана:</strong> {org.created_at ? new Date(org.created_at).toLocaleDateString() : '-'}</p>
                         </div>
+
+                        <AdminBanControl
+                            entityType="org"
+                            entityId={org.id}
+                            isBanned={org.is_banned}
+                            onUpdate={(banned) => setOrg({...org, is_banned: banned})}
+                        />
                     </div>
                 </div>
 

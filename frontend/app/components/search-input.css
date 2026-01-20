@@ -1,0 +1,36 @@
+.chooser {
+    width: 100%;
+    position: relative;
+    top: 0;
+}
+
+.chooser__list:not(:empty) {
+    border: 1px solid #c9c9c9;
+    background: var(--background);
+    width: 100%;
+    border-radius: 3px;
+    z-index: 10;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.chooser__label:not(:empty) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 10px;
+}
+
+.chooser__list > * {
+    cursor: pointer;
+    color: var(--foreground);
+    background: var(--background);
+    padding: 10px;
+    font-size: 1rem;
+}
+
+.chooser__list > *:hover {
+    background: var(--light-blue);
+    color: var(--background);
+
+}

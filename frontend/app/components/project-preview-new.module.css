@@ -1,0 +1,29 @@
+.preview {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    font-size: inherit;
+    cursor: pointer;
+}
+
+.preview_image {
+    width: 100%;
+    aspect-ratio: 1/1;
+    height: auto;
+    position: relative;
+}
+
+.preview_image img {
+    object-fit: cover;
+    border-radius: 2rem;
+}
+
+.preview_name {
+    margin-top: 0.6em;
+    font-size: 2em;
+}
+
+.preview_description {
+    margin-top: 1em;
+    font-size: 1em;
+}

@@ -1,0 +1,75 @@
+.preview {
+    background-color: #656662; /* Темно-серый фон карточки */
+    color: white;
+    border: 1px solid #4a4a4a;
+    border-radius: 6px;
+}
+
+.image_container {
+    cursor: pointer;
+    text-align: center;
+    border-radius: 4px;
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+}
+
+.image_container img {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    width: 100%;
+    height: 124.797px;
+}
+
+.project_info {
+    padding: 8px 10px;
+}
+
+.project_name {
+    color: #DB935B;
+    cursor: pointer;
+    font: var(--font-montserrat);
+
+    font-weight: 700;
+}
+
+.footer {
+    bottom: 4px;
+    padding: 0 10px;
+    position: absolute;
+    width: 100%;
+}
+
+.progress_bar {
+    background-color: rgb(221, 221, 221);
+    width: 100%;
+    height: 6px;
+    margin: 4px 0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress_fill {
+    background-color: #825e9c;
+    border-bottom-left-radius: 4px;
+    border-top-left-radius: 4px;
+    height: 6px;
+    width: 0%;
+}
+
+.stats_container {
+    justify-content: space-between;
+    display: flex;
+    margin-bottom: 5px;
+}
+
+.stat_block {
+    display: inline-block;
+    overflow: hidden;
+}
+
+.stat_value {
+    color: rgb(76, 76, 76);
+    font-weight: 700;
+    margin-left: 7px;
+}

@@ -1,0 +1,55 @@
+.main {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    padding: 3rem 0;
+    background: var(--dark-violet);
+}
+
+.main > p{
+    color: white;
+}
+
+.main_link {
+    font-size: 1.5rem;
+    text-decoration: underline;
+    padding: 1rem;
+}
+
+.tabs {
+    margin-top: 3rem;
+    display: flex;
+    flex-direction: row;
+    gap: 4rem;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    width: 100%;
+    padding: 0 4rem;
+    /*min-width: max-content;*/
+    overflow-x: auto;
+}
+
+.tabs > p{
+    color: whitesmoke;
+}
+.tabs > a{
+    color: whitesmoke;
+}
+
+
+.tabs > * {
+    padding: 1.5rem 0.5rem;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.tabs > *.active {
+    border-bottom: 4px solid var(--light-blue);
+}
+
+.content {
+    margin-top: 3rem;
+    padding: 0 4rem;
+    font-size: 1rem;
+}
