@@ -1,7 +1,7 @@
 'use client'
 import styles from './project-view.module.css';
 import Image from "next/image";
-import {Project, SetProjectCompleted, SetProjectPublic, UpdateProject} from "@/api/project";
+import {Project, SetProjectCompleted, SetProjectPublic, UpdateProject, ProjectPayback, UploadProjectPicture} from "@/api/project";
 import avatar from "@/public/temp/avatar.png";
 import rocket from "@/public/rocket.svg";
 import image_bg from "@/public/image_bg.png";
@@ -14,7 +14,7 @@ import AdminBanControl from "@/app/components/admin-ban-control";
 import {GetUserById, User} from "@/api/user";
 import {toast} from "sonner";
 import { Button } from "@/app/components/ui/button";
-import { Edit3, CheckCircle, Eye, EyeOff } from "lucide-react";
+import { Edit3, CheckCircle, Eye, EyeOff, Camera, DollarSign, XCircle } from "lucide-react";
 import MessageComponent from "@/app/components/message";
 import { Message } from "@/api/api";
 
@@ -41,6 +41,7 @@ export default function ProjectView({project: initialProject, setProject: extern
     const [isEditing, setIsEditing] = useState(false);
     const [editData, setEditData] = useState(initialProject);
     const [message, setMessage] = useState<Message | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Синхронизация при изменении initialProject
     useEffect(() => {
@@ -73,6 +74,20 @@ export default function ProjectView({project: initialProject, setProject: extern
         }
 
         if (shareUrl) window.open(shareUrl, '_blank');
+    };
+
+    const handlePictureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const path = await UploadProjectPicture(project.id, file, setMessage);
+            if (path && typeof path === 'string') {
+                setProject({...project, quick_peek_picture_path: path});
+                setEditData({...editData, quick_peek_picture_path: path});
+            } else {
+                // Перезагружаем страницу если путь не вернулся
+                window.location.reload();
+            }
+        }
     };
 
     return (
@@ -172,6 +187,27 @@ export default function ProjectView({project: initialProject, setProject: extern
                         {/* Кнопки управления проектом (для владельца) */}
                         {project.creator_id && (
                             <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
+                                <input 
+                                    type="file" 
+                                    ref={fileInputRef} 
+                                    hidden 
+                                    onChange={handlePictureUpload} 
+                                    accept="image/*"
+                                />
+                                <Button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    style={{
+                                        backgroundColor: '#3498db',
+                                        color: 'white',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem'
+                                    }}
+                                >
+                                    <Camera size={16} />
+                                    Обновить обложку
+                                </Button>
+
                                 <Button
                                     onClick={() => setIsEditing(!isEditing)}
                                     style={{
@@ -186,28 +222,44 @@ export default function ProjectView({project: initialProject, setProject: extern
                                     {isEditing ? 'Отмена' : 'Редактировать'}
                                 </Button>
 
-                                {!project.is_completed && (
-                                    <Button
-                                        onClick={() => {
-                                            SetProjectCompleted(project.id, true, (msg) => {
-                                                setMessage(msg);
-                                                if (!msg.isError) {
-                                                    setProject({...project, is_completed: true});
-                                                }
-                                            });
-                                        }}
-                                        style={{
-                                            backgroundColor: '#2ecc71',
-                                            color: 'white',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.5rem'
-                                        }}
-                                    >
-                                        <CheckCircle size={16} />
-                                        Завершить
-                                    </Button>
-                                )}
+                                <Button
+                                    onClick={() => {
+                                        SetProjectCompleted(project.id, !project.is_completed, (msg) => {
+                                            setMessage(msg);
+                                            if (!msg.isError) {
+                                                setProject({...project, is_completed: !project.is_completed});
+                                            }
+                                        });
+                                    }}
+                                    style={{
+                                        backgroundColor: project.is_completed ? '#e67e22' : '#2ecc71',
+                                        color: 'white',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem'
+                                    }}
+                                >
+                                    {project.is_completed ? <XCircle size={16} /> : <CheckCircle size={16} />}
+                                    {project.is_completed ? 'Возобновить' : 'Завершить'}
+                                </Button>
+
+                                <Button
+                                    onClick={() => {
+                                        ProjectPayback(project.id, (msg) => {
+                                            setMessage(msg);
+                                        });
+                                    }}
+                                    style={{
+                                        backgroundColor: '#f39c12',
+                                        color: 'white',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem'
+                                    }}
+                                >
+                                    <DollarSign size={16} />
+                                    Payback
+                                </Button>
 
                                 <Button
                                     onClick={() => {

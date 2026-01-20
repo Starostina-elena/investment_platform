@@ -195,3 +195,28 @@ export async function DeleteProjectPicture(
     }
 }
 
+export async function UploadProjectPicture(
+    projectId: number,
+    file: File,
+    setMessage: (msg: Message) => void
+): Promise<string | null> {
+    try {
+        const formData = new FormData();
+        formData.append("picture", file);
+        
+        const res = await api.post(`/projects/${projectId}/picture/upload`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        
+        setMessage({isError: false, message: "Обложка обновлена"});
+        
+        // Бэкенд возвращает строку пути или объект с path
+        if (typeof res.data === 'string') return res.data;
+        if (res.data?.path && typeof res.data.path === 'string') return res.data.path;
+        
+        return null;
+    } catch (e: any) {
+        DefaultErrorHandler(setMessage)(e);
+        return null;
+    }
+}
