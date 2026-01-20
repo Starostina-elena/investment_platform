@@ -13,18 +13,6 @@ type Repo struct {
 }
 
 func NewRepo(db *sqlx.DB) *Repo {
-	db.MustExec(`
-		CREATE TABLE IF NOT EXISTS payments (
-			id UUID PRIMARY KEY,
-			external_id TEXT NOT NULL,
-			amount NUMERIC(10, 2) NOT NULL,
-			user_id INT NOT NULL,
-			entity_type TEXT NOT NULL,
-			status TEXT NOT NULL,
-			created_at TIMESTAMP NOT NULL,
-			updated_at TIMESTAMP NOT NULL
-		);
-	`)
 	return &Repo{db: db}
 }
 

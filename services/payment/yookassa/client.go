@@ -20,9 +20,19 @@ type Client struct {
 }
 
 func NewClient() *Client {
+	shopID := os.Getenv("YOOKASSA_SHOP_ID")
+	secretKey := os.Getenv("YOOKASSA_SECRET_KEY")
+	
+	fmt.Printf("YooKassa Client initialized:\n")
+	fmt.Printf("  Shop ID: %s\n", shopID)
+	fmt.Printf("  Secret Key length: %d\n", len(secretKey))
+	if len(secretKey) > 10 {
+		fmt.Printf("  Secret Key prefix: %s...\n", secretKey[:10])
+	}
+	
 	return &Client{
-		ShopID:    os.Getenv("YOOKASSA_SHOP_ID"),
-		SecretKey: os.Getenv("YOOKASSA_SECRET_KEY"),
+		ShopID:    shopID,
+		SecretKey: secretKey,
 		APIURL:    "https://api.yookassa.ru/v3/payments",
 		HTTP:      &http.Client{},
 	}
@@ -81,6 +91,10 @@ func (c *Client) CreatePayment(amount string, description string, returnURL stri
 	req.Header.Set("Authorization", "Basic "+auth)
 	req.Header.Set("Idempotence-Key", uuid.New().String())
 	req.Header.Set("Content-Type", "application/json")
+	
+	fmt.Printf("YooKassa CreatePayment:\n")
+	fmt.Printf("  Auth header: Basic %s\n", auth[:min(20, len(auth))]+"...")
+	fmt.Printf("  URL: %s\n", c.APIURL)
 
 	resp, err := c.HTTP.Do(req)
 	if err != nil {
