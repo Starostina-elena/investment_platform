@@ -149,6 +149,10 @@ func (m *mockService) RevokeAllRefreshTokens(ctx context.Context, userID int) er
 	return nil
 }
 
+func (m *mockService) ChangeBalance(ctx context.Context, userID int, delta float64) error {
+	return nil
+}
+
 func (m *mockService) GetActiveInvestments(ctx context.Context, userID int) ([]core.UserProjectInvestment, error) {
 	return []core.UserProjectInvestment{
 		{
