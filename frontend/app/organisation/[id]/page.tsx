@@ -82,20 +82,18 @@ export default function OrganisationPage() {
                             width: '160px',
                             height: '160px',
                             margin: '0 auto 1.5rem auto',
-                            position: 'relative', // Для Image fill
                             borderRadius: '50%',
+                            overflow: 'hidden',
                             border: '4px solid #825e9c',
                             backgroundColor: 'white',
-                            overflow: 'hidden', // Обрезаем картинку по кругу
-                            flexShrink: 0
+                            cursor: 'default',
+                            pointerEvents: 'none'
                         }}>
-                            <Image
-                                src={avatarSrc}
+                            <img
+                                src={typeof avatarSrc === 'string' ? avatarSrc : avatarSrc.src}
                                 alt={org.name}
-                                fill={true} // Растягиваем внутри 160x160
-                                style={{objectFit: 'cover'}}
-                                unoptimized
-                                priority
+                                style={{width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none', userSelect: 'none'}}
+                                draggable={false}
                             />
                         </div>
 

@@ -103,8 +103,8 @@ export default function GenericInfo({project, setProject, children}: {
                             const val = e.target.value;
                             setProject({
                                 ...project,
-                                monetization_type: val, // Для логики бэка
-                                category: CATEGORIES[val][0] // Для отображения (русское название)
+                                monetization_type: val,
+                                category: CATEGORIES[val] || val
                             })
                         }}
                     >

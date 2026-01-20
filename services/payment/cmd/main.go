@@ -48,6 +48,9 @@ func main() {
 			if err := svc.ProcessPendingPayments(ctx); err != nil {
 				logger.Error("error processing pending payments", "error", err)
 			}
+			if err := svc.ProcessPendingWithdrawals(ctx); err != nil {
+				logger.Error("error processing pending withdrawals", "error", err)
+			}
 			cancel()
 		}
 	}()
@@ -56,6 +59,9 @@ func main() {
 	mux.HandleFunc("POST /pay/init", h.InitPaymentHandler)
 	mux.HandleFunc("POST /pay/webhook", h.WebhookHandler)
 	mux.HandleFunc("POST /pay/check", h.CheckPaymentHandler)
+	mux.HandleFunc("POST /withdraw/init", h.InitWithdrawalHandler)
+	mux.HandleFunc("POST /withdraw/webhook", h.WebhookHandler)
+	mux.HandleFunc("POST /withdraw/check", h.CheckWithdrawalHandler)
 
 	logger.Info("payment service listening on :8106")
 	http.ListenAndServe(":8106", mux)
