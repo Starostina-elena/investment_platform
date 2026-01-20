@@ -3,10 +3,10 @@ import { Project } from "@/api/project";
 import styles from "./generic-info.module.css";
 import Image from "next/image";
 import image_bg from "@/public/image_bg.png";
-import { CATEGORIES, RU_CITIES } from "@/app/globals";
 import { Fragment } from "react";
 import { useImage } from "@/hooks/use-image";
 import { BUCKETS } from "@/lib/config";
+import {CATEGORIES} from "@/globals";
 
 export default function GenericInfo({project, setProject, children}: {
     project: Project,
@@ -94,24 +94,41 @@ export default function GenericInfo({project, setProject, children}: {
 
                 {/* Бэкенд пока не хранит category и location, но мы их держим в стейте для UI */}
                 <div className={styles.form_group}>
-                    <label htmlFor="category" className={styles.label}>Категория</label>
+                    <label htmlFor="category" className={styles.label}>Тип финансирования</label>
                     <select
                         id="category" className={styles.select_field}
-                        value={project.category || ""}
+                        value={project.monetization_type || ""}
                         required
-                        onChange={(e) => setProject({...project, category: e.target.value})}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setProject({
+                                ...project,
+                                monetization_type: val, // Для логики бэка
+                                category: CATEGORIES[val][0] // Для отображения (русское название)
+                            })
+                        }}
                     >
-                        <option value="" disabled>Выберите категорию...</option>
-                        {Object.keys(CATEGORIES).map(e => (
-                            <Fragment key={e}>
-                                <option value={e}>{e}</option>
-                                {CATEGORIES[e].map(sub => (
-                                    <option key={sub} value={sub}>-- {sub.toLowerCase()}</option>
-                                ))}
-                            </Fragment>
+                        <option value="" disabled>Выберите тип...</option>
+                        {Object.entries(CATEGORIES).map(([key, label]) => (
+                            <option key={key} value={key}>{label}</option>
                         ))}
                     </select>
                 </div>
+
+                {/* Поле Процент (появляется только для инвест проектов) */}
+                {(project.monetization_type === 'fixed_percent' || project.monetization_type === 'time_percent') && (
+                    <div className={styles.form_group}>
+                        <label className={styles.label}>Процентная ставка (%)</label>
+                        <input
+                            type="number"
+                            className={styles.input_field}
+                            value={project.percent || ''}
+                            onChange={(e) => setProject({...project, percent: parseFloat(e.target.value)})}
+                            placeholder="Например: 10"
+                            min="0.1" step="0.1" required
+                        />
+                    </div>
+                )}
 
                 <div className={styles.form_group}>
                     <label htmlFor="location" className={styles.label}>Место реализации</label>
@@ -121,8 +138,6 @@ export default function GenericInfo({project, setProject, children}: {
                         required
                         onChange={(e) => setProject({...project, location: e.target.value})}
                     >
-                        <option value="" disabled>Выберите город...</option>
-                        {RU_CITIES.map(e => <option key={e} value={e}>{e}, Россия</option>)}
                     </select>
                 </div>
 
