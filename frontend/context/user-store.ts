@@ -1,4 +1,3 @@
-// frontend/context/user-store.ts
 import {create} from "zustand";
 import {AppRouterInstance} from "next/dist/shared/lib/app-router-context.shared-runtime";
 import {addBasePath} from "next/dist/client/add-base-path";
@@ -12,6 +11,7 @@ interface UserState {
     token: string | null;
     Login: (user: User, token: string) => void;
     Logout: () => void;
+    setToken: (token: string) => void; // <--- Добавили
     init: (router: AppRouterInstance, pathname: string) => void;
 }
 
@@ -27,7 +27,13 @@ export const useUserStore = create<UserState>((set) => ({
     Logout: function () {
         localStorage.removeItem("user");
         localStorage.removeItem("token");
+        // Также можно дернуть API logout, чтобы очистить cookie на сервере
+        // api.post('/user/logout').catch(() => {});
         set({user: null, token: null});
+    },
+    setToken: function(token) { // <--- Реализация
+        localStorage.setItem("token", token);
+        set({token: token});
     },
     init: function(router, pathname) {
         try {
@@ -39,14 +45,16 @@ export const useUserStore = create<UserState>((set) => ({
                 set({token: token, inited: true, user});
             } else {
                 set({inited: true});
-                if(!AllowedRoutes.map(e => addBasePath(e)).includes(pathname.replace(/\/$/, ''))) {
-                    router.push("/login");
-                }
+                // Проверка маршрутов: если страница защищенная, редиректим
+                // Но лучше это делать в middleware Next.js или в HOC компонентах
+                // if(!AllowedRoutes.map(e => addBasePath(e)).includes(pathname.replace(/\/$/, ''))) {
+                //     router.push("/login");
+                // }
             }
         } catch (e) {
             console.warn(e);
             set({inited: true});
-            router.push("/login");
+            // router.push("/login");
         }
     }
 }));
