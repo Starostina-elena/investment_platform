@@ -30,7 +30,8 @@ export default function OrganisationPage() {
         }
     }, [params.id]);
 
-    const avatarSrc = useImage(null, org?.avatar_path, BUCKETS.AVATARS, orgPlaceholder);
+    const avatarPath = org?.avatar_path || (org?.id ? `orgpic_${org.id}.jpg` : null);
+    const avatarSrc = useImage(null, avatarPath, BUCKETS.AVATARS, orgPlaceholder);
 
     const handleUpdate = async (data: any) => {
         if (!org) return;
