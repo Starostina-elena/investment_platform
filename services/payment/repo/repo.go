@@ -50,3 +50,46 @@ func (r *Repo) GetPendingPayments(ctx context.Context) ([]core.Payment, error) {
 	err := r.db.SelectContext(ctx, &payments, "SELECT * FROM payments WHERE status = $1", core.StatusPending)
 	return payments, err
 }
+
+func (r *Repo) CreateWithdrawal(ctx context.Context, w *core.Withdrawal) error {
+	w.CreatedAt = time.Now()
+	w.UpdatedAt = time.Now()
+	_, err := r.db.NamedExecContext(ctx, `
+		INSERT INTO withdrawals (id, external_id, entity_id, entity_type, amount, status, created_at, updated_at)
+		VALUES (:id, :external_id, :entity_id, :entity_type, :amount, :status, :created_at, :updated_at)
+	`, w)
+	return err
+}
+
+func (r *Repo) UpdateWithdrawalStatus(ctx context.Context, externalID string, status core.WithdrawalStatus) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE withdrawals SET status = $1, updated_at = NOW() WHERE external_id = $2
+	`, status, externalID)
+	return err
+}
+
+func (r *Repo) GetWithdrawalByExternalID(ctx context.Context, externalID string) (*core.Withdrawal, error) {
+	var w core.Withdrawal
+	err := r.db.GetContext(ctx, &w, "SELECT * FROM withdrawals WHERE external_id = $1", externalID)
+	return &w, err
+}
+
+func (r *Repo) GetWithdrawalByID(ctx context.Context, id string) (*core.Withdrawal, error) {
+	var w core.Withdrawal
+	err := r.db.GetContext(ctx, &w, "SELECT * FROM withdrawals WHERE id = $1", id)
+	return &w, err
+}
+
+func (r *Repo) GetPendingWithdrawals(ctx context.Context) ([]core.Withdrawal, error) {
+	var withdrawals []core.Withdrawal
+	err := r.db.SelectContext(ctx, &withdrawals, "SELECT * FROM withdrawals WHERE status = $1", core.WithdrawalPending)
+	return withdrawals, err
+}
+
+func (r *Repo) GetWithdrawalsByEntity(ctx context.Context, entityType string, entityID int) ([]core.Withdrawal, error) {
+	var withdrawals []core.Withdrawal
+	err := r.db.SelectContext(ctx, &withdrawals,
+		"SELECT * FROM withdrawals WHERE entity_type = $1 AND entity_id = $2 ORDER BY created_at DESC",
+		entityType, entityID)
+	return withdrawals, err
+}

@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Camera, MapPin, Mail, Edit3, Save, X, Hash, Wallet, LogOut, Building2 } from 'lucide-react'; // Добавил иконки
+import { Camera, MapPin, Mail, Edit3, Save, X, Hash, Wallet, LogOut, Building2, RefreshCw } from 'lucide-react'; // Добавил иконки
 import { Button } from '@/app/components/ui/button';
 import { Input } from "@/app/components/ui/input";
 import styles from '@/app/user-profile/page.module.css';
-import { User, UpdateUserInfo, UploadUserAvatar, GetActiveInvestments, GetArchivedInvestments, Investment } from "@/api/user";
+import { User, UpdateUserInfo, UploadUserAvatar, GetActiveInvestments, GetArchivedInvestments, Investment, GetUserById } from "@/api/user";
 import { useUserStore } from "@/context/user-store";
 import { useImage } from "@/hooks/use-image";
 import { BUCKETS } from "@/lib/config";
@@ -34,9 +34,10 @@ export default function UserView({ user, isOwner }: UserViewProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [message, setMessage] = useState<Message | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     // Получаем Logout
-    const { Login, Logout, token } = useUserStore();
+    const { Login, Logout, token, updateUser } = useUserStore();
     const router = useRouter();
 
     // Стейт для инвестиций
@@ -68,6 +69,23 @@ export default function UserView({ user, isOwner }: UserViewProps) {
         setAvatarFile(null);
         setIsEditing(false);
         setMessage(null);
+    };
+
+    const handleRefreshBalance = async () => {
+        setIsRefreshing(true);
+        try {
+            const updatedUser = await GetUserById(user.id);
+            if (updatedUser) {
+                setFormData(updatedUser);
+                updateUser(updatedUser);
+                setMessage({isError: false, message: "Баланс обновлен"});
+                setTimeout(() => setMessage(null), 2000);
+            }
+        } catch (e: any) {
+            setMessage({isError: true, message: "Ошибка при обновлении баланса"});
+        } finally {
+            setIsRefreshing(false);
+        }
     };
 
     const handleSave = async () => {
@@ -197,6 +215,17 @@ export default function UserView({ user, isOwner }: UserViewProps) {
                                         <span className={styles.contactLabel}><Wallet size={14} className="inline mr-1"/>Баланс</span>
                                         <div className="flex items-center gap-2">
                                             <span className="font-bold text-[#DB935B] text-lg">{(formData.balance ?? 0).toLocaleString()} ₽</span>
+                                            {isOwner && (
+                                                <Button
+                                                    onClick={handleRefreshBalance}
+                                                    disabled={isRefreshing}
+                                                    size="sm"
+                                                    className="bg-[#DB935B] text-black hover:bg-[#c98149] font-bold"
+                                                    title="Обновить баланс"
+                                                >
+                                                    {isRefreshing ? <Spinner size={16} /> : <RefreshCw size={16} />}
+                                                </Button>
+                                            )}
                                             {isOwner && <TopUpModal />}
                                         </div>
                                     </div>

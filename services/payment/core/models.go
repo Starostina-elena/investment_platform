@@ -20,3 +20,22 @@ type Payment struct {
 	CreatedAt  time.Time     `db:"created_at"`
 	UpdatedAt  time.Time     `db:"updated_at"`
 }
+
+type WithdrawalStatus string
+
+const (
+	WithdrawalPending   WithdrawalStatus = "pending"
+	WithdrawalSucceeded WithdrawalStatus = "succeeded"
+	WithdrawalFailed    WithdrawalStatus = "failed"
+)
+
+type Withdrawal struct {
+	ID         string           `db:"id"`          // Внутренний UUID
+	ExternalID string           `db:"external_id"` // ID выплаты в ЮKassa
+	EntityID   int              `db:"entity_id"`   // Кто выводит
+	EntityType string           `db:"entity_type"` // "user" или "org"
+	Amount     float64          `db:"amount"`
+	Status     WithdrawalStatus `db:"status"`
+	CreatedAt  time.Time        `db:"created_at"`
+	UpdatedAt  time.Time        `db:"updated_at"`
+}

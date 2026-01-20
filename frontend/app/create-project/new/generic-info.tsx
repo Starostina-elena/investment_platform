@@ -102,7 +102,7 @@ export default function GenericInfo({project, setProject, children}: {
                         onChange={(e) => {
                             const val = e.target.value;
                             setProject({
-                                ...project,
+                                ...project, // Для логики бэка
                                 monetization_type: CATEGORIES[val][0] // Для отображения (русское название)
                             })
                         }}

@@ -51,3 +51,30 @@ func (tc *TransactionClient) Deposit(ctx context.Context, toType string, toID in
 	}
 	return nil
 }
+
+func (tc *TransactionClient) Withdraw(ctx context.Context, fromType string, fromID int, amount float64) error {
+	reqBody, _ := json.Marshal(map[string]interface{}{
+		"from_type": fromType,   // "user" или "org"
+		"from_id":   fromID,
+		"to_type":   "external", // помечает вывод средств
+		"to_id":     0,          // ID системы/шлюза
+		"amount":    amount,
+	})
+
+	req, err := http.NewRequestWithContext(ctx, "POST", tc.url+"/transfer", bytes.NewBuffer(reqBody))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := tc.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("transaction service error: %d", resp.StatusCode)
+	}
+	return nil
+}
