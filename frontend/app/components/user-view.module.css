@@ -1,0 +1,223 @@
+/* Основной контейнер */
+.container {
+    min-height: 100vh;
+    background-color: #989694; /* Светло-серый фон */
+    padding-bottom: 4rem;
+}
+
+/* Обложка профиля (шапка) */
+.header {
+    position: relative;
+    margin-bottom: 6rem; /* Отступ под карточку профиля */
+}
+
+.coverImage {
+    height: 14rem;
+    /* Строгий градиент */
+    background: linear-gradient(135deg, #656662 0%, #4a4a4a 100%);
+    position: relative;
+    overflow: hidden;
+    border-bottom: 4px solid #DB935B; /* Акцентная линия */
+}
+
+/* Узор на фоне (сетка) */
+.coverPattern {
+    position: absolute;
+    inset: 0;
+    opacity: 0.1;
+    background-image: linear-gradient(#fff 1px, transparent 1px),
+    linear-gradient(90deg, #fff 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+/* Секция с контентом */
+.profileSection {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    position: relative;
+    margin-top: -5rem; /* Наезд на обложку */
+    z-index: 10;
+}
+
+.profileGrid {
+    display: grid;
+    grid-template-columns: 300px 1fr; /* Фиксированная левая колонка */
+    gap: 2rem;
+}
+
+/* Левая колонка (Карточка профиля) */
+.leftColumn {
+    width: 100%;
+}
+
+.profileCard {
+    background-color: #FFFFFF; /* Белая карточка */
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    border: 1px solid #ccc;
+    text-align: center;
+    padding-bottom: 2rem;
+}
+
+/* Фото профиля */
+.profilePhoto {
+    margin-top: -3rem; /* Вылезает вверх */
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.photoContainer {
+    position: relative;
+    padding: 4px;
+    background: #FFFFFF;
+    border-radius: 50%;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.photoPlaceholder {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    overflow: hidden;
+    position: relative;
+    border: 4px solid #DB935B; /* Бледно-коричневая рамка */
+}
+
+/* Имя и статус */
+.nameSection {
+    margin-bottom: 1.5rem;
+    padding: 0 1rem;
+}
+
+.userName {
+    font-family: var(--font-montserrat);
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #000000;
+    margin-bottom: 0.2rem;
+    text-transform: uppercase;
+}
+
+.userStatus {
+    font-size: 0.9rem;
+    color: #825e9c; /* Фиолетовый для роли */
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Контакты и инфо */
+.contactInfo {
+    text-align: left;
+    padding: 0 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    color: #333;
+}
+
+.contactItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.95rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.contactLabel {
+    color: #666;
+    font-weight: 500;
+}
+
+/* Правая колонка (Контент) */
+.mainContent {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-top: 5rem; /* Отступ сверху, чтобы выровнять с карточкой */
+}
+
+/* Заголовки секций справа */
+.descHeader {
+    font-family: var(--font-montserrat);
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: #000;
+    text-transform: uppercase;
+    border-bottom: 3px solid #DB935B;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+    display: inline-block;
+}
+
+/* Данные в правой колонке */
+.infoGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    background: #FFFFFF;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.infoItem label {
+    display: block;
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 0.2rem;
+    text-transform: uppercase;
+}
+
+.infoItem p {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #000;
+}
+
+.uploadAvatarBtn {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: #825e9c;
+    border: 2px solid white;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.uploadAvatarBtn:hover {
+    background: #6a4c80;
+}
+
+/* Адаптив */
+@media (max-width: 1024px) {
+    .profileGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .profileCard {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .mainContent {
+        margin-top: 0;
+    }
+}
+
+@media (max-width: 640px) {
+    .infoGrid {
+        grid-template-columns: 1fr;
+    }
+}

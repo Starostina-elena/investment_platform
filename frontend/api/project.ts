@@ -48,7 +48,7 @@ export async function GetProjects(
         if (query) params.append("q", query);
         if (category) params.append("category", category);
 
-        const res = await api.get(`/projects/?${params.toString()}`);
+        const res = await api.get(`/projects/projects/?${params.toString()}`);
         if (Array.isArray(res.data)) {
             return res.data;
         }
@@ -61,7 +61,7 @@ export async function GetProjects(
 
 export async function PublishProject(project: Project, setMessage: (message: Message) => void) {
     try {
-        // 1. Формируем payload строго по Go struct CreateProjectRequest
+        // При отправке тоже используем snake_case
         const payload = {
             name: project.name,
             creator_id: project.creator_id,
@@ -76,12 +76,10 @@ export async function PublishProject(project: Project, setMessage: (message: Mes
         const res = await api.post('/projects/create', payload);
         const createdProject = res.data;
 
-        // 2. Если пользователь выбрал картинку, грузим её отдельным запросом
         if (project.quickPeekPictureFile) {
             const formData = new FormData();
             formData.append("picture", project.quickPeekPictureFile);
 
-            // Go handler: UploadPictureHandler ожидает "picture" в form-data
             await api.post(`/projects/${createdProject.id}/picture/upload`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });

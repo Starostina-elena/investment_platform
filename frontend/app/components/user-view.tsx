@@ -1,51 +1,41 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Camera, MapPin, Mail, Edit3, Save, X } from 'lucide-react';
+import { Camera, MapPin, Mail, Edit3, Save, X, Hash, Wallet } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
-import { Input } from "@/app/components/ui/input"; // Убедитесь, что компонент Input существует (shadcn)
+import { Input } from "@/app/components/ui/input";
 import styles from '@/app/user-profile/page.module.css';
-import {
-    User,
-    UpdateUserInfo,
-    UploadUserAvatar,
-    GetActiveInvestments,
-    GetArchivedInvestments,
-    Investment
-} from "@/api/user";
+import { User, UpdateUserInfo, UploadUserAvatar, GetActiveInvestments, GetArchivedInvestments, Investment } from "@/api/user";
 import { useUserStore } from "@/context/user-store";
 import { useImage } from "@/hooks/use-image";
 import { BUCKETS } from "@/lib/config";
 import Image from "next/image";
-import avatarPlaceholder from "@/public/avatar.svg"; // Или любой другой плейсхолдер
+import avatarPlaceholder from "@/public/avatar.svg";
 import MessageComponent from "@/app/components/message";
 import { Message } from "@/api/api";
 import Spinner from "@/app/components/spinner";
 import TopUpModal from "@/app/components/top-up-modal";
-import BannedBanner from "@/app/components/banned-banner";
-import AdminBanControl from "@/app/components/admin-ban-control";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/app/components/ui/tabs";
 import InvestmentsList from "@/app/components/investments-list";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
+import AdminBanControl from "@/app/components/admin-ban-control";
+import BannedBanner from "@/app/components/banned-banner";
+import {Card, CardContent, CardHeader, CardTitle} from "@/app/components/ui/card";
 
 interface UserViewProps {
     user: User;
-    isOwner: boolean; // Флаг: это мой профиль?
+    isOwner: boolean;
 }
 
 export default function UserView({ user, isOwner }: UserViewProps) {
     const [isEditing, setIsEditing] = useState(false);
-
-    // Стейт формы
     const [formData, setFormData] = useState<User>(user);
-
-    // Стейт аватара
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    // UI стейты
     const [message, setMessage] = useState<Message | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const { Login, token } = useUserStore();
+
+    // Стейт для инвестиций
     const [activeInvestments, setActiveInvestments] = useState<Investment[]>([]);
     const [archivedInvestments, setArchivedInvestments] = useState<Investment[]>([]);
     const [loadingInvestments, setLoadingInvestments] = useState(false);
@@ -63,10 +53,6 @@ export default function UserView({ user, isOwner }: UserViewProps) {
         }
     }, [isOwner]);
 
-    // Глобальный стор (чтобы обновить данные в хедере после сохранения)
-    const { Login, token } = useUserStore();
-
-    // Хук для картинки
     const avatarSrc = useImage(
         avatarFile,
         formData.avatar_path,
@@ -74,7 +60,6 @@ export default function UserView({ user, isOwner }: UserViewProps) {
         avatarPlaceholder
     );
 
-    // Сброс формы при отмене
     const handleCancel = () => {
         setFormData(user);
         setAvatarFile(null);
@@ -84,26 +69,13 @@ export default function UserView({ user, isOwner }: UserViewProps) {
 
     const handleSave = async () => {
         setIsLoading(true);
-        setMessage(null);
-
-        // 1. Обновляем текстовые данные
         const updatedUser = await UpdateUserInfo(formData, setMessage);
-
         if (updatedUser) {
-            // 2. Если выбран новый аватар, грузим его
             if (avatarFile) {
                 const newAvatarPath = await UploadUserAvatar(avatarFile, setMessage);
-                if (newAvatarPath) {
-                    updatedUser.avatar_path = newAvatarPath;
-                }
+                if (newAvatarPath) updatedUser.avatar_path = newAvatarPath;
             }
-
-            // 3. Обновляем глобальный стор
-            if (token) {
-                Login(updatedUser, token);
-            }
-
-            // 4. Обновляем локальный стейт
+            if (token) Login(updatedUser, token);
             setFormData(updatedUser);
             setIsEditing(false);
             setAvatarFile(null);
@@ -111,235 +83,207 @@ export default function UserView({ user, isOwner }: UserViewProps) {
         setIsLoading(false);
     };
 
-    // Обработчик выбора файла
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
-            if (file.size > 5 * 1024 * 1024) {
-                setMessage({ isError: true, message: "Файл слишком большой (макс 5МБ)" });
-                return;
-            }
-            setAvatarFile(file);
-        }
+        if (file) setAvatarFile(file);
     };
 
     return (
         <div className={styles.container}>
-            {/* Баннер виден всем, если юзер забанен */}
+            {/* Баннер бана */}
             {formData.is_banned && (
-                <div className="p-6">
+                <div className="max-w-6xl mx-auto pt-6 px-8">
                     <BannedBanner type="Пользователь" />
                 </div>
             )}
 
-            {/* Header Section */}
+            {/* 1. Обложка */}
             <div className={styles.header}>
                 <div className={styles.coverImage}>
                     <div className={styles.coverPattern}></div>
                 </div>
 
-                {/* Profile Section */}
+                {/* 2. Секция профиля */}
                 <div className={styles.profileSection}>
                     <div className={styles.profileGrid}>
-                        {/* Left Profile Info */}
-                        <div className={styles.leftColumn}>
-                            <Card className={styles.profileCard}>
-                                <CardContent className="p-6">
-                                    {/* Profile Photo */}
-                                    <div className={styles.profilePhoto}>
-                                        <div className={styles.photoContainer}>
-                                            <div className={styles.photoPlaceholder} style={{overflow: 'hidden'}}>
-                                                <Image
-                                                    src={avatarSrc}
-                                                    alt={formData.nickname}
-                                                    fill
-                                                    style={{objectFit: 'cover'}}
-                                                />
-                                            </div>
 
-                                            {/* Кнопка загрузки фото (только при редактировании) */}
-                                            {isEditing && (
-                                                <Button
-                                                    variant="secondary"
-                                                    size="sm"
-                                                    className={styles.uploadAvatarBtn}
-                                                    onClick={() => fileInputRef.current?.click()}
-                                                >
-                                                    <Camera className="w-4 h-4" />
-                                                </Button>
-                                            )}
-                                            <input
-                                                type="file"
-                                                ref={fileInputRef}
-                                                hidden
-                                                accept="image/jpeg,image/png,image/webp"
-                                                onChange={handleFileChange}
+                        {/* Левая колонка: Карточка */}
+                        <div className={styles.leftColumn}>
+                            <div className={styles.profileCard}>
+                                {/* Фото */}
+                                <div className={styles.profilePhoto}>
+                                    <div className={styles.photoContainer}>
+                                        <div className={styles.photoPlaceholder}>
+                                            <Image
+                                                src={avatarSrc}
+                                                alt={formData.nickname}
+                                                fill
+                                                style={{objectFit: 'cover'}}
                                             />
                                         </div>
-                                    </div>
-
-                                    {/* Name */}
-                                    <div className={styles.nameSection}>
-                                        {isEditing ? (
-                                            <div className="flex flex-col gap-2">
-                                                <Input
-                                                    value={formData.nickname}
-                                                    onChange={e => setFormData({...formData, nickname: e.target.value})}
-                                                    placeholder="Никнейм"
-                                                />
-                                            </div>
-                                        ) : (
-                                            <h1 className={styles.userName}>{formData.nickname}</h1>
+                                        {isEditing && (
+                                            <button
+                                                className={styles.uploadAvatarBtn}
+                                                onClick={() => fileInputRef.current?.click()}
+                                                type="button"
+                                            >
+                                                <Camera size={18} />
+                                            </button>
                                         )}
-                                        <p style={{color: '#aaa', fontSize: '0.9rem'}}>
-                                            {formData.is_admin ? "Администратор" : "Пользователь"}
-                                        </p>
+                                        <input type="file" ref={fileInputRef} hidden onChange={handleFileChange} />
+                                    </div>
+                                </div>
+
+                                {/* Имя */}
+                                <div className={styles.nameSection}>
+                                    {isEditing ? (
+                                        <Input
+                                            className="text-center font-bold text-lg mb-2 text-black bg-white border-gray-300"
+                                            value={formData.nickname}
+                                            onChange={e => setFormData({...formData, nickname: e.target.value})}
+                                            placeholder="Никнейм"
+                                        />
+                                    ) : (
+                                        <h1 className={styles.userName}>{formData.nickname}</h1>
+                                    )}
+                                    <div className={styles.userStatus}>
+                                        {formData.is_admin ? "Администратор" : "Пользователь"}
+                                    </div>
+                                </div>
+
+                                {/* Инфо */}
+                                <div className={styles.contactInfo}>
+                                    <div className={styles.contactItem}>
+                                        <span className={styles.contactLabel}><Hash size={14} className="inline mr-1"/>ID</span>
+                                        <span className="font-mono font-bold">{formData.id}</span>
                                     </div>
 
-                                    {/* Contact Info */}
-                                    <div className={styles.contactInfo}>
-                                        <div className={styles.contactItem}>
-                                            <span className={styles.contactLabel}>ID:</span>
-                                            <span>{formData.id}</span>
-                                        </div>
-                                        <div className={styles.contactItem}>
-                                            <span className={styles.contactLabel}>Баланс:</span>
-                                            <span className="font-bold text-[#DB935B] text-lg">{formData.balance} ₽</span>
-                                            {/* Показываем кнопку пополнения только владельцу */}
+                                    <div className={styles.contactItem}>
+                                        <span className={styles.contactLabel}><Wallet size={14} className="inline mr-1"/>Баланс</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-bold text-[#DB935B] text-lg">{formData.balance.toLocaleString()} ₽</span>
                                             {isOwner && <TopUpModal />}
                                         </div>
-
-                                        <div className={styles.contactItem}>
-                                            <Mail className="w-4 h-4 mr-2" />
-                                            {isEditing ? (
-                                                <Input
-                                                    value={formData.email}
-                                                    onChange={e => setFormData({...formData, email: e.target.value})}
-                                                />
-                                            ) : (
-                                                <span>{formData.email}</span>
-                                            )}
-                                        </div>
-                                        <div className={styles.contactItem}>
-                                            <MapPin className="w-4 h-4 mr-2" />
-                                            <span>Россия</span>
-                                        </div>
                                     </div>
 
-                                    {/* Edit / Save Buttons */}
-                                    {isOwner && (
-                                        <div className="mt-6 flex gap-2">
-                                            {!isEditing ? (
-                                                <Button className="w-full" onClick={() => setIsEditing(true)}>
-                                                    <Edit3 className="w-4 h-4 mr-2" />
-                                                    Редактировать
+                                    <div className={styles.contactItem}>
+                                        <span className={styles.contactLabel}><Mail size={14} className="inline mr-1"/>Email</span>
+                                        {isEditing ? (
+                                            <Input
+                                                className="h-8 w-40 text-right text-xs text-black bg-white border-gray-300"
+                                                value={formData.email}
+                                                onChange={e => setFormData({...formData, email: e.target.value})}
+                                            />
+                                        ) : (
+                                            <span className="truncate max-w-[150px] font-medium" title={formData.email}>{formData.email}</span>
+                                        )}
+                                    </div>
+
+                                    <div className={styles.contactItem}>
+                                        <span className={styles.contactLabel}><MapPin size={14} className="inline mr-1"/>Страна</span>
+                                        <span className="font-medium">Россия</span>
+                                    </div>
+                                </div>
+
+                                {/* Кнопки */}
+                                {isOwner && (
+                                    <div className="px-6 mt-6 pb-4">
+                                        {!isEditing ? (
+                                            <Button
+                                                className="w-full bg-[#656662] hover:bg-[#505050] text-white font-bold uppercase tracking-wider"
+                                                onClick={() => setIsEditing(true)}
+                                            >
+                                                <Edit3 className="w-4 h-4 mr-2" /> Редактировать
+                                            </Button>
+                                        ) : (
+                                            <div className="flex gap-2">
+                                                <Button variant="outline" onClick={handleCancel} className="flex-1 border-gray-400 hover:bg-gray-100 text-black">
+                                                    <X className="w-4 h-4" />
                                                 </Button>
-                                            ) : (
-                                                <>
-                                                    <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
-                                                        <X className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button className="w-full" onClick={handleSave} disabled={isLoading}>
-                                                        {isLoading ? <Spinner size={20} /> : <Save className="w-4 h-4 mr-2" />}
-                                                        Сохранить
-                                                    </Button>
-                                                </>
-                                            )}
-                                        </div>
-                                    )}
+                                                <Button
+                                                    onClick={handleSave}
+                                                    disabled={isLoading}
+                                                    className="flex-1 bg-[#825e9c] hover:bg-[#6a4c80] text-white font-bold"
+                                                >
+                                                    {isLoading ? <Spinner size={16} /> : <Save className="w-4 h-4 mr-2" />} Сохр.
+                                                </Button>
+                                            </div>
+                                        )}
+                                        <MessageComponent message={message} style={{marginTop: '0.5rem', fontSize: '0.8rem'}}/>
 
-                                    {isOwner ? (
-                                        <Card>
-                                            <CardHeader>
-                                                <CardTitle className={styles.descHeader}>Мои инвестиции</CardTitle>
-                                            </CardHeader>
-                                            <CardContent>
-                                                {loadingInvestments ? (
-                                                    <div className="flex justify-center p-4"><Spinner size={40} /></div>
-                                                ) : (
-                                                    <Tabs defaultValue="active" className="w-full">
-                                                        <TabsList className="grid w-full grid-cols-2 bg-[#2d1b4e]">
-                                                            <TabsTrigger value="active">Активные</TabsTrigger>
-                                                            <TabsTrigger value="archived">Архив</TabsTrigger>
-                                                        </TabsList>
-                                                        <TabsContent value="active" className="mt-4">
-                                                            <InvestmentsList investments={activeInvestments} />
-                                                        </TabsContent>
-                                                        <TabsContent value="archived" className="mt-4">
-                                                            <InvestmentsList investments={archivedInvestments} />
-                                                        </TabsContent>
-                                                    </Tabs>
-                                                )}
-                                            </CardContent>
-                                        </Card>
-                                    ) : (
-                                        // Если чужой профиль - показываем публичную инфу или заглушку
-                                        <Card>
-                                            <CardHeader>
-                                                <CardTitle className={styles.descHeader}>Активность</CardTitle>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <p className={styles.emptyState}>Информация об инвестициях пользователя скрыта.</p>
-                                            </CardContent>
-                                        </Card>
-                                    )}
-                                    <AdminBanControl
-                                        entityType="user"
-                                        entityId={formData.id}
-                                        isBanned={formData.is_banned}
-                                        onUpdate={(banned) => setFormData({...formData, is_banned: banned})}
-                                    />
-
-                                    <MessageComponent message={message} style={{marginTop: '1rem'}}/>
-                                </CardContent>
-                            </Card>
+                                        {/* Админ панель */}
+                                        <AdminBanControl
+                                            entityType="user"
+                                            entityId={formData.id}
+                                            isBanned={formData.is_banned}
+                                            onUpdate={(banned) => setFormData({...formData, is_banned: banned})}
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        {/* Main Content (Right Side) */}
+                        {/* Правая колонка: Данные */}
                         <div className={styles.mainContent}>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className={styles.descHeader}>Личные данные</CardTitle>
-                                </CardHeader>
-                                <CardContent className="grid gap-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div>
-                                            <label className="text-sm text-gray-500">Имя</label>
-                                            {isEditing ? (
-                                                <Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-                                            ) : <p className={styles.descText}>{formData.name}</p>}
-                                        </div>
-                                        <div>
-                                            <label className="text-sm text-gray-500">Фамилия</label>
-                                            {isEditing ? (
-                                                <Input value={formData.surname} onChange={e => setFormData({...formData, surname: e.target.value})} />
-                                            ) : <p className={styles.descText}>{formData.surname}</p>}
-                                        </div>
-                                        <div>
-                                            <label className="text-sm text-gray-500">Отчество</label>
-                                            {isEditing ? (
-                                                <Input value={formData.patronymic || ''} onChange={e => setFormData({...formData, patronymic: e.target.value})} />
-                                            ) : <p className={styles.descText}>{formData.patronymic || '-'}</p>}
-                                        </div>
-                                    </div>
 
-                                    <div className="mt-4">
-                                        <label className="text-sm text-gray-500">Дата регистрации</label>
-                                        <p className={styles.descText}>
-                                            {new Date(formData.created_at).toLocaleDateString('ru-RU')}
-                                        </p>
+                            {/* Личные данные */}
+                            <div>
+                                <h2 className={styles.descHeader}>Личные данные</h2>
+                                <div className={styles.infoGrid}>
+                                    <div className={styles.infoItem}>
+                                        <label>Имя</label>
+                                        {isEditing ? (
+                                            <Input className="bg-gray-100 text-black border-gray-300" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                                        ) : <p>{formData.name}</p>}
                                     </div>
-                                </CardContent>
-                            </Card>
+                                    <div className={styles.infoItem}>
+                                        <label>Фамилия</label>
+                                        {isEditing ? (
+                                            <Input className="bg-gray-100 text-black border-gray-300" value={formData.surname} onChange={e => setFormData({...formData, surname: e.target.value})} />
+                                        ) : <p>{formData.surname}</p>}
+                                    </div>
+                                    <div className={styles.infoItem}>
+                                        <label>Отчество</label>
+                                        {isEditing ? (
+                                            <Input className="bg-gray-100 text-black border-gray-300" value={formData.patronymic || ''} onChange={e => setFormData({...formData, patronymic: e.target.value})} />
+                                        ) : <p>{formData.patronymic || '—'}</p>}
+                                    </div>
+                                    <div className={styles.infoItem}>
+                                        <label>Дата регистрации</label>
+                                        <p>{new Date(formData.created_at).toLocaleDateString('ru-RU')}</p>
+                                    </div>
+                                </div>
+                            </div>
 
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className={styles.descHeader}>Активность</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className={styles.emptyState}>История инвестиций и проектов будет здесь.</p>
-                                </CardContent>
-                            </Card>
+                            {/* Активность / Инвестиции */}
+                            <div>
+                                <h2 className={styles.descHeader}>Мои инвестиции</h2>
+                                {isOwner ? (
+                                    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                                        {loadingInvestments ? (
+                                            <div className="flex justify-center p-8"><Spinner size={40} /></div>
+                                        ) : (
+                                            <Tabs defaultValue="active" className="w-full">
+                                                <TabsList className="grid w-full grid-cols-2 bg-gray-200 mb-6">
+                                                    <TabsTrigger value="active" className="data-[state=active]:bg-[#825e9c] data-[state=active]:text-white font-bold">Активные</TabsTrigger>
+                                                    <TabsTrigger value="archived" className="data-[state=active]:bg-[#656662] data-[state=active]:text-white font-bold">Архив</TabsTrigger>
+                                                </TabsList>
+                                                <TabsContent value="active">
+                                                    <InvestmentsList investments={activeInvestments} />
+                                                </TabsContent>
+                                                <TabsContent value="archived">
+                                                    <InvestmentsList investments={archivedInvestments} />
+                                                </TabsContent>
+                                            </Tabs>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="bg-white p-6 rounded-lg shadow-sm text-center">
+                                        <p className="text-gray-500 italic">Информация об инвестициях пользователя скрыта.</p>
+                                    </div>
+                                )}
+                            </div>
+
                         </div>
                     </div>
                 </div>
