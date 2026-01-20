@@ -553,13 +553,13 @@ func (g *Generator) generateTransactions() error {
 
 		switch txType {
 		case "user_deposit":
-			fromID = 0 // Системный источник
+			fromID = 0
 			toID = g.userIDs[rand.Intn(len(g.userIDs))]
 			fromTable, toTable = "", "USERS"
 			fromColumn, toColumn = "", "balance"
 		case "user_withdraw":
 			fromID = g.userIDs[rand.Intn(len(g.userIDs))]
-			toID = 0 // Системный сток
+			toID = 0
 			fromTable, toTable = "USERS", ""
 			fromColumn, toColumn = "balance", ""
 		case "user_to_project":

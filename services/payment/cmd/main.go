@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/Starostina-elena/investment_platform/services/payment/clients"
 	"github.com/Starostina-elena/investment_platform/services/payment/handler"
@@ -37,9 +39,23 @@ func main() {
 	svc := service.NewService(r, yc, tc, *logger)
 	h := handler.NewHandler(svc)
 
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			if err := svc.ProcessPendingPayments(ctx); err != nil {
+				logger.Error("error processing pending payments", "error", err)
+			}
+			cancel()
+		}
+	}()
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /pay/init", h.InitPaymentHandler)
 	mux.HandleFunc("POST /pay/webhook", h.WebhookHandler)
+	mux.HandleFunc("POST /pay/check", h.CheckPaymentHandler)
 
 	logger.Info("payment service listening on :8106")
 	http.ListenAndServe(":8106", mux)

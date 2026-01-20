@@ -18,7 +18,6 @@ func NewHandler(s service.Service, log slog.Logger) *Handler {
 	return &Handler{service: s, log: log}
 }
 
-// TransferHandler обрабатывает внутренние переводы
 func TransferHandler(h *Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
@@ -45,7 +44,7 @@ func TransferHandler(h *Handler) http.HandlerFunc {
 
 		if err != nil {
 			h.log.Error("transfer error", "error", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError) // Или 400 в зависимости от типа ошибки
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 

@@ -4,30 +4,43 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
+	"github.com/Starostina-elena/investment_platform/services/transactions/clients"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-
-	"github.com/Starostina-elena/investment_platform/services/transactions/service"
 )
+
+type Transaction struct {
+	ID        int                `json:"id"`
+	FromType  clients.EntityType `json:"from_type"`
+	FromID    int                `json:"from_id"`
+	ToType    clients.EntityType `json:"to_type"`
+	ToID      int                `json:"to_id"`
+	Amount    float64            `json:"amount"`
+	CreatedAt time.Time          `json:"created_at"`
+}
+
+type Investor struct {
+	UserID    int    `db:"user_id"`
+	UserEmail string `db:"user_email"`
+}
 
 type Repo struct {
 	db  *sqlx.DB
 	log slog.Logger
 }
 
-func NewRepo(db *sqlx.DB, log slog.Logger) service.Repo {
+func NewRepo(db *sqlx.DB, log slog.Logger) *Repo {
 	return &Repo{db: db, log: log}
 }
 
-func (r *Repo) Create(ctx context.Context, t *service.Transaction) (int, error) {
-	// Формируем строковый тип для совместимости с текущей схемой БД
-	// Например: "user_to_project", "project_to_user"
+func (r *Repo) Create(ctx context.Context, t *Transaction) (int, error) {
 	txType := fmt.Sprintf("%s_to_%s", t.FromType, t.ToType)
 
-	// Предполагаем, что схема таблицы:
-	// id | from_id | reciever_id | type | amount | time_at
-	// from_id и reciever_id хранят просто ID. Кто это - понятно из type.
+	if t.FromID == 0 {
+		txType = fmt.Sprintf("%s_deposit", t.ToType)
+	}
 
 	var id int
 	row := r.db.QueryRowxContext(ctx,
@@ -40,4 +53,20 @@ func (r *Repo) Create(ctx context.Context, t *service.Transaction) (int, error) 
 		return 0, err
 	}
 	return id, nil
+}
+
+func (r *Repo) GetProjectInvestors(ctx context.Context, projectID int) ([]Investor, error) {
+	var investors []Investor
+	query := `
+		SELECT DISTINCT ON (t.from_id) t.from_id as user_id, u.email as user_email
+		FROM transactions t
+		JOIN users u ON t.from_id = u.id
+		WHERE t.reciever_id = $1 AND t.type = 'user_to_project'
+	`
+	err := r.db.SelectContext(ctx, &investors, query, projectID)
+	if err != nil {
+		r.log.Error("failed to get project investors", "error", err, "project_id", projectID)
+		return nil, err
+	}
+	return investors, nil
 }

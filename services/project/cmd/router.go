@@ -32,6 +32,8 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 	}))
 
 	router.Handle("POST /{id}/funds", handler.AddFundsHandler(h))
+	router.Handle("POST /{id}/funds/decrease", handler.DecreaseFundsHandler(h))
+	router.Handle("POST /{id}/money-required-payback", handler.UpdateMoneyRequiredToPaybackHandler(h))
 
 	return router
 }

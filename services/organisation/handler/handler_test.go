@@ -101,6 +101,10 @@ func (m *mockService) TransferOwnership(ctx context.Context, orgID int, userRequ
 	return nil
 }
 
+func (m *mockService) ChangeBalance(ctx context.Context, orgID int, delta float64) error {
+	return nil
+}
+
 func TestCreateOrgHandler_Success(t *testing.T) {
 	ms := &mockService{
 		createFunc: func(ctx context.Context, o core.Org) (*core.Org, error) {

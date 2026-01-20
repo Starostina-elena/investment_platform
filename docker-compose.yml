@@ -105,6 +105,7 @@ services:
     container_name: project
     depends_on:
       - db
+      - transactions
     ports:
       - "12553:8104"
     networks:
@@ -116,6 +117,7 @@ services:
       DB_PASSWORD: secret_password
       DB_NAME: venture-platform-db
       ORG_SERVICE_URL: http://organisation:8102
+      TRANSACTION_SERVICE_URL: http://transactions:8103
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin123
@@ -147,21 +149,25 @@ services:
 
   payment:
     build: ./services/payment
+    container_name: payment
+    ports:
+      - "12556:8106"
     environment:
       - APP_PORT=8106
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=password
-      - DB_NAME=investment_db
+      - DB_USER=comrade
+      - DB_PASSWORD=secret_password
+      - DB_NAME=venture-platform-db
       - YOOKASSA_SHOP_ID=${YOOKASSA_SHOP_ID}
-      - YOOKASSA_SECRET_KEY=$(YOOKASSA_SHOP_SEC_KEY}
+      - YOOKASSA_SECRET_KEY=${YOOKASSA_SECRET_KEY}
       - TRANSACTION_SERVICE_URL=http://transactions:8103
     networks:
       - app-network
     depends_on:
       - db
       - transactions
+    restart: unless-stopped
 
   notification:
     build: ./services/notification

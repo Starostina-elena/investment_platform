@@ -124,7 +124,7 @@ func (r *Repo) GetByCreator(ctx context.Context, creatorID int) ([]core.Project,
 	if err := r.db.SelectContext(ctx, &projects, `
 		SELECT id, name, creator_id, quick_peek, quick_peek_picture_path, content, 
 		       is_public, is_completed, current_money, wanted_money, duration_days,
-		       payback_started_date, money_required_to_paybacks, 
+		       payback_started_date, money_required_to_payback, 
 		       created_at, is_banned, monetization_type, percent, payback_started
 		FROM projects WHERE creator_id = $1 AND is_banned = false AND is_public = true ORDER BY created_at DESC, id ASC`, creatorID); err != nil {
 		r.log.Error("failed to get projects by creator", "creator_id", creatorID, "error", err)

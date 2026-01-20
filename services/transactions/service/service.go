@@ -7,20 +7,14 @@ import (
 	"time"
 
 	"github.com/Starostina-elena/investment_platform/services/transactions/clients"
+	"github.com/Starostina-elena/investment_platform/services/transactions/repo"
 )
 
-type Transaction struct {
-	ID        int                `json:"id"`
-	FromType  clients.EntityType `json:"from_type"`
-	FromID    int                `json:"from_id"`
-	ToType    clients.EntityType `json:"to_type"`
-	ToID      int                `json:"to_id"`
-	Amount    float64            `json:"amount"`
-	CreatedAt time.Time          `json:"created_at"`
-}
+type Transaction = repo.Transaction
 
 type Repo interface {
 	Create(ctx context.Context, t *Transaction) (int, error)
+	GetProjectInvestors(ctx context.Context, projectID int) ([]repo.Investor, error)
 }
 
 type Service interface {
@@ -28,13 +22,21 @@ type Service interface {
 }
 
 type service struct {
-	repo    Repo
-	clients *clients.BalanceClient
-	log     slog.Logger
+	repo               Repo
+	balanceClient      *clients.BalanceClient
+	projectClient      *clients.ProjectClient
+	notificationClient *clients.NotificationClient
+	log                slog.Logger
 }
 
-func NewService(repo Repo, bc *clients.BalanceClient, log slog.Logger) Service {
-	return &service{repo: repo, clients: bc, log: log}
+func NewService(repo Repo, bc *clients.BalanceClient, pc *clients.ProjectClient, nc *clients.NotificationClient, log slog.Logger) Service {
+	return &service{
+		repo:               repo,
+		balanceClient:      bc,
+		projectClient:      pc,
+		notificationClient: nc,
+		log:                log,
+	}
 }
 
 func (s *service) Transfer(ctx context.Context, fromType, toType clients.EntityType, fromID, toID int, amount float64) (*Transaction, error) {
@@ -44,24 +46,30 @@ func (s *service) Transfer(ctx context.Context, fromType, toType clients.EntityT
 
 	s.log.Info("starting transfer", "from", fromType, "from_id", fromID, "to", toType, "to_id", toID, "amount", amount)
 
-	// --- 1. Списание средств (Deduct) ---
-	// Если здесь ошибка (недостаточно средств), процесс прерывается
-	err := s.clients.ChangeBalance(ctx, fromType, fromID, -amount)
+	if toType == clients.TypeProject {
+		project, err := s.projectClient.GetProject(ctx, toID)
+		if err != nil {
+			s.log.Error("failed to check project status", "error", err, "project_id", toID)
+			return nil, fmt.Errorf("failed to check project status: %v", err)
+		}
+		if project.IsCompleted {
+			s.log.Warn("cannot transfer to completed project", "project_id", toID)
+			return nil, fmt.Errorf("cannot transfer funds to completed project")
+		}
+	}
+
+	err := s.balanceClient.ChangeBalance(ctx, fromType, fromID, -amount)
 	if err != nil {
 		s.log.Error("failed to deduct funds", "error", err)
 		return nil, fmt.Errorf("transaction failed: %v", err)
 	}
 
-	// --- 2. Начисление средств (Add) ---
-	err = s.clients.ChangeBalance(ctx, toType, toID, amount)
+	err = s.balanceClient.ChangeBalance(ctx, toType, toID, amount)
 	if err != nil {
 		s.log.Error("failed to add funds, starting rollback", "error", err)
 
-		// --- COMPENSATING TRANSACTION (ROLLBACK) ---
-		// Возвращаем деньги отправителю
-		rbErr := s.clients.ChangeBalance(ctx, fromType, fromID, amount)
+		rbErr := s.balanceClient.ChangeBalance(ctx, fromType, fromID, amount)
 		if rbErr != nil {
-			// Это критическая ситуация, требует ручного вмешательства администратора
 			s.log.Error("CRITICAL: ROLLBACK FAILED", "from_type", fromType, "from_id", fromID, "amount", amount, "error", rbErr)
 			return nil, fmt.Errorf("system error: money stuck, contact support")
 		}
@@ -69,7 +77,6 @@ func (s *service) Transfer(ctx context.Context, fromType, toType clients.EntityT
 		return nil, fmt.Errorf("transaction failed at destination: %v", err)
 	}
 
-	// --- 3. Сохранение истории ---
 	t := &Transaction{
 		FromType:  fromType,
 		FromID:    fromID,
@@ -81,10 +88,77 @@ func (s *service) Transfer(ctx context.Context, fromType, toType clients.EntityT
 
 	id, err := s.repo.Create(ctx, t)
 	if err != nil {
-		// Деньги переведены, но история не сохранилась. Не критично для балансов, но плохо для отчетности.
 		s.log.Error("transaction successful but failed to save record", "error", err)
 	}
 	t.ID = id
 
+	if toType == clients.TypeProject {
+		s.log.Info("processing project payment", "project_id", toID, "amount", amount)
+		s.handleProjectPayment(ctx, toID, amount)
+	}
+
 	return t, nil
+}
+
+func (s *service) handleProjectPayment(ctx context.Context, projectID int, amount float64) {
+	project, err := s.projectClient.GetProject(ctx, projectID)
+	if err != nil {
+		s.log.Error("failed to get project data", "error", err, "project_id", projectID)
+		return
+	}
+
+	s.log.Info("got project data", "project_id", projectID, "monetization_type", project.MonetizationType)
+
+	var paybackDelta float64
+	switch project.MonetizationType {
+	case "fixed_percent":
+		paybackDelta = amount * (project.Percent / 100)
+		s.log.Info("fixed_percent payback calculation", "amount", amount, "percent", project.Percent, "payback_delta", paybackDelta)
+
+	case "time_percent":
+		paybackDelta = 0
+		s.log.Info("time_percent payback calculation - will be calculated at payback time", "amount", amount)
+
+	default:
+		paybackDelta = amount
+		s.log.Info("default payback calculation", "monetization_type", project.MonetizationType, "payback_delta", paybackDelta)
+	}
+
+	newMoneyRequired := project.MoneyRequiredToPayback + paybackDelta
+	if err := s.projectClient.UpdateMoneyRequiredToPayback(ctx, projectID, newMoneyRequired); err != nil {
+		s.log.Error("failed to update money required to payback", "error", err, "project_id", projectID)
+	} else {
+		s.log.Info("updated money required to payback", "project_id", projectID, "new_amount", newMoneyRequired)
+	}
+
+	updatedProject, err := s.projectClient.GetProject(ctx, projectID)
+	if err != nil {
+		s.log.Error("failed to get updated project data for goal check", "error", err, "project_id", projectID)
+		return
+	}
+
+	if updatedProject.CurrentMoney >= updatedProject.WantedMoney {
+		s.log.Info("project goal reached!", "project_id", projectID, "current_money", updatedProject.CurrentMoney, "wanted_money", updatedProject.WantedMoney)
+		s.sendGoalReachedNotifications(ctx, projectID, updatedProject)
+	}
+}
+
+func (s *service) sendGoalReachedNotifications(ctx context.Context, projectID int, project *clients.ProjectData) {
+	investors, err := s.repo.GetProjectInvestors(ctx, projectID)
+	if err != nil {
+		s.log.Error("failed to get project investors", "error", err, "project_id", projectID)
+		return
+	}
+
+	s.log.Info("sending goal reached notifications", "project_id", projectID, "investor_count", len(investors))
+
+	for _, investor := range investors {
+		if err := s.notificationClient.SendEmail(investor.UserEmail, "project_goal_reached", project.Name, 0); err != nil {
+			s.log.Error("failed to send goal reached email", "error", err, "user_id", investor.UserID, "email", investor.UserEmail)
+		} else {
+			s.log.Info("sent goal reached email", "user_id", investor.UserID, "email", investor.UserEmail)
+		}
+	}
+
+	s.log.Info("goal reached notifications sent for project", "project_id", projectID, "project_name", project.Name)
 }

@@ -28,17 +28,19 @@ type Service interface {
 	deletePicture(ctx context.Context, projectID int, picturePath string) error
 	DeletePictureFromProject(ctx context.Context, projectID int, userID int) error
 	AddFunds(ctx context.Context, projectID int, amount float64) error
+	UpdateMoneyRequiredToPayback(ctx context.Context, projectID int, amount float64) error
 }
 
 type service struct {
-	repo      repo.RepoInterface
-	orgClient *clients.OrgClient
-	minio     *storage.MinioStorage
-	log       slog.Logger
+	repo              repo.RepoInterface
+	orgClient         *clients.OrgClient
+	transactionClient *clients.TransactionClient
+	minio             *storage.MinioStorage
+	log               slog.Logger
 }
 
-func NewService(r repo.RepoInterface, orgClient *clients.OrgClient, minioStorage *storage.MinioStorage, log slog.Logger) Service {
-	return &service{repo: r, orgClient: orgClient, minio: minioStorage, log: log}
+func NewService(r repo.RepoInterface, orgClient *clients.OrgClient, transactionClient *clients.TransactionClient, minioStorage *storage.MinioStorage, log slog.Logger) Service {
+	return &service{repo: r, orgClient: orgClient, transactionClient: transactionClient, minio: minioStorage, log: log}
 }
 
 func (s *service) Create(ctx context.Context, p core.Project, creatorID int, userID int) (*core.Project, error) {
@@ -170,20 +172,19 @@ func (s *service) StartPayback(ctx context.Context, projectID int, userID int) e
 		return core.ErrNotAuthorized
 	}
 
-	if existingProject.PaybackStarted {
-		s.log.Warn("payback already started", "project_id", projectID)
-		return core.ErrPaybackStarted
-	}
-
 	if existingProject.MonetizationType == "charity" || existingProject.MonetizationType == "custom" {
 		s.log.Warn("payback not supported for monetization type", "project_id", projectID, "type", existingProject.MonetizationType)
 		return core.ErrPaybackNotSupported
 	}
 
-	err = s.repo.StartPayback(ctx, projectID)
-	if err != nil {
-		s.log.Error("failed to start payback", "error", err)
-		return err
+	if !existingProject.PaybackStarted {
+		err = s.repo.StartPayback(ctx, projectID)
+		if err != nil {
+			s.log.Error("failed to start payback", "error", err)
+			return err
+		}
+	} else {
+		s.log.Info("payback already started, continuing payouts", "project_id", projectID)
 	}
 
 	transactions, err := s.repo.GetProjectTransactions(ctx, projectID)
@@ -199,22 +200,34 @@ func (s *service) StartPayback(ctx context.Context, projectID int, userID int) e
 	}()
 
 	for _, payback := range investorPaybacks {
-		if payback.TotalReceived > 0 {
+		amountRemaining := payback.PaybackAmount - payback.TotalReceived
+		if amountRemaining <= 0 {
+			s.log.Info("investor already fully paid", "project_id", projectID, "user_id", payback.UserID)
 			continue
 		}
-		amountToPay := payback.PaybackAmount
 
-		if existingProject.CurrentMoney >= amountToPay {
-			// TODO: вызов микросервиса транзакций для создания транзакции project_to_user
-			// transactionService.CreateTransaction(ctx, projectID, payback.UserID, amountToPay, "project_to_user")
+		amountToPay := amountRemaining
+		if existingProject.CurrentMoney < amountToPay {
+			amountToPay = existingProject.CurrentMoney
+			s.log.Info("partial payback - insufficient funds", "project_id", projectID, "user_id", payback.UserID, "amount_to_pay", amountToPay, "amount_remaining", amountRemaining)
+		}
+
+		if amountToPay > 0 {
+			err := s.transactionClient.Transfer(ctx, "project", projectID, "user", payback.UserID, amountToPay)
+			if err != nil {
+				s.log.Error("failed to create payback transaction", "error", err, "project_id", projectID, "user_id", payback.UserID, "amount", amountToPay)
+				return err
+			}
 			existingProject.CurrentMoney -= amountToPay
 			newMoneyRequired -= amountToPay
 			if newMoneyRequired < 0 {
 				newMoneyRequired = 0
 			}
-		} else {
-			s.log.Info("insufficient funds for full payback", "project_id", projectID, "user_id", payback.UserID, "amount_needed", amountToPay, "current_money", existingProject.CurrentMoney)
-			return core.ErrNotEnoughFunds
+		}
+
+		if existingProject.CurrentMoney <= 0 {
+			s.log.Info("no more funds for payback", "project_id", projectID)
+			break
 		}
 	}
 
@@ -266,7 +279,7 @@ func (s *service) calculatePaybacks(project *core.Project, transactions []core.T
 		case "fixed_percent":
 			investor.PaybackAmount = investor.TotalInvested * (1 + project.Percent/100)
 		case "time_percent":
-			paybackAmount := 0.0
+			paybackAmount := investor.TotalInvested
 			now := time.Now()
 			for _, inv := range investor.Investments {
 				days := int(now.Sub(inv.InvestedAt).Hours() / 24)
@@ -283,4 +296,8 @@ func (s *service) calculatePaybacks(project *core.Project, transactions []core.T
 func (s *service) AddFunds(ctx context.Context, projectID int, amount float64) error {
 	// TODO add validations
 	return s.repo.AddFunds(ctx, projectID, amount)
+}
+
+func (s *service) UpdateMoneyRequiredToPayback(ctx context.Context, projectID int, amount float64) error {
+	return s.repo.UpdateMoneyRequiredToPayback(ctx, projectID, amount)
 }
