@@ -68,7 +68,7 @@ export default function TopUpModal() {
                     <Button 
                         onClick={handleTopUp} 
                         disabled={loading} 
-                        className="bg-[#B7FF00] text-black hover:bg-[#a6e600] font-bold w-full"
+                        className="w-full bg-[#B7FF00] text-black hover:bg-[#a6e600] font-bold"
                     >
                         {loading ? <Spinner size={20} /> : `Перейти к оплате`}
                     </Button>

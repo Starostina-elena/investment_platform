@@ -11,7 +11,8 @@ interface UserState {
     token: string | null;
     Login: (user: User, token: string) => void;
     Logout: () => void;
-    setToken: (token: string) => void; // <--- Добавили
+    setToken: (token: string) => void;
+    updateUser: (user: User) => void;
     init: (router: AppRouterInstance, pathname: string) => void;
 }
 
@@ -34,6 +35,10 @@ export const useUserStore = create<UserState>((set) => ({
     setToken: function(token) { // <--- Реализация
         localStorage.setItem("token", token);
         set({token: token});
+    },
+    updateUser: function(user) {
+        localStorage.setItem("user", JSON.stringify(user));
+        set({user: user});
     },
     init: function(router, pathname) {
         try {

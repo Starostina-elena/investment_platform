@@ -88,14 +88,17 @@ export default function OrganisationPage() {
                             borderRadius: '50%',
                             overflow: 'hidden',
                             border: '4px solid #825e9c', // Фиолетовая рамка
-                            backgroundColor: 'white'
+                            backgroundColor: 'white',
+                            cursor: 'default',
+                            pointerEvents: 'none'
                         }}>
                             <Image
                                 src={avatarSrc}
                                 alt={org.name}
                                 fill
-                                style={{objectFit: 'cover'}}
-                                unoptimized // Важно для внешних ссылок (MinIO)
+                                style={{objectFit: 'cover', pointerEvents: 'none'}}
+                                unoptimized
+                                draggable={false}
                             />
                         </div>
 

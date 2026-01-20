@@ -57,6 +57,8 @@ export default function MyOrganisationsPage() {
                                             alt={org.name}
                                             fill
                                             className="object-cover"
+                                            draggable={false}
+                                            style={{pointerEvents: 'none', userSelect: 'none'}}
                                         />
                                     </div>
                                     <div className="flex-1 min-w-0">
