@@ -47,10 +47,11 @@ func main() {
 		}
 	}(db)
 
-
 	repository := repo.NewRepo(db, *logger)
 	balanceClient := clients.NewBalanceClient(*logger)
-	svc := service.NewService(repository, balanceClient, *logger)
+	projectClient := clients.NewProjectClient(*logger)
+	notificationClient := clients.NewNotificationClient(*logger)
+	svc := service.NewService(repository, balanceClient, projectClient, notificationClient, *logger)
 	h := handler.NewHandler(svc, *logger)
 
 	router := getRouter(h)

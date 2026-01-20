@@ -28,6 +28,7 @@ type Service interface {
 	deletePicture(ctx context.Context, projectID int, picturePath string) error
 	DeletePictureFromProject(ctx context.Context, projectID int, userID int) error
 	AddFunds(ctx context.Context, projectID int, amount float64) error
+	UpdateMoneyRequiredToPayback(ctx context.Context, projectID int, amount float64) error
 }
 
 type service struct {
@@ -283,4 +284,8 @@ func (s *service) calculatePaybacks(project *core.Project, transactions []core.T
 func (s *service) AddFunds(ctx context.Context, projectID int, amount float64) error {
 	// TODO add validations
 	return s.repo.AddFunds(ctx, projectID, amount)
+}
+
+func (s *service) UpdateMoneyRequiredToPayback(ctx context.Context, projectID int, amount float64) error {
+	return s.repo.UpdateMoneyRequiredToPayback(ctx, projectID, amount)
 }

@@ -133,7 +133,7 @@ func (s *EmailService) buildProjectClosedEmail(req *core.EmailRequest) (string, 
     <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #FF5722;">Проект истек</h2>
         <p>Здравствуйте!</p>
-        <p>Проект <strong>{{.ProjectName}}</strong> достиг установленного срока и был закрыт.</p>
+        <p>Проект <strong>{{.ProjectName}}</strong> достиг установленного срока или собрал требуемую сумму и был закрыт.</p>
         <p>Ожидайте выплаты дивидендов.</p>
         <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
         <p style="font-size: 12px; color: #888;">

@@ -566,3 +566,40 @@ func AddFundsHandler(h *Handler) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 	}
 }
+
+type UpdateMoneyRequiredToPaybackRequest struct {
+	Amount float64 `json:"amount"`
+}
+
+func UpdateMoneyRequiredToPaybackHandler(h *Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idStr := r.PathValue("id")
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			h.log.Error("invalid project id", "id", idStr, "error", err)
+			http.Error(w, "Некорректный id", http.StatusBadRequest)
+			return
+		}
+
+		var req UpdateMoneyRequiredToPaybackRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			h.log.Error("failed to decode request", "error", err)
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+
+		if req.Amount < 0 {
+			http.Error(w, "amount must not be negative", http.StatusBadRequest)
+			return
+		}
+
+		err = h.service.UpdateMoneyRequiredToPayback(r.Context(), id, req.Amount)
+		if err != nil {
+			h.log.Error("failed to update money required to payback", "error", err)
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+	}
+}
