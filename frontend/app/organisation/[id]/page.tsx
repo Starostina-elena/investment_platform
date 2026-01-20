@@ -92,12 +92,10 @@ export default function OrganisationPage() {
                             cursor: 'default',
                             pointerEvents: 'none'
                         }}>
-                            <Image
-                                src={avatarSrc}
+                            <img
+                                src={typeof avatarSrc === 'string' ? avatarSrc : avatarSrc.src}
                                 alt={org.name}
-                                fill
-                                style={{objectFit: 'cover', pointerEvents: 'none'}}
-                                unoptimized
+                                style={{width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none', userSelect: 'none'}}
                                 draggable={false}
                             />
                         </div>

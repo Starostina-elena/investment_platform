@@ -7,7 +7,6 @@ import {Card, CardContent, CardHeader, CardTitle} from "@/app/components/ui/card
 import {Button} from "@/app/components/ui/button";
 import {Plus, Building2, AlertTriangle, CheckCircle, Clock} from "lucide-react";
 import styles from "@/app/user-profile/page.module.css"; // Переиспользуем стили профиля
-import Image from "next/image";
 import {getStorageUrl, BUCKETS} from "@/lib/config";
 import placeholder from "@/public/image_bg.png";
 import Spinner from "@/app/components/spinner";
@@ -52,13 +51,11 @@ export default function MyOrganisationsPage() {
                             <Card className={`h-full border-gray-700 bg-[#1e0e31] transition-all duration-300 group-hover:border-light-blue/50 group-hover:-translate-y-1 ${org.is_banned ? 'border-red-500/50' : ''}`}>
                                 <CardHeader className="flex flex-row items-start gap-4 pb-2">
                                     <div className="relative w-14 h-14 shrink-0 rounded-full overflow-hidden border-2 border-gray-600 group-hover:border-light-blue">
-                                        <Image
-                                            src={getStorageUrl(org.avatar_path, BUCKETS.AVATARS) || placeholder}
+                                        <img
+                                            src={getStorageUrl(org.avatar_path, BUCKETS.AVATARS) || placeholder.src}
                                             alt={org.name}
-                                            fill
-                                            className="object-cover"
+                                            style={{width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none', userSelect: 'none'}}
                                             draggable={false}
-                                            style={{pointerEvents: 'none', userSelect: 'none'}}
                                         />
                                     </div>
                                     <div className="flex-1 min-w-0">
