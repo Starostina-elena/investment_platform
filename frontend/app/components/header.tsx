@@ -3,7 +3,7 @@ import Link from 'next/link';
 import styles from './header.module.css';
 import search from "@/public/search.svg"
 import Image from "next/image";
-import logo from "@/public/logo.svg"
+import logo from "@/public/logo.png"
 import {useEffect, useRef, useState} from "react";
 import cross from "@/public/cross.svg";
 import {addBasePath} from "next/dist/client/add-base-path";
