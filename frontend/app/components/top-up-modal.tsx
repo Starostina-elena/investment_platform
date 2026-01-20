@@ -35,7 +35,11 @@ export default function TopUpModal() {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="ml-2 gap-2 border-light-green text-[#DB935B] hover:bg-light-green hover:text-black">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="ml-2 gap-2 border-[#DB935B] text-[#DB935B] hover:bg-[#DB935B] hover:text-black z-10 pointer-events-auto relative"
+                >
                     <PlusCircle className="w-4 h-4" /> Пополнить
                 </Button>
             </DialogTrigger>
@@ -57,7 +61,7 @@ export default function TopUpModal() {
                         />
                     </div>
                     <p className="text-xs text-gray-400">
-                        Вы будете перенаправлены на страницу ЮKassa для оплаты банковской картой или СБП.
+                        Вы будете перенаправлены на страницу ЮKassa для оплаты банковской картой.
                     </p>
                 </div>
 

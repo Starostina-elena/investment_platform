@@ -3,158 +3,123 @@ import Link from 'next/link';
 import styles from './header.module.css';
 import search from "@/public/search.svg"
 import Image from "next/image";
-import logo from "@/public/logo.png"
-import {useRef, useState} from "react";
-import burger_icon from "@/public/burger.svg";
+import logo from "@/public/logo.svg"
+import {useEffect, useRef, useState} from "react";
 import cross from "@/public/cross.svg";
 import {addBasePath} from "next/dist/client/add-base-path";
 import {useUserStore} from "@/context/user-store";
 import avatar from "@/public/avatar.svg";
 import {useRouter} from "next/navigation";
+import { useImage } from "@/hooks/use-image"; // Импортируем хук
+import { BUCKETS } from "@/lib/config";
 
 const LINKS = [
-    {
-        name: 'Главная',
-        className: styles.main_link,
-        link: '/'
-    },
-    {
-        name: 'О нас',
-        className: styles.about_link,
-        link: '/#about'
-    },
-    {
-        name: 'Как это работает',
-        className: styles.how_it_works_link,
-        link: '/#features'
-    },
-    {
-        name: 'Каталог проектов',
-        link: '/#projects'
-    },
-    {
-        name: 'Рекордсмены',
-        className: styles.records_link,
-        link: '/#records'
-    },
-    {
-        name: 'Контакты',
-        link: '/#contacts'
-    }
+    { name: 'Главная', className: styles.main_link, link: '/' },
+    { name: 'О нас', className: styles.about_link, link: '/#about' },
+    { name: 'Как это работает', className: styles.how_it_works_link, link: '/#features' },
+    { name: 'Каталог проектов', link: '/projects' },
+    { name: 'Контакты', link: '/#contacts' }
 ]
+
 const Header = () => {
-    const [filtersOpened, setFiltersOpened] = useState(false);
     const [burger, setBurger] = useState(false);
     const [showComboBox, setShowComboBox] = useState(false);
-    const header = useRef<HTMLHeadingElement>(null);
     const user = useUserStore((state) => state.user);
     const router = useRouter();
 
+    // Загрузка аватарки через хук (чтобы работало с MinIO)
+    const avatarSrc = useImage(null, user?.avatar_path, BUCKETS.AVATARS, avatar);
+
+    // Блокировка скролла при открытом меню
+    useEffect(() => {
+        if (burger) document.body.style.overflow = 'hidden';
+        else document.body.style.overflow = 'unset';
+    }, [burger]);
+
     return (
         <>
-            <header className={styles.header_container} ref={header} style={filtersOpened ? {position: 'fixed'} : {}}>
+            <header className={styles.header_container}>
                 <Link href="/" className={styles.logo_link}>
-                    <Image src={logo} alt="Логотип" fill={true}/>
+                    <Image src={logo} alt="Логотип" fill className="object-contain"/>
                 </Link>
+
+                {/* Навигация (Десктоп) */}
                 <div className={styles.nav_group}>
                     {LINKS.map(link => (
-                        <Link key={link.name} href={link.link} className={styles.nav_link + ' ' + link.className}>
+                        <Link key={link.name} href={link.link} className={styles.nav_link}>
                             {link.name}
                         </Link>
                     ))}
-                    <div className={styles.search_container}>
-                        <form
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                const formData = new FormData(e.currentTarget);
-                                const q = formData.get('q');
-                                router.push(`/projects?q=${q}`);
-                            }}
-                            className={styles.search_form}
-                        >
-                            <input className={styles.search_input} type="text" name="q" placeholder="Поиск..." />
-                            <button type="submit">
-                                <Image className={styles.search_icon} src={search} alt="поиск"/>
-                            </button>
-                        </form>
-                    </div>
                 </div>
 
+                {/* Поиск (Десктоп) */}
+                <div className={styles.search_container}>
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            const formData = new FormData(e.currentTarget);
+                            router.push(`/projects?q=${formData.get('q')}`);
+                        }}
+                        className={styles.search_form}
+                    >
+                        <input className={styles.search_input} type="text" name="q" placeholder="Поиск..." />
+                        <Image className={styles.search_icon} src={search} alt="поиск" width={18} height={18}/>
+                    </form>
+                </div>
+
+                {/* Кнопки справа (Десктоп) */}
                 <div className={styles.actions_group}>
-                    <Link href="/create-project" className={styles.create_btn}>
-                        Создать проект
-                    </Link>
-                    <Link href="/projects" className={styles.invest_btn}>
-                        Инвестировать
-                    </Link>
-                    {!user && <Link href="/login" className={styles.login_link}>
-                        Войти
-                    </Link>}
-                    {user && <Link href="/organisation/my" className="text-sm text-gray-300 hover:text-white mr-4">
-                        Мои организации
-                    </Link>}
-                    {user && <Link href="/user-profile" className={styles.profile_link}>
-                        Профиль{/*onClick={e => {
-                                       e.preventDefault();
-                                       setShowComboBox(!showComboBox);
-                                   }}*/}
-                        <Image src={user.avatar_path || avatar} alt='Профиль' fill={true}/>
-                    </Link>}
-                    {showComboBox && <div className={styles.combo_box}>
-                        <button onClick={() => {
-                            useUserStore.getState().Logout();
-                            router.push(addBasePath('/login'));
-                        }}>Выйти из аккаунта
-                        </button>
-                    </div>}
+                    <Link href="/create-project" className={styles.create_btn}>Создать проект</Link>
+                    <Link href="/projects" className={styles.invest_btn}>Инвестировать</Link>
+
+                    {!user ? (
+                        <Link href="/login" className={styles.login_link}>Войти</Link>
+                    ) : (
+                        <div className="relative">
+                            <button
+                                onClick={() => router.push('/user-profile')}
+                                className={styles.profile_link}
+                            >
+                                <Image src={avatarSrc} alt='Профиль' fill className="object-cover"/>
+                            </button>
+                        </div>
+                    )}
                 </div>
 
+                {/* Бургер кнопка (Мобильные) */}
                 <div className={styles.burger_button} onClick={() => setBurger(!burger)}>
-                    <Image src={burger_icon} alt='Бургер' fill={true}/>
+                    <span></span>
+                    <span></span>
+                    <span></span>
                 </div>
             </header>
-            {filtersOpened && header.current &&
-                <div style={{height: header.current.getBoundingClientRect().height}}></div>}
-            <div className={styles.burger_menu + ' ' + (burger ? styles.burger_open : "")}
-                 onClick={e => {
-                     if (e.target === e.currentTarget) setBurger(false)
-                 }}>
+
+            {/* Мобильное меню */}
+            <div className={`${styles.burger_menu} ${burger ? styles.burger_open : ''}`}>
                 <div className={styles.burger_links}>
-                    <Image className={styles.burger_close} src={cross}
-                           alt='Крестик' width={30} height={30} onClick={() => setBurger(false)}/>
-                    <h3 className={styles.burger_title}>Навигация</h3>
-                    <div className={styles.search_container}>
-                        <form action={addBasePath("/search")} className={styles.search_form}>
-                            <input
-                                className={styles.search_input}
-                                type="text"
-                                name="q"
-                            />
-                            <button><Image className={styles.search_icon} src={search} alt="поиск"/></button>
-                        </form>
+                    {/* Кнопка закрытия */}
+                    <div className="flex justify-end w-full mb-4">
+                        <Image src={cross} alt='Закрыть' width={30} height={30} onClick={() => setBurger(false)} className="cursor-pointer invert"/>
                     </div>
+
                     {LINKS.map(link => (
-                        <Link key={link.name} href={link.link} className={styles.burger_link}>
+                        <Link key={link.name} href={link.link} onClick={() => setBurger(false)}>
                             {link.name}
                         </Link>
                     ))}
-                    {!user && <Link href="/login" className={styles.login_link}>
-                        Войти
-                    </Link>}
-                    {user && <Link href="/user-profile" className={styles.profile_link}>
-                        Профиль{/*onClick={e => {
-                                       e.preventDefault();
-                                       setShowComboBox(!showComboBox);
-                                   }}*/}
-                    </Link>}
-                    <div className={styles.actions_group}>
-                        <Link href="/create-project" className={styles.create_btn}>
-                            Создать проект
-                        </Link>
-                        <Link href="/#" className={styles.invest_btn}>
-                            Инвестировать
-                        </Link>
-                    </div>
+
+                    <hr className="border-gray-700 my-2"/>
+
+                    {!user ? (
+                        <Link href="/login" onClick={() => setBurger(false)}>Войти</Link>
+                    ) : (
+                        <>
+                            <Link href="/user-profile" onClick={() => setBurger(false)}>Мой профиль</Link>
+                            <Link href="/organisation/my" onClick={() => setBurger(false)}>Мои организации</Link>
+                        </>
+                    )}
+
+                    <Link href="/create-project" className="text-[#825e9c]" onClick={() => setBurger(false)}>Создать проект</Link>
                 </div>
             </div>
         </>

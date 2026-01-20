@@ -1,19 +1,19 @@
 .header_container {
     background: #000000;
     color: #FFFFFF;
-    /* Фиксированная высота, чтобы не прыгало */
     height: 80px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    position: sticky; /* Липкий хедер */
+    position: sticky;
     top: 0;
-    z-index: 1000;
+    z-index: 1000; /* Высокий индекс для хедера */
     display: flex;
     align-items: center;
-    justify-content: space-between; /* Разносим лого и экшны по краям */
-    padding: 0 40px; /* Отступы по бокам */
+    justify-content: space-between;
+    padding: 0 40px;
     border-bottom: 3px solid #656662;
     width: 100%;
 }
+
 
 .logo_link {
     height: 40px; /* Увеличим лого */
@@ -91,53 +91,11 @@
     display: flex;
     gap: 15px;
     align-items: center;
+    position: relative;
+    z-index: 1001; /* Чтобы кнопки были кликабельны */
 }
 
-.actions_group > a {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 45px;
-    padding: 0 25px;
-    font-size: 16px;
-    border-radius: 6px;
-    font-family: var(--font-montserrat);
-    font-weight: 700;
-    text-transform: uppercase;
-    white-space: nowrap;
-    line-height: 1;
-    transition: filter 0.2s;
-}
-
-/* Создать проект (Фиолетовая) */
-.create_btn {
-    background: #825e9c !important;
-    color: #fff !important;
-    border: none !important;
-    box-shadow: 0 4px 0 #5a3e70; /* Объем */
-}
-
-/* Инвестировать (Коричневая) */
-.invest_btn {
-    background: #DB935B !important;
-    color: #000 !important;
-    border: none !important;
-    box-shadow: 0 4px 0 #a66b3d; /* Объем */
-}
-
-.login_link {
-    background: transparent !important;
-    border: 2px solid #DB935B !important;
-    color: #DB935B !important;
-    box-shadow: none !important;
-}
-
-.login_link:hover {
-    background: #DB935B !important;
-    color: #000 !important;
-}
-
-/* Аватарка профиля */
+/* Аватарка в хедере */
 .profile_link {
     width: 45px;
     height: 45px;
@@ -145,15 +103,96 @@
     overflow: hidden;
     border: 2px solid #DB935B;
     padding: 0 !important;
+    position: relative;
+    /* Убираем отрицательные марджины или абсолюты, если они были */
+    flex-shrink: 0;
 }
 
-/* Бургер (скрыт на десктопе) */
+.profile_link img {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+}
+
+/* --- Исправление Бургер Меню --- */
+
+.burger_menu {
+    display: none; /* Скрыто по умолчанию */
+    position: fixed;
+    top: 80px; /* Отступ на высоту хедера */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.95); /* Полупрозрачный черный фон */
+    backdrop-filter: blur(10px);
+    z-index: 999; /* Ниже хедера */
+    opacity: 0;
+    pointer-events: none; /* Чтобы не мешало кликать, когда прозрачное */
+    transition: opacity 0.3s;
+}
+
+.burger_open {
+    display: block; /* Показываем */
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.burger_links {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 2rem;
+    color: #FFFFFF;
+    height: 100%;
+    overflow-y: auto;
+    text-align: center;
+}
+
+.burger_links a {
+    font-size: 1.5rem;
+    font-family: var(--font-montserrat);
+    text-decoration: none;
+    color: #fff;
+    padding: 10px;
+    border-bottom: 1px solid #333;
+}
+
+/* Кнопка закрытия в бургере */
+.burger_close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    cursor: pointer;
+    filter: invert(1); /* Делаем крестик белым */
+    width: 30px;
+    height: 30px;
+}
+
+/* Скрываем на десктопе */
 @media screen and (min-width: 1200px) {
     .burger_button { display: none; }
+    .burger_menu { display: none !important; } /* Жестко скрываем */
 }
 
+/* Показываем на мобилках */
 @media screen and (max-width: 1200px) {
     .nav_group { display: none; }
-    .burger_button { display: block; }
-    .search_container { display: none; } /* Прячем поиск в бургер на планшетах */
+    .burger_button {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        width: 30px;
+        height: 25px;
+        cursor: pointer;
+        z-index: 1002;
+    }
+
+    /* Рисуем бургер через CSS, чтобы не зависеть от картинки */
+    .burger_button span {
+        display: block;
+        width: 100%;
+        height: 3px;
+        background-color: #fff;
+        border-radius: 2px;
+    }
 }
