@@ -52,3 +52,85 @@ func InvestHandler(h *Handler) http.HandlerFunc {
 		_ = json.NewEncoder(w).Encode(tx)
 	}
 }
+
+func WithdrawHandler(h *Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "Withdrawal temporarily disabled. Use deposit to add funds.", http.StatusNotImplemented)
+	}
+}
+
+// CreateDepositHandler создает платеж для пополнения баланса
+func CreateDepositHandler(h *Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			UserID    int     `json:"user_id"`
+			Amount    float64 `json:"amount"`
+			ReturnURL string  `json:"return_url"` // URL куда вернется пользователь после оплаты
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			h.log.Error("failed to decode deposit request", "error", err)
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+
+		if req.Amount <= 0 {
+			http.Error(w, "amount must be positive", http.StatusBadRequest)
+			return
+		}
+
+		if req.ReturnURL == "" {
+			req.ReturnURL = "http://localhost:3000/profile" // URL по умолчанию
+		}
+
+		paymentID, confirmationURL, err := h.service.CreateDeposit(r.Context(), req.UserID, req.Amount, req.ReturnURL)
+		if err != nil {
+			h.log.Error("failed to create deposit", "error", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		response := struct {
+			PaymentID       string `json:"payment_id"`
+			ConfirmationURL string `json:"confirmation_url"`
+			Message         string `json:"message"`
+		}{
+			PaymentID:       paymentID,
+			ConfirmationURL: confirmationURL,
+			Message:         "Перейдите по ссылке для оплаты",
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(response)
+	}
+}
+
+// CheckDepositHandler проверяет статус платежа
+func CheckDepositHandler(h *Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			PaymentID string `json:"payment_id"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			h.log.Error("failed to decode check request", "error", err)
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+
+		if req.PaymentID == "" {
+			http.Error(w, "payment_id is required", http.StatusBadRequest)
+			return
+		}
+
+		tx, err := h.service.CheckDeposit(r.Context(), req.PaymentID)
+		if err != nil {
+			h.log.Error("failed to check deposit", "error", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(tx)
+	}
+}
