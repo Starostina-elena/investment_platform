@@ -38,3 +38,24 @@ export async function DeleteComment(commentId: number, setMessage: (msg: Message
         return false;
     }
 }
+
+export async function EditComment(commentId: number, body: string, setMessage: (msg: Message) => void): Promise<Comment | null> {
+    try {
+        const res = await api.post(`/comments/edit/${commentId}`, { body });
+        setMessage({isError: false, message: "Комментарий обновлен"});
+        return res.data;
+    } catch (e: any) {
+        DefaultErrorHandler(setMessage)(e);
+        return null;
+    }
+}
+
+export async function GetComment(commentId: number): Promise<Comment | null> {
+    try {
+        const res = await api.get(`/comments/read/${commentId}`);
+        return res.data;
+    } catch (e) {
+        console.warn("Failed to load comment:", e);
+        return null;
+    }
+}

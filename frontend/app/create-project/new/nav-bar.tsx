@@ -6,23 +6,29 @@ export default function NavBar({routes, onRouteClick, currentRoute, onPreviewCli
     currentRoute: string,
     onPreviewClick: () => void
 }) {
-
-
     return (
         <div className={styles.navbar} id='navbar'>
             <div>
                 {routes.map((e, i) => (
-                    <a href="#navbar" key={i} onClick={onRouteClick.bind(null, e)}
-                       className={styles.nav_link + ' ' + (currentRoute == e ? styles.nav_link_active : '')}>
+                    <button
+                        key={i}
+                        type="button"
+                        onClick={() => onRouteClick(e)}
+                        className={styles.nav_link + ' ' + (currentRoute == e ? styles.nav_link_active : '')}
+                    >
                         {i + 1}. {e}
-                    </a>
+                    </button>
                 ))}
             </div>
 
             <div className={styles.preview_link_container}>
-                <a href="#navbar" className={styles.nav_link + ' ' + (currentRoute == 'preview' ? styles.nav_link_active : '')} onClick={onPreviewClick}>
+                <button
+                    type="button"
+                    className={styles.nav_link + ' ' + (currentRoute == 'preview' ? styles.nav_link_active : '')}
+                    onClick={onPreviewClick}
+                >
                     Предпросмотр
-                </a>
+                </button>
             </div>
         </div>
     )

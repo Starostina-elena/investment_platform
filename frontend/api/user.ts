@@ -79,6 +79,28 @@ export async function BanUser(userId: number, ban: boolean, setMessage: (msg: Me
     }
 }
 
+export async function SetUserAdmin(userId: number, admin: boolean, setMessage: (msg: Message) => void): Promise<boolean> {
+    try {
+        await api.post(`/user/${userId}/admin?admin=${admin}`);
+        setMessage({isError: false, message: admin ? "Админские права выданы" : "Админские права отозваны"});
+        return true;
+    } catch (e: any) {
+        DefaultErrorHandler(setMessage)(e);
+        return false;
+    }
+}
+
+export async function DeleteUserAvatar(setMessage: (msg: Message) => void): Promise<boolean> {
+    try {
+        await api.delete('/user/avatar');
+        setMessage({isError: false, message: "Аватар удален"});
+        return true;
+    } catch (e: any) {
+        DefaultErrorHandler(setMessage)(e);
+        return false;
+    }
+}
+
 export interface Investment {
     project_id: number;
     project_name: string;

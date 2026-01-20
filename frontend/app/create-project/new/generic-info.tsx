@@ -6,12 +6,11 @@ import image_bg from "@/public/image_bg.png";
 import { Fragment } from "react";
 import { useImage } from "@/hooks/use-image";
 import { BUCKETS } from "@/lib/config";
-import {CATEGORIES} from "@/globals";
+import {CATEGORIES} from "@/app/globals";
 
-export default function GenericInfo({project, setProject, children}: {
+export default function GenericInfo({project, setProject}: {
     project: Project,
-    setProject: (project: Project) => void,
-    children: React.ReactNode
+    setProject: (project: Project) => void
 }) {
     const coverImageSrc = useImage(
         project.quickPeekPictureFile,
@@ -45,40 +44,6 @@ export default function GenericInfo({project, setProject, children}: {
                 </div>
 
                 <div className={styles.form_group}>
-                    <div className={styles.label}>Обложка</div>
-                    <label className={styles.cover_wrapper}>
-                        <div className={styles.upload_img_placeholder}>
-                            <Image src={coverImageSrc} alt="placeholder" fill={true} />
-                        </div>
-                        <div className={styles.upload_btn}>
-                            Загрузить изображение
-                            <input
-                                type="file"
-                                accept=".jpg,.jpeg,.png,.webp,.bmp"
-                                onChange={(e) => {
-                                    const file = e.currentTarget.files?.[0]
-                                    if (!file) return;
-
-                                    if (file.size > 5 * 1024 * 1024){
-                                        e.currentTarget.setCustomValidity('Максимальный размер 5МБ!');
-                                        return;
-                                    }
-                                    e.currentTarget.setCustomValidity('');
-
-                                    setProject({
-                                        ...project,
-                                        quickPeekPictureFile: file
-                                    })
-                                }}
-                            />
-                        </div>
-                        <p className={styles.file_info}>
-                            JPEG, PNG или BMP. Макс. 5 МБ.
-                        </p>
-                    </label>
-                </div>
-
-                <div className={styles.form_group}>
                     <label htmlFor="shortDesc" className={styles.label}>
                         Короткое описание
                     </label>
@@ -92,6 +57,22 @@ export default function GenericInfo({project, setProject, children}: {
                     <span className={styles.char_count}>{`${project.quick_peek.length}/100`}</span>
                 </div>
 
+                <div className={styles.form_group}>
+                    <label htmlFor="fullDesc" className={styles.label}>
+                        Полное описание проекта
+                    </label>
+                    <textarea
+                        id="fullDesc"
+                        className={styles.textarea_field}
+                        value={project.content}
+                        onChange={(e) => setProject({...project, content: e.target.value})}
+                        minLength={50}
+                        required
+                        placeholder="Опишите суть проекта, что вы хотите реализовать, зачем это нужно..."
+                    />
+                    <span className={styles.char_count}>{`${project.content.length} символов`}</span>
+                </div>
+
                 {/* Бэкенд пока не хранит category и location, но мы их держим в стейте для UI */}
                 <div className={styles.form_group}>
                     <label htmlFor="category" className={styles.label}>Тип финансирования</label>
@@ -102,8 +83,8 @@ export default function GenericInfo({project, setProject, children}: {
                         onChange={(e) => {
                             const val = e.target.value;
                             setProject({
-                                ...project, // Для логики бэка
-                                monetization_type: CATEGORIES[val][0] // Для отображения (русское название)
+                                ...project,
+                                monetization_type: val
                             })
                         }}
                     >
@@ -155,20 +136,6 @@ export default function GenericInfo({project, setProject, children}: {
                         <span className={styles.currency_symbol}>₽</span>
                     </div>
                 </div>
-
-                <div className={styles.form_group}>
-                    <div className={styles.checkbox_container}>
-                        <label className={styles.checkbox_label}>
-                            <input
-                                type="checkbox"
-                                checked={!project.is_public}
-                                onChange={() => setProject({...project, is_public: !project.is_public})}
-                            /> Приватный проект
-                        </label>
-                    </div>
-                </div>
-
-                {children}
             </div>
         </form>
     )

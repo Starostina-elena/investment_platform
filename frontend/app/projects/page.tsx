@@ -51,23 +51,16 @@ function Catalog() {
         setLoading(true);
         const offset = (page - 1) * limit;
 
-        GetProjects(limit, offset, searchQuery, selectedCategoryKey)
+        GetProjects(limit + 1, offset, searchQuery, selectedCategoryKey)
             .then(data => {
-                // Если бэкенд не фильтрует по категории, фильтруем тут (фоллбек)
-                let filtered = data;
-
-                if (selectedCategoryKey) {
-                    // Если бэк вернул всё, фильтруем по типу.
-                    // Но если бэк умный, этот фильтр не навредит (вернет то же самое)
-                    filtered = filtered.filter(p => p.monetization_type === selectedCategoryKey);
-                }
-
-                if (filtered.length < limit) {
-                    setHasMore(false);
-                } else {
+                // Проверяем есть ли еще страницы
+                if (data.length > limit) {
                     setHasMore(true);
+                    setProjects(data.slice(0, limit)); // Берем только limit элементов
+                } else {
+                    setHasMore(false);
+                    setProjects(data);
                 }
-                setProjects(filtered);
             })
             .finally(() => setLoading(false));
     }, [searchQuery, selectedCategoryKey, page]);

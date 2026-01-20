@@ -30,13 +30,13 @@ const CreateProjectPage = () => {
         name: '',
         quick_peek: '',
         quick_peek_picture_path: "",
-        content: 'Полное описание проекта...',
+        content: '',
         duration_days: 30,
         wanted_money: 100000,
         current_money: 0,
         is_public: true,
         is_completed: false,
-        monetization_type: "donation",
+        monetization_type: "charity",
         quickPeekPictureFile: null,
         is_banned: false,
         percent: 0,
@@ -58,8 +58,6 @@ const CreateProjectPage = () => {
             .finally(() => setIsLoadingOrgs(false));
     }, []);
 
-    const CurrentRoute = route < STEPS.length ? STEPS[route].component : ProjectView;
-
     if (isLoadingOrgs) {
         return <div className={styles.page_container}><Spinner/></div>;
     }
@@ -72,12 +70,31 @@ const CreateProjectPage = () => {
                     onRouteClick={rt => {setRoute(STEPS.findIndex(e => e.title === rt))}}/>
 
             <div className={styles.page_container}>
-                {/* Передаем userOrgs в компонент шага (понадобится только для OrgSelector) */}
-                <CurrentRoute
-                    project={project}
-                    setProject={setProject}
-                    userOrgs={userOrgs}
-                >
+                {/* Левая колонка: форма и кнопки */}
+                <div className={styles.form_container}>
+                    {/* Всегда рендерим все компоненты, скрываем ненужные */}
+                    <div style={{ display: route === 0 ? 'block' : 'none' }}>
+                        <OrgSelector
+                            project={project}
+                            setProject={setProject}
+                            userOrgs={userOrgs}
+                        />
+                    </div>
+                    <div style={{ display: route === 1 ? 'block' : 'none' }}>
+                        <GenericInfo
+                            project={project}
+                            setProject={setProject}
+                        />
+                    </div>
+                    <div style={{ display: route >= STEPS.length ? 'block' : 'none' }}>
+                        <ProjectView
+                            project={project}
+                            setProject={setProject}
+                            userOrgs={userOrgs}
+                        />
+                    </div>
+
+                    {/* Кнопки навигации */}
                     <div className={styles.controls}>
                         {route > 0 &&
                             <button onClick={() => setRoute(route - 1)}
@@ -95,8 +112,6 @@ const CreateProjectPage = () => {
                                 Вперёд
                             </button>
                         )}
-
-                        <MessageComponent message={response}/>
 
                         {/* Кнопка "Опубликовать" (на шаге Превью) */}
                         {route == STEPS.length && (
@@ -118,11 +133,12 @@ const CreateProjectPage = () => {
                                 Опубликовать
                             </button>
                         )}
-                    </div>
-                </CurrentRoute>
 
-                {/* Превью справа (показываем всегда, кроме мобилок) */}
-                {/* Скрываем превью на первом шаге выбора орги, чтобы не мешало, или оставляем */}
+                        <MessageComponent message={response}/>
+                    </div>
+                </div>
+
+                {/* Правая колонка: превью */}
                 {route > 0 && route < STEPS.length && <ProjectPreview project={project}/>}
             </div>
         </>

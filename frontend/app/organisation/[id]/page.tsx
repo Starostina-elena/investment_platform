@@ -9,11 +9,14 @@ import {useImage} from "@/hooks/use-image";
 import {BUCKETS} from "@/lib/config";
 import Image from "next/image";
 import {Button} from "@/app/components/ui/button";
-import {Camera, Edit3, Building2, UserCircle, Briefcase} from "lucide-react";
+import {Camera, Edit3, Building2, UserCircle, Briefcase, Users, FileText} from "lucide-react";
 import MessageComponent from "@/app/components/message";
 import {Message} from "@/api/api";
 import {Badge} from "@/app/components/ui/badge";
 import orgPlaceholder from "@/public/image_bg.png";
+import OrganisationEmployees from "@/app/components/organisation-employees";
+import OrganisationDocuments from "@/app/components/organisation-documents";
+import OrganisationProjects from "@/app/components/organisation-projects";
 
 export default function OrganisationPage() {
     const params = useParams();
@@ -21,6 +24,7 @@ export default function OrganisationPage() {
     const [isEditing, setIsEditing] = useState(false);
     const [message, setMessage] = useState<Message | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [activeTab, setActiveTab] = useState<'info' | 'employees' | 'documents' | 'projects'>('info');
 
     useEffect(() => {
         if (params.id) {
@@ -154,35 +158,125 @@ export default function OrganisationPage() {
                             <p style={{color: '#ccc'}}>{orgTypeName}</p>
                         </div>
 
-                        {!isEditing ? (
+                        {activeTab === 'info' && !isEditing && (
                             <Button
                                 onClick={() => setIsEditing(true)}
                                 style={{backgroundColor: '#825e9c', color: 'white', fontWeight: 'bold'}}
                             >
                                 <Edit3 size={16} style={{marginRight: '8px'}}/> Редактировать
                             </Button>
-                        ) : (
+                        )}
+                        {activeTab === 'info' && isEditing && (
                             <Button variant="outline" onClick={() => setIsEditing(false)} style={{color: '#ff9999', borderColor: '#ff9999'}}>
                                 Отмена
                             </Button>
                         )}
                     </div>
 
-                    <div style={{backgroundColor: '#656662', padding: '2px', borderRadius: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.1)', position: 'relative'}}>
-                        <OrganisationForm
-                            initialData={org}
-                            onSubmit={handleUpdate}
-                            isEditing={isEditing}
-                        />
-
-                        {!isEditing && (
-                            <div style={{position: 'absolute', inset: 0, zIndex: 10, backgroundColor: 'transparent'}} />
-                        )}
+                    {/* Табы */}
+                    <div style={{display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '2px solid #555'}}>
+                        <button
+                            onClick={() => setActiveTab('info')}
+                            style={{
+                                padding: '0.75rem 1.5rem',
+                                color: activeTab === 'info' ? '#825e9c' : '#ccc',
+                                fontWeight: activeTab === 'info' ? 'bold' : 'normal',
+                                borderBottom: activeTab === 'info' ? '3px solid #825e9c' : 'none',
+                                background: 'transparent',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                            }}
+                        >
+                            <Building2 size={18} />
+                            Информация
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('employees')}
+                            style={{
+                                padding: '0.75rem 1.5rem',
+                                color: activeTab === 'employees' ? '#825e9c' : '#ccc',
+                                fontWeight: activeTab === 'employees' ? 'bold' : 'normal',
+                                borderBottom: activeTab === 'employees' ? '3px solid #825e9c' : 'none',
+                                background: 'transparent',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                            }}
+                        >
+                            <Users size={18} />
+                            Сотрудники
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('documents')}
+                            style={{
+                                padding: '0.75rem 1.5rem',
+                                color: activeTab === 'documents' ? '#825e9c' : '#ccc',
+                                fontWeight: activeTab === 'documents' ? 'bold' : 'normal',
+                                borderBottom: activeTab === 'documents' ? '3px solid #825e9c' : 'none',
+                                background: 'transparent',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                            }}
+                        >
+                            <FileText size={18} />
+                            Документы
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('projects')}
+                            style={{
+                                padding: '0.75rem 1.5rem',
+                                color: activeTab === 'projects' ? '#825e9c' : '#ccc',
+                                fontWeight: activeTab === 'projects' ? 'bold' : 'normal',
+                                borderBottom: activeTab === 'projects' ? '3px solid #825e9c' : 'none',
+                                background: 'transparent',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                            }}
+                        >
+                            <Briefcase size={18} />
+                            Проекты
+                        </button>
                     </div>
 
-                    <div style={{marginTop: '1rem'}}>
-                        <MessageComponent message={message}/>
-                    </div>
+                    {/* Контент табов */}
+                    {activeTab === 'info' && (
+                        <>
+                            <div style={{backgroundColor: '#656662', padding: '2px', borderRadius: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.1)', position: 'relative'}}>
+                                <OrganisationForm
+                                    initialData={org}
+                                    onSubmit={handleUpdate}
+                                    isEditing={isEditing}
+                                />
+
+                                {!isEditing && (
+                                    <div style={{position: 'absolute', inset: 0, zIndex: 10, backgroundColor: 'transparent'}} />
+                                )}
+                            </div>
+
+                            <div style={{marginTop: '1rem'}}>
+                                <MessageComponent message={message}/>
+                            </div>
+                        </>
+                    )}
+
+                    {activeTab === 'employees' && (
+                        <OrganisationEmployees orgId={org.id} />
+                    )}
+
+                    {activeTab === 'documents' && (
+                        <OrganisationDocuments orgId={org.id} orgType={org.org_type} />
+                    )}
+
+                    {activeTab === 'projects' && (
+                        <OrganisationProjects orgId={org.id} />
+                    )}
                 </div>
             </div>
 

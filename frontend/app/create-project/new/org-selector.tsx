@@ -11,10 +11,9 @@ interface OrgSelectorProps {
     project: Project;
     setProject: (p: Project) => void;
     userOrgs: Organisation[];
-    children?: React.ReactNode;
 }
 
-export default function OrgSelector({project, setProject, userOrgs, children}: OrgSelectorProps) {
+export default function OrgSelector({project, setProject, userOrgs}: OrgSelectorProps) {
 
     if (userOrgs.length === 0) {
         return (
@@ -98,11 +97,6 @@ export default function OrgSelector({project, setProject, userOrgs, children}: O
                 <Link href="/organisation/create" className="text-sm text-[#DB935B] hover:text-white transition-colors underline">
                     + Создать новую организацию
                 </Link>
-
-                {/* Кнопки навигации */}
-                <div className="flex gap-4">
-                    {project.creator_id > 0 && children}
-                </div>
             </div>
         </div>
     );
