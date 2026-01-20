@@ -38,6 +38,10 @@ func openOrgClient(log slog.Logger) *clients.OrgClient {
 	return clients.NewOrgClient(os.Getenv("ORG_SERVICE_URL"), log)
 }
 
+func openTransactionClient() *clients.TransactionClient {
+	return clients.NewTransactionClient()
+}
+
 func openMinioStorage(log slog.Logger) *storage.MinioStorage {
 	endpoint := os.Getenv("MINIO_ENDPOINT")
 	accessKey := os.Getenv("MINIO_ACCESS_KEY")
@@ -66,8 +70,9 @@ func main() {
 	repo := repo.NewRepo(db, *logger)
 
 	orgClient := openOrgClient(*logger)
+	transactionClient := openTransactionClient()
 	minioStorage := openMinioStorage(*logger)
-	service := service.NewService(repo, orgClient, minioStorage, *logger)
+	service := service.NewService(repo, orgClient, transactionClient, minioStorage, *logger)
 
 	handler := handler.NewHandler(service, *logger)
 

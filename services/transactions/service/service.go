@@ -112,12 +112,12 @@ func (s *service) handleProjectPayment(ctx context.Context, projectID int, amoun
 	var paybackDelta float64
 	switch project.MonetizationType {
 	case "fixed_percent":
-		paybackDelta = amount * (1 + project.Percent/100)
+		paybackDelta = amount * (project.Percent / 100)
 		s.log.Info("fixed_percent payback calculation", "amount", amount, "percent", project.Percent, "payback_delta", paybackDelta)
 
 	case "time_percent":
-		paybackDelta = amount
-		s.log.Info("time_percent payback calculation", "amount", amount, "payback_delta", paybackDelta)
+		paybackDelta = 0
+		s.log.Info("time_percent payback calculation - will be calculated at payback time", "amount", amount)
 
 	default:
 		paybackDelta = amount
