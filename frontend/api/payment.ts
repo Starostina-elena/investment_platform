@@ -1,22 +1,34 @@
 import {api, DefaultErrorHandler, Message} from "@/api/api";
+import {useUserStore} from "@/context/user-store";
 
-export async function InitPayment(amount: number, returnUrl: string, setMessage: (msg: Message) => void): Promise<string | null> {
+export async function InitPayment(
+    amount: number,
+    returnUrl: string,
+    setMessage: (msg: Message) => void
+): Promise<string | null> {
     try {
+        // 1. Берем юзера из стейта, а не из localStorage
+        const user = useUserStore.getState().user;
 
-        const userStr = localStorage.getItem("user");
-        const user = userStr ? JSON.parse(userStr) : null;
+        if (!user) {
+            setMessage({isError: true, message: "Ошибка: пользователь не авторизован"});
+            return null;
+        }
 
-        if (!user) throw new Error("User not found");
+        console.log("Sending payment init:", { user_id: user.id, amount, return_url: returnUrl });
 
+        // 2. Отправляем запрос
         const res = await api.post("/payment/pay/init", {
-            entity_type: "user", //TODO someday change it
+            entity_type: "user",
             entity_id: user.id,
             amount: amount,
             return_url: returnUrl
         });
 
+        // 3. Возвращаем ссылку
         return res.data.confirmation_url;
     } catch (e: any) {
+        console.error("Payment init error:", e);
         DefaultErrorHandler(setMessage)(e);
         return null;
     }
