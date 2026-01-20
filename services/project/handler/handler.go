@@ -531,3 +531,37 @@ func StartPaybackHandler(h *Handler) http.HandlerFunc {
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
+
+type AddFundsRequest struct {
+	Amount float64 `json:"amount"`
+}
+
+func AddFundsHandler(h *Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idStr := r.PathValue("id")
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			http.Error(w, "invalid id", http.StatusBadRequest)
+			return
+		}
+
+		var req AddFundsRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+
+		if req.Amount <= 0 {
+			http.Error(w, "amount must be positive", http.StatusBadRequest)
+			return
+		}
+
+		err = h.service.AddFunds(r.Context(), id, req.Amount)
+		if err != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+	}
+}

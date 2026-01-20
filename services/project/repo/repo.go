@@ -32,6 +32,7 @@ type RepoInterface interface {
 	StartPayback(ctx context.Context, projectID int) error
 	GetProjectTransactions(ctx context.Context, projectID int) ([]core.Transaction, error)
 	UpdateMoneyRequiredToPayback(ctx context.Context, projectID int, newAmount float64) error
+	AddFunds(ctx context.Context, projectID int, amount float64) error
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -238,6 +239,17 @@ func (r *Repo) UpdateMoneyRequiredToPayback(ctx context.Context, projectID int, 
 	)
 	if err != nil {
 		r.log.Error("failed to update money_required_to_payback", "project_id", projectID, "error", err)
+		return err
+	}
+	return nil
+}
+
+func (r *Repo) AddFunds(ctx context.Context, projectID int, amount float64) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE projects SET current_money = current_money + $1 WHERE id = $2`,
+		amount, projectID)
+	if err != nil {
+		r.log.Error("failed to add funds", "project_id", projectID, "amount", amount, "error", err)
 		return err
 	}
 	return nil

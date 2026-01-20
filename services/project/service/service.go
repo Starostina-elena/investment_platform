@@ -27,6 +27,7 @@ type Service interface {
 	UploadPicture(ctx context.Context, projectID int, userID int, file multipart.File, fileHeader *multipart.FileHeader) (string, error)
 	deletePicture(ctx context.Context, projectID int, picturePath string) error
 	DeletePictureFromProject(ctx context.Context, projectID int, userID int) error
+	AddFunds(ctx context.Context, projectID int, amount float64) error
 }
 
 type service struct {
@@ -277,4 +278,9 @@ func (s *service) calculatePaybacks(project *core.Project, transactions []core.T
 	}
 
 	return result
+}
+
+func (s *service) AddFunds(ctx context.Context, projectID int, amount float64) error {
+	// TODO add validations
+	return s.repo.AddFunds(ctx, projectID, amount)
 }

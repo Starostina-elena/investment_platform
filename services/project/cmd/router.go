@@ -31,5 +31,7 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 		w.Write([]byte("pong"))
 	}))
 
+	router.Handle("POST /{id}/funds", handler.AddFundsHandler(h))
+
 	return router
 }
