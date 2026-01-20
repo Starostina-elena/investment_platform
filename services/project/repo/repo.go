@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/jmoiron/sqlx"
@@ -21,7 +22,7 @@ type RepoInterface interface {
 	Create(ctx context.Context, p *core.Project) (int, error)
 	Get(ctx context.Context, id int) (*core.Project, error)
 	Update(ctx context.Context, p *core.Project) (*core.Project, error)
-	GetList(ctx context.Context, limit, offset int) ([]core.Project, error)
+	GetList(ctx context.Context, limit, offset int, monetizationType string) ([]core.Project, error)
 	GetByCreator(ctx context.Context, creatorID int) ([]core.Project, error)
 	GetAllByCreator(ctx context.Context, creatorID int) ([]core.Project, error)
 	UpdatePicturePath(ctx context.Context, projectID int, picturePath *string) error
@@ -81,18 +82,29 @@ func (r *Repo) Update(ctx context.Context, p *core.Project) (*core.Project, erro
 	return r.Get(ctx, p.ID)
 }
 
-func (r *Repo) GetList(ctx context.Context, limit, offset int) ([]core.Project, error) {
+func (r *Repo) GetList(ctx context.Context, limit, offset int, monetizationType string) ([]core.Project, error) {
 	projects := []core.Project{}
 
-	if err := r.db.SelectContext(ctx, &projects,
-		`SELECT id, name, creator_id, quick_peek, quick_peek_picture_path, content, 
-		       is_public, is_completed, current_money, wanted_money, duration_days,
-		       payback_started_date, money_required_to_paybacks, 
-		       created_at, is_banned, monetization_type, percent, payback_started
-		FROM projects
-		WHERE is_public = true AND is_banned = false AND is_completed = false
-		ORDER BY created_at DESC, id ASC LIMIT $1 OFFSET $2`,
-		limit, offset); err != nil {
+	query := `SELECT id, name, creator_id, quick_peek, quick_peek_picture_path, content, 
+	       is_public, is_completed, current_money, wanted_money, duration_days,
+	       payback_started_date, money_required_to_payback, 
+	       created_at, is_banned, monetization_type, percent, payback_started
+	FROM projects
+	WHERE is_public = true AND is_banned = false AND is_completed = false`
+
+	var args []interface{}
+	argIndex := 1
+
+	if monetizationType != "" {
+		query += " AND monetization_type = $" + fmt.Sprintf("%d", argIndex)
+		args = append(args, monetizationType)
+		argIndex++
+	}
+
+	query += " ORDER BY created_at DESC, id ASC LIMIT $" + fmt.Sprintf("%d", argIndex) + " OFFSET $" + fmt.Sprintf("%d", argIndex+1)
+	args = append(args, limit, offset)
+
+	if err := r.db.SelectContext(ctx, &projects, query, args...); err != nil {
 		r.log.Error("failed to get projects list", "error", err)
 		return nil, err
 	}
