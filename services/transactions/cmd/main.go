@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
@@ -10,10 +11,10 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/Starostina-elena/investment_platform/services/transactions/clients"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 
+	"github.com/Starostina-elena/investment_platform/services/transactions/clients"
 	"github.com/Starostina-elena/investment_platform/services/transactions/handler"
 	"github.com/Starostina-elena/investment_platform/services/transactions/repo"
 	"github.com/Starostina-elena/investment_platform/services/transactions/service"
@@ -41,12 +42,13 @@ func main() {
 	db := openDB()
 	defer db.Close()
 
-	repo := repo.NewRepo(db, *logger)
+	// Исправляем имена переменных, чтобы не конфликтовали с пакетами
+	repository := repo.NewRepo(db, *logger)
 	projectClient := clients.NewProjectClient(*logger)
-	service := service.NewService(repo, projectClient, *logger)
-	handler := handler.NewHandler(service, *logger)
+	svc := service.NewService(repository, projectClient, *logger)
+	h := handler.NewHandler(svc, *logger)
 
-	router := getRouter(handler)
+	router := getRouter(h)
 
 	appPort := os.Getenv("APP_PORT")
 	srv := &http.Server{Addr: ":" + appPort, Handler: router}
@@ -56,7 +58,7 @@ func main() {
 	defer stop()
 
 	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Error("listen", "error", err)
 		}
 	}()

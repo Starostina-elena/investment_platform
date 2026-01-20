@@ -9,12 +9,11 @@ import (
 func getRouter(h *handler.Handler) *http.ServeMux {
 	router := http.NewServeMux()
 
-	// Используем InvestHandler
 	router.Handle("POST /transactions", handler.InvestHandler(h))
 
 	router.Handle("GET /ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("pong"))
+		_, _ = w.Write([]byte("pong")) // Игнорируем ошибку записи
 	}))
 
 	return router
