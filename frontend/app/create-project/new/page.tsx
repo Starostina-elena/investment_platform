@@ -31,8 +31,6 @@ const CreateProjectPage = () => {
         quick_peek: '',
         quick_peek_picture_path: "",
         content: 'Полное описание проекта...',
-        category: '',
-        location: '',
         duration_days: 30,
         wanted_money: 100000,
         current_money: 0,
@@ -87,53 +85,39 @@ const CreateProjectPage = () => {
                                 Назад
                             </button>}
 
-                        {route < STEPS.length - 1 &&
+                        {route < STEPS.length && (
                             <button onClick={e => {
-                                // Валидация формы перед переходом
-                                // Для OrgSelector проверка creator_id
-                                if (route === 0 && project.creator_id <= 0) {
-                                    alert("Пожалуйста, выберите организацию");
-                                    return;
-                                }
-
-                                // Для остальных форм (GenericInfo)
-                                const form = document.querySelector('form');
-                                if (form && !form.checkValidity()) {
-                                    form.reportValidity();
-                                    return;
-                                }
-
-                                setRoute(route + 1)
+                                if (e.currentTarget.form?.reportValidity())
+                                    setRoute(route + 1)
                                 e.preventDefault()
                             }}
                                     className={styles.controls_btn + ' ' + styles.controls_btn_next}>
                                 Вперёд
-                            </button>}
+                            </button>
+                        )}
 
                         <MessageComponent message={response}/>
 
-                        {/* Кнопка публикации (на шаге превью или последнем шаге) */}
-                        {route == STEPS.length &&
+                        {/* Кнопка "Опубликовать" (на шаге Превью) */}
+                        {route == STEPS.length && (
                             <button disabled={requestSent} onClick={e => {
+                                // Валидация перед отправкой
                                 if (project.creator_id <= 0) {
-                                    setResponse({isError: true, message: "Не выбрана организация-автор"});
+                                    setResponse({isError: true, message: "Не выбрана организация"});
                                     return;
                                 }
                                 setRequestSent(true);
                                 PublishProject(project, (msg) => {
                                     setResponse(msg);
                                     setRequestSent(false);
-                                    if (!msg.isError) {
-                                        // Опционально: редирект на созданный проект через пару секунд
-                                        // setTimeout(() => router.push(`/project?id=${newId}`), 2000);
-                                    }
                                 })
                                 e.preventDefault()
                             }}
                                     className={styles.controls_btn + ' ' + styles.controls_btn_next}>
                                 {requestSent && <Spinner size={30} style={{margin: "-11px 0 -11px -32px", paddingRight: "32px"}}/>}
                                 Опубликовать
-                            </button>}
+                            </button>
+                        )}
                     </div>
                 </CurrentRoute>
 

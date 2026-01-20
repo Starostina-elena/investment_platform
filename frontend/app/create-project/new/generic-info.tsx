@@ -103,8 +103,7 @@ export default function GenericInfo({project, setProject, children}: {
                             const val = e.target.value;
                             setProject({
                                 ...project,
-                                monetization_type: val, // Для логики бэка
-                                category: CATEGORIES[val][0] // Для отображения (русское название)
+                                monetization_type: CATEGORIES[val][0] // Для отображения (русское название)
                             })
                         }}
                     >
@@ -129,17 +128,6 @@ export default function GenericInfo({project, setProject, children}: {
                         />
                     </div>
                 )}
-
-                <div className={styles.form_group}>
-                    <label htmlFor="location" className={styles.label}>Место реализации</label>
-                    <select
-                        id="location" className={styles.select_field}
-                        value={project.location || ""}
-                        required
-                        onChange={(e) => setProject({...project, location: e.target.value})}
-                    >
-                    </select>
-                </div>
 
                 <div className={styles.form_group}>
                     <label className={styles.label}>Срок (дней)</label>

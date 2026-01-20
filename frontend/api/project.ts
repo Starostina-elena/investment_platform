@@ -14,15 +14,13 @@ export interface Project {
     current_money: number;
     wanted_money: number;
     duration_days: number;
+    monetization_type: string;
     created_at?: string;
     is_banned: boolean;
-    monetization_type: string;
     percent?: number;
 
-    // UI поля (не отправляются в JSON проекта напрямую, но используются для логики)
     quickPeekPictureFile?: File | null;
-    category?: string; // Пока бэк не хранит, но фронт использует
-    location?: string; // Пока бэк не хранит
+
 }
 
 export async function GetProjectById(id: number): Promise<Project | null> {
