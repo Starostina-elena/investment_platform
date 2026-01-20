@@ -135,6 +135,22 @@ services:
       REDIS_PORT: 6379
     restart: unless-stopped
 
+  payment:
+    build: ./services/payment
+    environment:
+      - APP_PORT=8106
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=investment_db
+      - YOOKASSA_SHOP_ID=${YOOKASSA_SHOP_ID}
+      - YOOKASSA_SECRET_KEY=$(YOOKASSA_SHOP_SEC_KEY}
+      - TRANSACTION_SERVICE_URL=http://transactions:8103
+    depends_on:
+      - db
+      - transactions
+
   notification:
     build: ./services/notification
     container_name: notification
