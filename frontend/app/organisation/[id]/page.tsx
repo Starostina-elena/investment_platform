@@ -13,8 +13,6 @@ import {Camera, Edit3, Building2, UserCircle, Briefcase} from "lucide-react";
 import MessageComponent from "@/app/components/message";
 import {Message} from "@/api/api";
 import {Badge} from "@/app/components/ui/badge";
-
-// Заглушка
 import orgPlaceholder from "@/public/image_bg.png";
 
 export default function OrganisationPage() {
@@ -30,8 +28,7 @@ export default function OrganisationPage() {
         }
     }, [params.id]);
 
-    const avatarPath = org?.avatar_path || (org?.id ? `orgpic_${org.id}.jpg` : null);
-    const avatarSrc = useImage(null, avatarPath, BUCKETS.AVATARS, orgPlaceholder);
+    const avatarSrc = useImage(null, org?.avatar_path, BUCKETS.AVATARS, orgPlaceholder);
 
     const handleUpdate = async (data: any) => {
         if (!org) return;
@@ -65,37 +62,40 @@ export default function OrganisationPage() {
 
     return (
         <div style={{minHeight: '100vh', backgroundColor: '#989694', padding: '3rem 2rem'}}>
-            <div style={{maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: '300px 1fr', gap: '2rem'}}>
+            <div style={{maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: '320px 1fr', gap: '2rem'}}>
 
                 {/* Левая колонка - Карточка */}
                 <div style={{width: '100%'}}>
                     <div style={{
                         backgroundColor: '#656662',
-                        padding: '1.5rem',
+                        padding: '2rem',
                         borderRadius: '8px',
                         boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
                         border: '1px solid #4a4a4a',
                         textAlign: 'center',
                         position: 'sticky',
-                        top: '100px'
+                        top: '100px',
+                        overflow: 'hidden' // ВАЖНО: чтобы ничего не вылезало
                     }}>
-                        {/* Аватар с ЖЕСТКОЙ фиксацией размеров */}
+                        {/* Аватар: Жесткий контейнер */}
                         <div style={{
-                            position: 'relative',
                             width: '160px',
                             height: '160px',
                             margin: '0 auto 1.5rem auto',
+                            position: 'relative', // Для Image fill
                             borderRadius: '50%',
-                            overflow: 'hidden',
-                            border: '4px solid #825e9c', // Фиолетовая рамка
-                            backgroundColor: 'white'
+                            border: '4px solid #825e9c',
+                            backgroundColor: 'white',
+                            overflow: 'hidden', // Обрезаем картинку по кругу
+                            flexShrink: 0
                         }}>
                             <Image
                                 src={avatarSrc}
                                 alt={org.name}
-                                fill
+                                fill={true} // Растягиваем внутри 160x160
                                 style={{objectFit: 'cover'}}
-                                unoptimized // Важно для внешних ссылок (MinIO)
+                                unoptimized
+                                priority
                             />
                         </div>
 
@@ -105,7 +105,7 @@ export default function OrganisationPage() {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    style={{marginBottom: '1.5rem', color: 'white', borderColor: '#aaa'}}
+                                    style={{marginBottom: '1.5rem', color: 'white', borderColor: '#aaa', backgroundColor: 'transparent'}}
                                     onClick={() => fileInputRef.current?.click()}
                                 >
                                     <Camera size={16} style={{marginRight: '8px'}}/> Сменить логотип
@@ -113,7 +113,7 @@ export default function OrganisationPage() {
                             </>
                         )}
 
-                        <h2 style={{fontSize: '1.5rem', fontWeight: '800', color: 'white', marginBottom: '0.5rem', fontFamily: 'var(--font-montserrat)'}}>
+                        <h2 style={{fontSize: '1.5rem', fontWeight: '800', color: 'white', marginBottom: '0.5rem', fontFamily: 'var(--font-montserrat)', wordWrap: 'break-word'}}>
                             {org.name}
                         </h2>
 
@@ -129,7 +129,7 @@ export default function OrganisationPage() {
                                 <span style={{color: '#aaa'}}>Тип</span>
                                 <div style={{display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold'}}>
                                     <OrgIcon size={16} color="#DB935B" />
-                                    {org.org_type.toUpperCase()}
+                                    <span style={{textTransform: 'uppercase'}}>{org.org_type}</span>
                                 </div>
                             </div>
                             <div style={{display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid #666', marginBottom: '0.5rem'}}>
@@ -147,8 +147,8 @@ export default function OrganisationPage() {
                 </div>
 
                 {/* Правая колонка - Данные */}
-                <div>
-                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem'}}>
+                <div style={{minWidth: 0}}> {/* minWidth: 0 важен для Grid, чтобы контент не распирал колонку */}
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem'}}>
                         <div>
                             <h1 style={{fontSize: '2rem', fontWeight: '800', color: 'white', textTransform: 'uppercase', fontFamily: 'var(--font-montserrat)'}}>
                                 Профиль организации
@@ -177,7 +177,6 @@ export default function OrganisationPage() {
                             isEditing={isEditing}
                         />
 
-                        {/* Блокировка формы */}
                         {!isEditing && (
                             <div style={{position: 'absolute', inset: 0, zIndex: 10, backgroundColor: 'transparent'}} />
                         )}
@@ -189,7 +188,6 @@ export default function OrganisationPage() {
                 </div>
             </div>
 
-            {/* Адаптив для мобилок через inline style (media query тут не сработает, но Grid сам подстроится если поменять template) */}
             <style jsx>{`
                 @media (max-width: 1024px) {
                     div[style*="gridTemplateColumns"] {
