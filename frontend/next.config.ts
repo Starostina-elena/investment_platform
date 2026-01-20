@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
     async rewrites() {
         return [
             {
+                source: '/api/payment/:path*',
+                destination: 'http://payment:8106/:path*'
+            },
+            {
                 source: '/api/:path*',
                 destination: 'http://nginx:80/api/:path*'
             },
