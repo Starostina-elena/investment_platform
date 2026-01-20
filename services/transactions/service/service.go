@@ -46,6 +46,18 @@ func (s *service) Transfer(ctx context.Context, fromType, toType clients.EntityT
 
 	s.log.Info("starting transfer", "from", fromType, "from_id", fromID, "to", toType, "to_id", toID, "amount", amount)
 
+	if toType == clients.TypeProject {
+		project, err := s.projectClient.GetProject(ctx, toID)
+		if err != nil {
+			s.log.Error("failed to check project status", "error", err, "project_id", toID)
+			return nil, fmt.Errorf("failed to check project status: %v", err)
+		}
+		if project.IsCompleted {
+			s.log.Warn("cannot transfer to completed project", "project_id", toID)
+			return nil, fmt.Errorf("cannot transfer funds to completed project")
+		}
+	}
+
 	err := s.balanceClient.ChangeBalance(ctx, fromType, fromID, -amount)
 	if err != nil {
 		s.log.Error("failed to deduct funds", "error", err)

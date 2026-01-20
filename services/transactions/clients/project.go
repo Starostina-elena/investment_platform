@@ -25,6 +25,7 @@ type ProjectData struct {
 	WantedMoney            float64 `json:"wanted_money"`
 	MoneyRequiredToPayback float64 `json:"money_required_to_payback"`
 	CreatorID              int     `json:"creator_id"`
+	IsCompleted            bool    `json:"is_completed"`
 }
 
 func NewProjectClient(log slog.Logger) *ProjectClient {
