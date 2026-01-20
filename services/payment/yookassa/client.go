@@ -114,3 +114,31 @@ func (c *Client) CreatePayment(amount string, description string, returnURL stri
 
 	return &result, nil
 }
+func (c *Client) GetPayment(paymentID string) (*CreatePaymentResponse, error) {
+	req, err := http.NewRequest("GET", c.APIURL+"/"+paymentID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	auth := base64.StdEncoding.EncodeToString([]byte(c.ShopID + ":" + c.SecretKey))
+	req.Header.Set("Authorization", "Basic "+auth)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.HTTP.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("yookassa error: %s", string(respBody))
+	}
+
+	var result CreatePaymentResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}

@@ -47,6 +47,10 @@ func (bc *BalanceClient) ChangeBalance(ctx context.Context, entityType EntityTyp
 	var url string
 	var reqBody []byte
 
+	if entityType == "external" {
+		return nil
+	}
+
 	switch entityType {
 	case TypeUser:
 		url = fmt.Sprintf("%s/internal/balance", bc.userUrl)

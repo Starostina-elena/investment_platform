@@ -23,6 +23,10 @@ func NewRepo(db *sqlx.DB, log slog.Logger) service.Repo {
 func (r *Repo) Create(ctx context.Context, t *service.Transaction) (int, error) {
 	txType := fmt.Sprintf("%s_to_%s", t.FromType, t.ToType)
 
+	if t.FromID == 0 {
+		txType = fmt.Sprintf("%s_deposit", t.ToType)
+	}
+
 	var id int
 	row := r.db.QueryRowxContext(ctx,
 		`INSERT INTO transactions (from_id, reciever_id, type, amount, time_at) 
