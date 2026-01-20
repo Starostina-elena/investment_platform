@@ -26,3 +26,15 @@ type RefreshToken struct {
 	CreatedAt time.Time `db:"created_at"`
 	Revoked   bool      `db:"revoked"`
 }
+
+type UserProjectInvestment struct {
+	ProjectID        int       `json:"project_id" db:"project_id"`
+	ProjectName      string    `json:"project_name" db:"project_name"`
+	QuickPeek        string    `json:"quick_peek" db:"quick_peek"`
+	MonetizationType string    `json:"monetization_type" db:"monetization_type"`
+	TotalInvested    float64   `json:"total_invested" db:"total_invested"`
+	TotalReceived    float64   `json:"total_received" db:"total_received"`
+	CreatedAt        time.Time `json:"created_at" db:"created_at"`
+	IsCompleted      bool      `json:"is_completed" db:"is_completed"`
+	IsBanned         bool      `json:"is_banned" db:"is_banned"`
+}
