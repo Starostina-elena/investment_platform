@@ -33,6 +33,8 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 	router.Handle("DELETE /{org_id}/employees/{user_id}/delete", middleware.AuthMiddleware(handler.DeleteEmployeeHandler(h)))
 	router.Handle("POST /{org_id}/ownership/transfer/{new_owner_user_id}", middleware.AuthMiddleware(handler.TransferOwnershipHandler(h)))
 
+	router.Handle("POST /internal/balance", handler.ChangeBalanceHandler(h))
+
 	router.Handle("GET /ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("pong"))
