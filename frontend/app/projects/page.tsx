@@ -6,11 +6,20 @@ import {GetProjects, Project} from "@/api/project";
 import ProjectPreviewNew from "@/app/components/project-preview-new";
 import Spinner from "@/app/components/spinner";
 import {CATEGORIES} from "@/app/globals";
-import styles from "./page.module.css"; // Свои стили для каталога
+import styles from "./projects.module.css";
+import {Input} from "@/app/components/ui/input";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/app/components/ui/pagination";
 
 export default function ProjectsPage() {
     return (
-        <Suspense fallback={<div style={{display: 'flex', justifyContent: 'center', padding: '10rem'}}><Spinner/></div>}>
+        <Suspense fallback={<div className="flex justify-center p-20"><Spinner/></div>}>
             <Catalog />
         </Suspense>
     );
@@ -23,105 +32,129 @@ function Catalog() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Считываем фильтры из URL
-    const initialQuery = searchParams.get('q') || '';
-    const initialCategory = searchParams.get('category') || '';
+    // Переменные состояния из URL
+    const searchQuery = searchParams.get('q') || '';
+    const selectedCategoryKey = searchParams.get('category') || '';
 
-    const [searchQuery, setSearchQuery] = useState(initialQuery);
-    const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+    // Пагинация
+    const [page, setPage] = useState(1);
+    const limit = 9;
+    const [hasMore, setHasMore] = useState(true);
+
+    // Сброс страницы при изменении фильтров
+    useEffect(() => {
+        setPage(1);
+    }, [searchQuery, selectedCategoryKey]);
 
     // Загрузка проектов
     useEffect(() => {
         setLoading(true);
-        GetProjects(100, 0, searchQuery, selectedCategory)
+        const offset = (page - 1) * limit;
+
+        GetProjects(limit, offset, searchQuery, selectedCategoryKey)
             .then(data => {
-                // Временная фильтрация на фронте, если бэкенд отдает все подряд
+                // Если бэкенд не фильтрует по категории, фильтруем тут (фоллбек)
                 let filtered = data;
-                if (searchQuery) {
-                    const lowerQ = searchQuery.toLowerCase();
-                    filtered = filtered.filter(p => p.name.toLowerCase().includes(lowerQ) || p.quick_peek.toLowerCase().includes(lowerQ));
+
+                if (selectedCategoryKey) {
+                    // Если бэк вернул всё, фильтруем по типу.
+                    // Но если бэк умный, этот фильтр не навредит (вернет то же самое)
+                    filtered = filtered.filter(p => p.monetization_type === selectedCategoryKey);
                 }
-                if (selectedCategory) {
-                    filtered = filtered.filter(p => p.category === selectedCategory);
+
+                if (filtered.length < limit) {
+                    setHasMore(false);
+                } else {
+                    setHasMore(true);
                 }
                 setProjects(filtered);
             })
             .finally(() => setLoading(false));
-    }, [searchParams]);
+    }, [searchQuery, selectedCategoryKey, page]);
 
-    // Обновление URL при поиске
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
+    const updateUrl = (q: string, cat: string) => {
         const params = new URLSearchParams();
-        if (searchQuery) params.set('q', searchQuery);
-        if (selectedCategory) params.set('category', selectedCategory);
+        if (q) params.set('q', q);
+        if (cat) params.set('category', cat);
         router.push(`/projects?${params.toString()}`);
-    };
-
-    // Клики по категориям
-    const handleCategoryClick = (cat: string) => {
-        const newCat = selectedCategory === cat ? '' : cat;
-        setSelectedCategory(newCat);
-        const params = new URLSearchParams(searchParams.toString());
-        if (newCat) params.set('category', newCat);
-        else params.delete('category');
-        router.push(`/projects?${params.toString()}`);
-    };
+    }
 
     return (
         <div className={styles.container}>
             <h1 className={styles.title}>Каталог проектов</h1>
 
-            {/* Фильтры и поиск */}
             <div className={styles.filters_container}>
-
-                {/* Строка поиска */}
-                <form onSubmit={handleSearch} className={styles.search_form}>
-                    <input
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                {/* Поиск */}
+                <div className={styles.search_form}>
+                    <Input
+                        defaultValue={searchQuery}
+                        onChange={(e) => updateUrl(e.target.value, selectedCategoryKey)}
                         placeholder="Найти проект..."
                         className={styles.search_input}
                     />
-                    <button type="submit" className={styles.search_button}>
-                        Найти
-                    </button>
-                </form>
+                </div>
 
-                {/* Категории */}
+                {/* Фильтры */}
                 <div className={styles.categories_list}>
                     <button
-                        className={`${styles.category_btn} ${selectedCategory === '' ? styles.category_btn_active : ''}`}
-                        onClick={() => handleCategoryClick('')}
+                        className={`${styles.category_btn} ${selectedCategoryKey === '' ? styles.category_btn_active : ''}`}
+                        onClick={() => updateUrl(searchQuery, '')}
                     >
                         Все
                     </button>
-                    {Object.keys(CATEGORIES).map(cat => (
+                    {Object.entries(CATEGORIES).map(([key, label]) => (
                         <button
-                            key={cat}
-                            className={`${styles.category_btn} ${selectedCategory === cat ? styles.category_btn_active : ''}`}
-                            onClick={() => handleCategoryClick(cat)}
+                            key={key}
+                            className={`${styles.category_btn} ${selectedCategoryKey === key ? styles.category_btn_active : ''}`}
+                            onClick={() => updateUrl(searchQuery, key)}
                         >
-                            {cat}
+                            {label}
                         </button>
                     ))}
                 </div>
             </div>
 
-            {/* Сетка проектов */}
+            {/* Сетка */}
             {loading ? (
-                <div style={{display: 'flex', justifyContent: 'center', padding: '5rem'}}>
-                    <Spinner />
-                </div>
+                <div className="flex justify-center p-20"><Spinner /></div>
             ) : projects.length > 0 ? (
-                <div className={styles.grid_container}>
-                    {projects.map(project => (
-                        <ProjectPreviewNew key={project.id} project={project} />
-                    ))}
-                </div>
+                <>
+                    <div className={styles.grid_container}>
+                        {projects.map(project => (
+                            <ProjectPreviewNew key={project.id} project={project} />
+                        ))}
+                    </div>
+
+                    {/* Пагинация */}
+                    <div className="mt-12">
+                        <Pagination>
+                            <PaginationContent>
+                                <PaginationItem>
+                                    <PaginationPrevious
+                                        className={page <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer bg-white/10 text-black hover:bg-white/20"}
+                                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                                    />
+                                </PaginationItem>
+
+                                <PaginationItem>
+                                    <PaginationLink isActive className="bg-[#DB935B] text-black border-none font-bold">
+                                        {page}
+                                    </PaginationLink>
+                                </PaginationItem>
+
+                                <PaginationItem>
+                                    <PaginationNext
+                                        className={!hasMore ? "pointer-events-none opacity-50" : "cursor-pointer bg-white/10 text-black hover:bg-white/20"}
+                                        onClick={() => setPage(p => p + 1)}
+                                    />
+                                </PaginationItem>
+                            </PaginationContent>
+                        </Pagination>
+                    </div>
+                </>
             ) : (
                 <div className={styles.empty_state}>
-                    Ничего не найдено по вашему запросу 😔
+                    Ничего не найдено 😔
                 </div>
             )}
         </div>
