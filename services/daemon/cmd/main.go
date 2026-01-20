@@ -41,7 +41,13 @@ func main() {
 	expiredJob := jobs.NewExpiredProjectsJob(db, logger)
 	_, err := c.AddFunc("0 0 * * *", expiredJob.Run)
 	if err != nil {
-		log.Fatalf("failed to add cron job: %v", err)
+		log.Fatalf("failed to add expired projects cron job: %v", err)
+	}
+
+	recalculateJob := jobs.NewRecalculatePaybackJob(db, logger)
+	_, err = c.AddFunc("0 0 * * *", recalculateJob.Run)
+	if err != nil {
+		log.Fatalf("failed to add recalculate payback cron job: %v", err)
 	}
 
 	c.Start()
