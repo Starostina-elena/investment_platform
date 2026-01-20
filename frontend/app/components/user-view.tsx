@@ -196,7 +196,7 @@ export default function UserView({ user, isOwner }: UserViewProps) {
                                     <div className={styles.contactItem}>
                                         <span className={styles.contactLabel}><Wallet size={14} className="inline mr-1"/>Баланс</span>
                                         <div className="flex items-center gap-2">
-                                            <span className="font-bold text-[#DB935B] text-lg">{formData.balance.toLocaleString()} ₽</span>
+                                            <span className="font-bold text-[#DB935B] text-lg">{(formData.balance ?? 0).toLocaleString()} ₽</span>
                                             {isOwner && <TopUpModal />}
                                         </div>
                                     </div>

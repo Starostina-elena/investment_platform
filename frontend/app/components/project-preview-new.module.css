@@ -20,9 +20,23 @@
 
 .preview_image {
     width: 100%;
-    aspect-ratio: 16/9; /* Фиксированное соотношение сторон (или 4/3) */
-    position: relative;
-    background-color: #333; /* Фон под картинкой, пока грузится */
+    /* Добавляем явную высоту или соотношение сторон, которое поддерживается всеми браузерами */
+    height: 200px; /* Фиксированная высота */
+    /* ИЛИ */
+    aspect-ratio: 16 / 9;
+
+    position: relative; /* Обязательно для Image fill */
+    background-color: #333;
+    overflow: hidden; /* Обрезаем лишнее */
+    border-radius: 8px 8px 0 0; /* Скругление сверху */
+}
+
+/* И сам Image внутри */
+.preview_image img {
+    object-fit: cover;
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
 }
 
 .image_element {

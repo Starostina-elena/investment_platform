@@ -116,7 +116,7 @@ export default function OrganisationPage() {
                             </div>
                             <div className="flex justify-between items-center border-b border-gray-600 pb-2">
                                 <span className="text-gray-400">Баланс</span>
-                                <span className="font-bold text-[#DB935B] text-lg">{org.balance.toLocaleString()} ₽</span>
+                                <span className="font-bold text-[#DB935B] text-lg">{(org.balance ?? 0).toLocaleString()} ₽</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-gray-400">Создана</span>
