@@ -57,7 +57,7 @@ export default function OrgSelector({project, setProject, userOrgs, children}: O
                             <CardHeader className="pb-2">
                                 <div className="flex justify-between items-center w-full">
                                     <CardTitle className="text-white text-xl font-bold uppercase">
-                                        {org.name}
+                                        {org.name + " "}
                                     </CardTitle>
 
                                     {/* Бейдж "Выбрано" справа */}
@@ -75,7 +75,7 @@ export default function OrgSelector({project, setProject, userOrgs, children}: O
                                         {org.org_type}
                                     </span>
                                     <span>
-                                        Баланс: <span className="font-bold text-[#DB935B]">{(org.balance ?? 0).toLocaleString()} ₽</span>
+                                        Баланс: <span className="font-bold text-[#DB935B]">{(org.balance ?? 0)} ₽</span>
                                     </span>
                                 </div>
 

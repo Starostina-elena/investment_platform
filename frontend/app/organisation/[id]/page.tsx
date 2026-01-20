@@ -5,7 +5,6 @@ import {useParams} from "next/navigation";
 import {GetFullOrganisation, Organisation, UpdateOrganisation, UploadOrgAvatar} from "@/api/organisation";
 import OrganisationForm from "@/app/components/organisation-form";
 import Spinner from "@/app/components/spinner";
-import styles from "@/app/user-profile/page.module.css";
 import {useImage} from "@/hooks/use-image";
 import {BUCKETS} from "@/lib/config";
 import Image from "next/image";
@@ -15,7 +14,7 @@ import MessageComponent from "@/app/components/message";
 import {Message} from "@/api/api";
 import {Badge} from "@/app/components/ui/badge";
 
-// Заглушка для аватара орги
+// Заглушка
 import orgPlaceholder from "@/public/image_bg.png";
 
 export default function OrganisationPage() {
@@ -25,7 +24,6 @@ export default function OrganisationPage() {
     const [message, setMessage] = useState<Message | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Загрузка данных
     useEffect(() => {
         if (params.id) {
             GetFullOrganisation(+params.id).then(setOrg);
@@ -38,7 +36,7 @@ export default function OrganisationPage() {
         if (!org) return;
         const updated = await UpdateOrganisation(org.id, data, setMessage);
         if (updated) {
-            setOrg({...org, ...updated}); // Merge updates
+            setOrg({...org, ...updated});
             setIsEditing(false);
         }
     };
@@ -61,112 +59,143 @@ export default function OrganisationPage() {
         </div>
     );
 
-    // Определяем иконку типа
     const OrgIcon = org.org_type === 'ip' ? Briefcase : org.org_type === 'jur' ? Building2 : UserCircle;
     const orgTypeName = org.org_type === 'ip' ? 'Индивидуальный предприниматель' : org.org_type === 'jur' ? 'Юридическое лицо' : 'Физическое лицо';
 
     return (
-        <div className={styles.container} style={{padding: '3rem 2rem'}}>
-            <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div style={{minHeight: '100vh', backgroundColor: '#989694', padding: '3rem 2rem'}}>
+            <div style={{maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: '300px 1fr', gap: '2rem'}}>
 
-                {/* Левая колонка - Карточка организации */}
-                <div className="lg:col-span-1">
-                    <div className="bg-[#656662] p-6 rounded-lg shadow-xl border border-gray-500 text-center sticky top-24">
-                        {/* Аватар */}
-                        <div className="relative w-40 h-40 mx-auto mb-6 rounded-full overflow-hidden border-4 border-[#825e9c] shadow-lg bg-white">
+                {/* Левая колонка - Карточка */}
+                <div style={{width: '100%'}}>
+                    <div style={{
+                        backgroundColor: '#656662',
+                        padding: '1.5rem',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                        border: '1px solid #4a4a4a',
+                        textAlign: 'center',
+                        position: 'sticky',
+                        top: '100px'
+                    }}>
+                        {/* Аватар с ЖЕСТКОЙ фиксацией размеров */}
+                        <div style={{
+                            position: 'relative',
+                            width: '160px',
+                            height: '160px',
+                            margin: '0 auto 1.5rem auto',
+                            borderRadius: '50%',
+                            overflow: 'hidden',
+                            border: '4px solid #825e9c', // Фиолетовая рамка
+                            backgroundColor: 'white'
+                        }}>
                             <Image
                                 src={avatarSrc}
                                 alt={org.name}
                                 fill
-                                className="object-cover"
+                                style={{objectFit: 'cover'}}
+                                unoptimized // Важно для внешних ссылок (MinIO)
                             />
                         </div>
 
-                        {/* Загрузка аватара */}
                         {!isEditing && (
                             <>
                                 <input type="file" ref={fileInputRef} hidden onChange={handleAvatarUpload} accept="image/*"/>
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="mb-6 border-gray-400 text-white hover:bg-white hover:text-black"
+                                    style={{marginBottom: '1.5rem', color: 'white', borderColor: '#aaa'}}
                                     onClick={() => fileInputRef.current?.click()}
                                 >
-                                    <Camera className="w-4 h-4 mr-2"/> Сменить логотип
+                                    <Camera size={16} style={{marginRight: '8px'}}/> Сменить логотип
                                 </Button>
                             </>
                         )}
 
-                        <h2 className="text-2xl font-bold text-white mb-2 leading-tight">{org.name}</h2>
+                        <h2 style={{fontSize: '1.5rem', fontWeight: '800', color: 'white', marginBottom: '0.5rem', fontFamily: 'var(--font-montserrat)'}}>
+                            {org.name}
+                        </h2>
 
-                        <div className="flex justify-center gap-2 mb-6">
+                        <div style={{display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '1.5rem'}}>
                             <Badge className={`${org.registration_completed ? 'bg-green-600' : 'bg-yellow-600'} text-white border-none`}>
                                 {org.registration_completed ? 'Активна' : 'Черновик'}
                             </Badge>
                             {org.is_banned && <Badge variant="destructive">Заблокирована</Badge>}
                         </div>
 
-                        <div className="text-left bg-[#555652] p-4 rounded-lg space-y-3 text-sm text-gray-200">
-                            <div className="flex justify-between items-center border-b border-gray-600 pb-2">
-                                <span className="text-gray-400">Тип</span>
-                                <div className="flex items-center gap-2 font-medium">
-                                    <OrgIcon size={16} className="text-[#DB935B]" />
+                        <div style={{textAlign: 'left', backgroundColor: '#555652', padding: '1rem', borderRadius: '8px', color: '#e0e0e0', fontSize: '0.9rem'}}>
+                            <div style={{display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid #666', marginBottom: '0.5rem'}}>
+                                <span style={{color: '#aaa'}}>Тип</span>
+                                <div style={{display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold'}}>
+                                    <OrgIcon size={16} color="#DB935B" />
                                     {org.org_type.toUpperCase()}
                                 </div>
                             </div>
-                            <div className="flex justify-between items-center border-b border-gray-600 pb-2">
-                                <span className="text-gray-400">Баланс</span>
-                                <span className="font-bold text-[#DB935B] text-lg">{(org.balance ?? 0).toLocaleString()} ₽</span>
+                            <div style={{display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid #666', marginBottom: '0.5rem'}}>
+                                <span style={{color: '#aaa'}}>Баланс</span>
+                                <span style={{color: '#DB935B', fontWeight: 'bold', fontSize: '1.1rem'}}>
+                                    {(org.balance ?? 0).toLocaleString()} ₽
+                                </span>
                             </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-gray-400">Создана</span>
+                            <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                                <span style={{color: '#aaa'}}>Создана</span>
                                 <span>{org.created_at ? new Date(org.created_at).toLocaleDateString() : '-'}</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Правая колонка - Форма / Данные */}
-                <div className="lg:col-span-2">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                {/* Правая колонка - Данные */}
+                <div>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem'}}>
                         <div>
-                            <h1 className="text-3xl font-bold text-white uppercase font-montserrat">Профиль организации</h1>
-                            <p className="text-gray-300 text-sm mt-1">{orgTypeName}</p>
+                            <h1 style={{fontSize: '2rem', fontWeight: '800', color: 'white', textTransform: 'uppercase', fontFamily: 'var(--font-montserrat)'}}>
+                                Профиль организации
+                            </h1>
+                            <p style={{color: '#ccc'}}>{orgTypeName}</p>
                         </div>
 
                         {!isEditing ? (
                             <Button
                                 onClick={() => setIsEditing(true)}
-                                className="bg-[#825e9c] text-white hover:bg-[#6a4c80] font-bold"
+                                style={{backgroundColor: '#825e9c', color: 'white', fontWeight: 'bold'}}
                             >
-                                <Edit3 className="w-4 h-4 mr-2"/> Редактировать
+                                <Edit3 size={16} style={{marginRight: '8px'}}/> Редактировать
                             </Button>
                         ) : (
-                            <Button variant="outline" className="border-red-400 text-red-400 hover:bg-red-400/10" onClick={() => setIsEditing(false)}>
+                            <Button variant="outline" onClick={() => setIsEditing(false)} style={{color: '#ff9999', borderColor: '#ff9999'}}>
                                 Отмена
                             </Button>
                         )}
                     </div>
 
-                    <div className="bg-[#656662] p-1 rounded-lg shadow-xl border border-gray-500 relative">
-                        {/* Форма редактирования/просмотра */}
+                    <div style={{backgroundColor: '#656662', padding: '2px', borderRadius: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.1)', position: 'relative'}}>
                         <OrganisationForm
                             initialData={org}
                             onSubmit={handleUpdate}
                             isEditing={isEditing}
                         />
 
-                        {/* Блокировка формы при просмотре (прозрачный слой) */}
+                        {/* Блокировка формы */}
                         {!isEditing && (
-                            <div className="absolute inset-0 z-10 bg-transparent cursor-default" />
+                            <div style={{position: 'absolute', inset: 0, zIndex: 10, backgroundColor: 'transparent'}} />
                         )}
                     </div>
 
-                    <div className="mt-4">
+                    <div style={{marginTop: '1rem'}}>
                         <MessageComponent message={message}/>
                     </div>
                 </div>
             </div>
+
+            {/* Адаптив для мобилок через inline style (media query тут не сработает, но Grid сам подстроится если поменять template) */}
+            <style jsx>{`
+                @media (max-width: 1024px) {
+                    div[style*="gridTemplateColumns"] {
+                        grid-template-columns: 1fr !important;
+                    }
+                }
+            `}</style>
         </div>
     );
 }
