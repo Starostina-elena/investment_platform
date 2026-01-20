@@ -34,6 +34,7 @@ type RepoInterface interface {
 	UpdateEmployeePermissions(ctx context.Context, orgID int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error
 	DeleteEmployee(ctx context.Context, orgID int, userID int) error
 	TransferOwnership(ctx context.Context, orgID int, oldOwnerID int, newOwnerID int) error
+	ChangeBalance(ctx context.Context, orgID int, delta float64) error
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -616,4 +617,33 @@ func (r *Repo) TransferOwnership(ctx context.Context, orgID int, oldOwnerID int,
 
 	r.log.Info("ownership transferred successfully", "org_id", orgID, "old_owner", oldOwnerID, "new_owner", newOwnerID)
 	return nil
+}
+
+func (r *Repo) ChangeBalance(ctx context.Context, orgID int, delta float64) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var balance float64
+	// Блокируем строку для обновления (FOR UPDATE)
+	err = tx.QueryRowxContext(ctx, "SELECT balance FROM organizations WHERE id = $1 FOR UPDATE", orgID).Scan(&balance)
+	if err != nil {
+		r.log.Error("failed to get org balance", "org_id", orgID, "error", err)
+		return err
+	}
+
+	// Если списание, проверяем, хватит ли средств
+	if balance+delta < 0 {
+		return fmt.Errorf("insufficient funds in organization %d", orgID)
+	}
+
+	_, err = tx.ExecContext(ctx, "UPDATE organizations SET balance = balance + $1 WHERE id = $2", delta, orgID)
+	if err != nil {
+		r.log.Error("failed to update org balance", "org_id", orgID, "error", err)
+		return err
+	}
+
+	return tx.Commit()
 }

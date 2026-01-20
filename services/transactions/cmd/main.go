@@ -49,8 +49,8 @@ func main() {
 
 	// Исправляем имена переменных, чтобы не конфликтовали с пакетами
 	repository := repo.NewRepo(db, *logger)
-	projectClient := clients.NewProjectClient(*logger)
-	svc := service.NewService(repository, projectClient, *logger)
+	balanceClient := clients.NewBalanceClient(*logger)
+	svc := service.NewService(repository, balanceClient, *logger)
 	h := handler.NewHandler(svc, *logger)
 
 	router := getRouter(h)

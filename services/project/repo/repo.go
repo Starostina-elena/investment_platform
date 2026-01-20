@@ -251,12 +251,19 @@ func (r *Repo) UpdateMoneyRequiredToPayback(ctx context.Context, projectID int, 
 }
 
 func (r *Repo) AddFunds(ctx context.Context, projectID int, amount float64) error {
+	if amount < 0 {
+		var current float64
+		err := r.db.GetContext(ctx, &current, "SELECT current_money FROM projects WHERE id=$1", projectID)
+		if err != nil {
+			return err
+		}
+		if current+amount < 0 {
+			return fmt.Errorf("insufficient funds")
+		}
+	}
+
 	_, err := r.db.ExecContext(ctx,
 		`UPDATE projects SET current_money = current_money + $1 WHERE id = $2`,
 		amount, projectID)
-	if err != nil {
-		r.log.Error("failed to add funds", "project_id", projectID, "amount", amount, "error", err)
-		return err
-	}
-	return nil
+	return err
 }

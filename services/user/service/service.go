@@ -31,6 +31,7 @@ type Service interface {
 	ChangePassword(ctx context.Context, userID int, oldPassword string, newPassword string) (*core.User, error)
 	GetActiveInvestments(ctx context.Context, userID int) ([]core.UserProjectInvestment, error)
 	GetArchivedInvestments(ctx context.Context, userID int) ([]core.UserProjectInvestment, error)
+	ChangeBalance(ctx context.Context, userID int, delta float64) error
 }
 
 type service struct {
@@ -228,3 +229,6 @@ func (s *service) GetArchivedInvestments(ctx context.Context, userID int) ([]cor
 	return investments, nil
 }
 
+func (s *service) ChangeBalance(ctx context.Context, userID int, delta float64) error {
+	return s.repo.ChangeBalance(ctx, userID, delta)
+}

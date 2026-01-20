@@ -9,7 +9,7 @@ import (
 func getRouter(h *handler.Handler) *http.ServeMux {
 	router := http.NewServeMux()
 
-	router.Handle("POST /transactions", handler.InvestHandler(h))
+	router.Handle("POST /transfer", handler.TransferHandler(h))
 
 	router.Handle("GET /ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

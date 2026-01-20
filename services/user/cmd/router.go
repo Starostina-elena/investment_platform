@@ -28,6 +28,8 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 	router.Handle("GET /investments/active", middleware.AuthMiddleware(handler.GetActiveInvestmentsHandler(h)))
 	router.Handle("GET /investments/archived", middleware.AuthMiddleware(handler.GetArchivedInvestmentsHandler(h)))
 
+	router.Handle("POST /internal/balance", handler.ChangeBalanceHandler(h))
+
 	router.Handle("GET /ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("pong"))

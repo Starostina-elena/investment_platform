@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -33,6 +34,7 @@ type RepoInterface interface {
 	UpdatePassword(ctx context.Context, userID int, passwordHash string) error
 	GetActiveInvestments(ctx context.Context, userID int) ([]core.UserProjectInvestment, error)
 	GetArchivedInvestments(ctx context.Context, userID int) ([]core.UserProjectInvestment, error)
+	ChangeBalance(ctx context.Context, userID int, delta float64) error
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -215,4 +217,30 @@ func (r *Repo) GetArchivedInvestments(ctx context.Context, userID int) ([]core.U
 	}
 
 	return investments, nil
+}
+
+func (r *Repo) ChangeBalance(ctx context.Context, userID int, delta float64) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var balance float64
+	// Блокируем строку для обновления
+	err = tx.QueryRowxContext(ctx, "SELECT balance FROM users WHERE id = $1 FOR UPDATE", userID).Scan(&balance)
+	if err != nil {
+		return err
+	}
+
+	if balance+delta < 0 {
+		return fmt.Errorf("insufficient funds")
+	}
+
+	_, err = tx.ExecContext(ctx, "UPDATE users SET balance = balance + $1 WHERE id = $2", delta, userID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }

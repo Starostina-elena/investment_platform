@@ -30,6 +30,7 @@ type Service interface {
 	UpdateEmployeePermissions(ctx context.Context, orgID int, userRequested int, userID int, orgAccMgmt, moneyMgmt, projMgmt bool) error
 	DeleteEmployee(ctx context.Context, orgID int, userRequested int, userID int) error
 	TransferOwnership(ctx context.Context, orgID int, userRequested int, newOwnerID int) error
+	ChangeBalance(ctx context.Context, orgID int, delta float64) error
 }
 
 type service struct {
@@ -157,4 +158,8 @@ func (s *service) BanOrg(ctx context.Context, orgID int, banned bool) error {
 		return err
 	}
 	return nil
+}
+
+func (s *service) ChangeBalance(ctx context.Context, orgID int, delta float64) error {
+	return s.repo.ChangeBalance(ctx, orgID, delta)
 }
