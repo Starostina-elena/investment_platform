@@ -17,8 +17,7 @@ const LINKS = [
     { name: 'Главная', className: styles.main_link, link: '/' },
     { name: 'О нас', className: styles.about_link, link: '/#about' },
     { name: 'Как это работает', className: styles.how_it_works_link, link: '/#features' },
-    { name: 'Каталог проектов', link: '/projects' },
-    { name: 'Контакты', link: '/#contacts' }
+    { name: 'Каталог проектов', link: '/projects' }
 ]
 
 const Header = () => {
