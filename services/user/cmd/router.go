@@ -25,6 +25,9 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 	router.Handle("POST /avatar/upload", middleware.AuthMiddleware(handler.UploadAvatarHandler(h)))
 	router.Handle("DELETE /avatar/", middleware.AuthMiddleware(handler.DeleteAvatarHandler(h)))
 
+	router.Handle("GET /investments/active", middleware.AuthMiddleware(handler.GetActiveInvestmentsHandler(h)))
+	router.Handle("GET /investments/archived", middleware.AuthMiddleware(handler.GetArchivedInvestmentsHandler(h)))
+
 	router.Handle("GET /ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("pong"))

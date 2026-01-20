@@ -149,6 +149,38 @@ func (m *mockService) RevokeAllRefreshTokens(ctx context.Context, userID int) er
 	return nil
 }
 
+func (m *mockService) GetActiveInvestments(ctx context.Context, userID int) ([]core.UserProjectInvestment, error) {
+	return []core.UserProjectInvestment{
+		{
+			ProjectID:        1,
+			ProjectName:      "Project A",
+			QuickPeek:        "A great project",
+			MonetizationType: "Equity",
+			TotalInvested:    1000.0,
+			TotalReceived:    100.0,
+			CreatedAt:        time.Now().AddDate(0, -1, 0),
+			IsCompleted:      false,
+			IsBanned:         false,
+		},
+	}, nil
+}
+
+func (m *mockService) GetArchivedInvestments(ctx context.Context, userID int) ([]core.UserProjectInvestment, error) {
+	return []core.UserProjectInvestment{
+		{
+			ProjectID:        2,
+			ProjectName:      "Project B",
+			QuickPeek:        "An archived project",
+			MonetizationType: "Revenue Share",
+			TotalInvested:    2000.0,
+			TotalReceived:    500.0,
+			CreatedAt:        time.Now().AddDate(-1, 0, 0),
+			IsCompleted:      true,
+			IsBanned:         false,
+		},
+	}, nil
+}
+
 func mockLogger() *slog.Logger {
 	return slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
 		Level: slog.LevelError,

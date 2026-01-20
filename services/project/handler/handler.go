@@ -254,6 +254,7 @@ func GetProjectListHandler(h *Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		limitStr := r.URL.Query().Get("limit")
 		offsetStr := r.URL.Query().Get("offset")
+		monetizationType := r.URL.Query().Get("type")
 
 		limit := 10
 		offset := 0
@@ -269,7 +270,20 @@ func GetProjectListHandler(h *Handler) http.HandlerFunc {
 			}
 		}
 
-		projects, err := h.service.GetList(r.Context(), limit, offset)
+		if monetizationType != "" {
+			validTypes := map[string]bool{
+				"charity":       true,
+				"custom":        true,
+				"fixed_percent": true,
+				"time_percent":  true,
+			}
+			if !validTypes[monetizationType] {
+				http.Error(w, "Некорректный тип монетизации", http.StatusBadRequest)
+				return
+			}
+		}
+
+		projects, err := h.service.GetList(r.Context(), limit, offset, monetizationType)
 		if err != nil {
 			h.log.Error("failed to get projects list", "error", err)
 			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
