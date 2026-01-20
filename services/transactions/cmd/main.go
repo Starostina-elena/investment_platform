@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/Starostina-elena/investment_platform/services/transactions/clients"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 
@@ -41,7 +42,8 @@ func main() {
 	defer db.Close()
 
 	repo := repo.NewRepo(db, *logger)
-	service := service.NewService(repo, *logger)
+	projectClient := clients.NewProjectClient(*logger)
+	service := service.NewService(repo, projectClient, *logger)
 	handler := handler.NewHandler(service, *logger)
 
 	router := getRouter(handler)

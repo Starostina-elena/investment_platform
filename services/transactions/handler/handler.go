@@ -13,21 +13,41 @@ type Handler struct {
 	log     slog.Logger
 }
 
-func NewHandler(s service.Service, log slog.Logger) *Handler { return &Handler{service: s, log: log} }
+func NewHandler(s service.Service, log slog.Logger) *Handler {
+	return &Handler{service: s, log: log}
+}
 
-func CreateTransactionHandler(h *Handler) http.HandlerFunc {
+// InvestHandler обрабатывает запросы на инвестирование
+func InvestHandler(h *Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Ожидаем структуру, которую отправляет фронтенд
 		var req struct {
-			From, To int
-			Amount   float64
+			UserID    int     `json:"user_id"`
+			ProjectID int     `json:"project_id"`
+			Amount    float64 `json:"amount"`
+			Method    string  `json:"method"` // "sbp" или "yookassa"
 		}
-		_ = json.NewDecoder(r.Body).Decode(&req)
-		tx, err := h.service.Create(r.Context(), req.From, req.To, req.Amount)
+
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			h.log.Error("failed to decode request", "error", err)
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+
+		// Валидация
+		if req.Amount <= 0 {
+			http.Error(w, "amount must be positive", http.StatusBadRequest)
+			return
+		}
+
+		// Вызываем новый метод сервиса Invest вместо старого Create
+		tx, err := h.service.Invest(r.Context(), req.UserID, req.ProjectID, req.Amount, req.Method)
 		if err != nil {
-			h.log.Error("failed to create tx", "error", err)
+			h.log.Error("failed to invest", "error", err)
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
+
 		w.WriteHeader(http.StatusCreated)
 		_ = json.NewEncoder(w).Encode(tx)
 	}
