@@ -22,7 +22,7 @@ type RepoInterface interface {
 	Create(ctx context.Context, p *core.Project) (int, error)
 	Get(ctx context.Context, id int) (*core.Project, error)
 	Update(ctx context.Context, p *core.Project) (*core.Project, error)
-	GetList(ctx context.Context, limit, offset int, monetizationType string) ([]core.Project, error)
+	GetList(ctx context.Context, limit, offset int, monetizationType string, searchQuery string) ([]core.Project, error)
 	GetByCreator(ctx context.Context, creatorID int) ([]core.Project, error)
 	GetAllByCreator(ctx context.Context, creatorID int) ([]core.Project, error)
 	UpdatePicturePath(ctx context.Context, projectID int, picturePath *string) error
@@ -82,7 +82,7 @@ func (r *Repo) Update(ctx context.Context, p *core.Project) (*core.Project, erro
 	return r.Get(ctx, p.ID)
 }
 
-func (r *Repo) GetList(ctx context.Context, limit, offset int, monetizationType string) ([]core.Project, error) {
+func (r *Repo) GetList(ctx context.Context, limit, offset int, monetizationType string, searchQuery string) ([]core.Project, error) {
 	projects := []core.Project{}
 
 	query := `SELECT id, name, creator_id, quick_peek, quick_peek_picture_path, content, 
@@ -98,6 +98,12 @@ func (r *Repo) GetList(ctx context.Context, limit, offset int, monetizationType 
 	if monetizationType != "" {
 		query += " AND monetization_type = $" + fmt.Sprintf("%d", argIndex)
 		args = append(args, monetizationType)
+		argIndex++
+	}
+
+	if searchQuery != "" {
+		query += " AND name ILIKE $" + fmt.Sprintf("%d", argIndex)
+		args = append(args, "%"+searchQuery+"%")
 		argIndex++
 	}
 

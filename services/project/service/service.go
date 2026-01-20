@@ -16,7 +16,7 @@ type Service interface {
 	Create(ctx context.Context, req core.Project, creatorID int, userID int) (*core.Project, error)
 	Get(ctx context.Context, id int) (*core.Project, error)
 	Update(ctx context.Context, projectID int, p core.Project, userID int) (*core.Project, error)
-	GetList(ctx context.Context, limit, offset int, monetizationType string) ([]core.Project, error)
+	GetList(ctx context.Context, limit, offset int, monetizationType string, searchQuery string) ([]core.Project, error)
 	GetByCreator(ctx context.Context, creatorID int) ([]core.Project, error)
 	GetAllByCreator(ctx context.Context, projectID int, userID int, isAdmin bool) ([]core.Project, error)
 	UpdatePicturePath(ctx context.Context, projectID int, picturePath string) error
@@ -95,7 +95,7 @@ func (s *service) Update(ctx context.Context, projectID int, p core.Project, use
 	return updatedProject, nil
 }
 
-func (s *service) GetList(ctx context.Context, limit, offset int, monetizationType string) ([]core.Project, error) {
+func (s *service) GetList(ctx context.Context, limit, offset int, monetizationType string, searchQuery string) ([]core.Project, error) {
 	if limit <= 0 {
 		limit = 10
 	}
@@ -105,7 +105,7 @@ func (s *service) GetList(ctx context.Context, limit, offset int, monetizationTy
 	if offset < 0 {
 		offset = 0
 	}
-	return s.repo.GetList(ctx, limit, offset, monetizationType)
+	return s.repo.GetList(ctx, limit, offset, monetizationType, searchQuery)
 }
 
 func (s *service) GetByCreator(ctx context.Context, creatorID int) ([]core.Project, error) {
