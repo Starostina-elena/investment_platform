@@ -138,6 +138,8 @@ services:
   notification:
     build: ./services/notification
     container_name: notification
+    depends_on:
+      - mailhog
     ports:
       - "12555:8083"
     environment:
@@ -194,6 +196,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
 
 volumes:
   pgdata:

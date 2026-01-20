@@ -7,13 +7,14 @@ import (
 	"log/slog"
 	"net/smtp"
 	"os"
+	"strconv"
 
 	"github.com/Starostina-elena/investment_platform/services/notification/core"
 )
 
 type EmailService struct {
 	smtpHost     string
-	smtpPort     string
+	smtpPort     int
 	smtpUser     string
 	smtpPassword string
 	fromEmail    string
@@ -21,9 +22,17 @@ type EmailService struct {
 }
 
 func NewEmailService(log slog.Logger) *EmailService {
+	portStr := os.Getenv("SMTP_PORT")
+	port := 587
+	if portStr != "" {
+		if p, err := strconv.Atoi(portStr); err == nil {
+			port = p
+		}
+	}
+
 	return &EmailService{
 		smtpHost:     os.Getenv("SMTP_HOST"),
-		smtpPort:     os.Getenv("SMTP_PORT"),
+		smtpPort:     port,
 		smtpUser:     os.Getenv("SMTP_USER"),
 		smtpPassword: os.Getenv("SMTP_PASSWORD"),
 		fromEmail:    os.Getenv("FROM_EMAIL"),
@@ -38,6 +47,8 @@ func (s *EmailService) SendNotification(req *core.EmailRequest) error {
 		return err
 	}
 
+	addr := fmt.Sprintf("%s:%d", s.smtpHost, s.smtpPort)
+
 	msg := []byte(fmt.Sprintf("From: %s\r\n"+
 		"To: %s\r\n"+
 		"Subject: %s\r\n"+
@@ -45,10 +56,13 @@ func (s *EmailService) SendNotification(req *core.EmailRequest) error {
 		"Content-Type: text/html; charset=UTF-8\r\n\r\n"+
 		"%s", s.fromEmail, req.Email, subject, body))
 
-	auth := smtp.PlainAuth("", s.smtpUser, s.smtpPassword, s.smtpHost)
-	addr := s.smtpHost + ":" + s.smtpPort
+	if s.smtpPort == 1025 {
+		err = smtp.SendMail(addr, nil, s.fromEmail, []string{req.Email}, msg)
+	} else {
+		auth := smtp.PlainAuth("", s.smtpUser, s.smtpPassword, s.smtpHost)
+		err = smtp.SendMail(addr, auth, s.fromEmail, []string{req.Email}, msg)
+	}
 
-	err = smtp.SendMail(addr, auth, s.fromEmail, []string{req.Email}, msg)
 	if err != nil {
 		s.log.Error("failed to send email", "error", err, "to", req.Email)
 		return core.ErrEmailSendFailed
