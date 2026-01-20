@@ -47,18 +47,21 @@ export default function OrganisationForm({ initialData, onSubmit, isEditing = fa
         onSubmit(cleanData);
     };
 
-    // Общие стили для инпутов, чтобы они были видны на темном фоне
-    const inputClass = "bg-white text-black border-gray-400 placeholder:text-gray-500";
-    const labelClass = "text-gray-300 mb-1 block";
+    // Стили для темной темы
+    const inputClass = "bg-white text-black border-gray-400 placeholder:text-gray-500 focus:border-purple-500";
+    const labelClass = "text-gray-300 font-medium mb-1 block";
+    const cardClass = "bg-[#656662] border-gray-600 shadow-xl text-white"; // Темно-серый фон карточки
 
     return (
         <form onSubmit={handleSubmit} className="space-y-8 max-w-4xl mx-auto">
             {/* Секция 1: Основные данные */}
-            <Card className="bg-[#656662] border-gray-500 shadow-xl">
-                <CardHeader>
-                    <CardTitle className="text-white uppercase font-bold text-xl border-b border-gray-500 pb-2">Основные данные</CardTitle>
+            <Card className={cardClass}>
+                <CardHeader className="border-b border-gray-500 pb-4">
+                    <CardTitle className="uppercase font-bold text-xl tracking-wider text-white">
+                        Основные данные
+                    </CardTitle>
                 </CardHeader>
-                <CardContent className="grid gap-6">
+                <CardContent className="grid gap-6 pt-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <Label className={labelClass}>Название (для отображения)</Label>
@@ -104,17 +107,18 @@ export default function OrganisationForm({ initialData, onSubmit, isEditing = fa
             </Card>
 
             {/* Секция 2: Реквизиты */}
-            <Card className="bg-[#656662] border-gray-500 shadow-xl">
-                <CardHeader>
-                    <CardTitle className="text-white uppercase font-bold text-xl border-b border-gray-500 pb-2">Реквизиты</CardTitle>
+            <Card className={cardClass}>
+                <CardHeader className="border-b border-gray-500 pb-4">
+                    <CardTitle className="uppercase font-bold text-xl tracking-wider text-white">
+                        Реквизиты
+                    </CardTitle>
                 </CardHeader>
-                <CardContent className="grid gap-6 pt-4">
-                    {/* Контейнер грида для полей */}
+                <CardContent className="pt-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                         {formData.org_type === 'phys' && (
                             <>
-                                <div className="space-y-2">
+                                <div className="space-y-2 md:col-span-2">
                                     <Label className={labelClass}>ФИО</Label>
                                     <Input className={inputClass} placeholder="Иванов Иван Иванович" required
                                            value={formData.phys_face?.fio || ''}
@@ -183,7 +187,6 @@ export default function OrganisationForm({ initialData, onSubmit, isEditing = fa
                             </>
                         )}
 
-                        {/* Аналогично оформляем JurFace и IPFace, добавляя Label и обертки div */}
                         {formData.org_type === 'jur' && (
                             <>
                                 <div className="space-y-2 md:col-span-2">
@@ -216,16 +219,17 @@ export default function OrganisationForm({ initialData, onSubmit, isEditing = fa
                                            value={formData.jur_face?.kpp || ''}
                                            onChange={e => handleFaceChange('jur_face', 'kpp', e.target.value)} />
                                 </div>
-                                {/* ... остальные поля юр лица аналогично ... */}
-                                {/* Чтобы не раздувать ответ, принцип тот же: Label + Input внутри div.space-y-2 */}
                                 <div className="space-y-2">
                                     <Label className={labelClass}>Должность руководителя</Label>
                                     <Input className={inputClass} required value={formData.jur_face?.position || ''} onChange={e => handleFaceChange('jur_face', 'position', e.target.value)} />
                                 </div>
-                                <div className="space-y-2">
+                                <div className="space-y-2 md:col-span-2">
                                     <Label className={labelClass}>Действует на основании</Label>
                                     <Input className={inputClass} required value={formData.jur_face?.acts_on_base || ''} onChange={e => handleFaceChange('jur_face', 'acts_on_base', e.target.value)} />
                                 </div>
+
+                                <div className="md:col-span-2 border-t border-gray-500 my-2"></div>
+
                                 <div className="space-y-2">
                                     <Label className={labelClass}>БИК</Label>
                                     <Input className={inputClass} required value={formData.jur_face?.bic || ''} onChange={e => handleFaceChange('jur_face', 'bic', e.target.value)} />
@@ -238,6 +242,9 @@ export default function OrganisationForm({ initialData, onSubmit, isEditing = fa
                                     <Label className={labelClass}>Корреспондентский счет</Label>
                                     <Input className={inputClass} required value={formData.jur_face?.correspondent_account || ''} onChange={e => handleFaceChange('jur_face', 'correspondent_account', e.target.value)} />
                                 </div>
+
+                                <div className="md:col-span-2 border-t border-gray-500 my-2"></div>
+
                                 <div className="space-y-2 md:col-span-2">
                                     <Label className={labelClass}>Юридический адрес</Label>
                                     <Input className={inputClass} required value={formData.jur_face?.jur_address || ''} onChange={e => handleFaceChange('jur_face', 'jur_address', e.target.value)} />
@@ -245,6 +252,10 @@ export default function OrganisationForm({ initialData, onSubmit, isEditing = fa
                                 <div className="space-y-2 md:col-span-2">
                                     <Label className={labelClass}>Фактический адрес</Label>
                                     <Input className={inputClass} required value={formData.jur_face?.fact_address || ''} onChange={e => handleFaceChange('jur_face', 'fact_address', e.target.value)} />
+                                </div>
+                                <div className="space-y-2 md:col-span-2">
+                                    <Label className={labelClass}>Почтовый адрес</Label>
+                                    <Input className={inputClass} required value={formData.jur_face?.post_address || ''} onChange={e => handleFaceChange('jur_face', 'post_address', e.target.value)} />
                                 </div>
                             </>
                         )}
@@ -255,7 +266,6 @@ export default function OrganisationForm({ initialData, onSubmit, isEditing = fa
                                     <Label className={labelClass}>ФИО ИП</Label>
                                     <Input className={inputClass} required value={formData.ip_face?.fio || ''} onChange={e => handleFaceChange('ip_face', 'fio', e.target.value)} />
                                 </div>
-                                {/* ... Поля для ИП ... */}
                                 <div className="space-y-2">
                                     <Label className={labelClass}>ИНН</Label>
                                     <Input className={inputClass} required value={formData.ip_face?.inn || ''} onChange={e => handleFaceChange('ip_face', 'inn', e.target.value)} />
@@ -276,6 +286,9 @@ export default function OrganisationForm({ initialData, onSubmit, isEditing = fa
                                     <Label className={labelClass}>Кем выдано</Label>
                                     <Input className={inputClass} required value={formData.ip_face?.ip_svid_givenby || ''} onChange={e => handleFaceChange('ip_face', 'ip_svid_givenby', e.target.value)} />
                                 </div>
+
+                                <div className="md:col-span-2 border-t border-gray-500 my-2"></div>
+
                                 <div className="space-y-2">
                                     <Label className={labelClass}>БИК</Label>
                                     <Input className={inputClass} required value={formData.ip_face?.bic || ''} onChange={e => handleFaceChange('ip_face', 'bic', e.target.value)} />
@@ -288,9 +301,20 @@ export default function OrganisationForm({ initialData, onSubmit, isEditing = fa
                                     <Label className={labelClass}>Корр. счет</Label>
                                     <Input className={inputClass} required value={formData.ip_face?.kor_schot || ''} onChange={e => handleFaceChange('ip_face', 'kor_schot', e.target.value)} />
                                 </div>
+
+                                <div className="md:col-span-2 border-t border-gray-500 my-2"></div>
+
                                 <div className="space-y-2 md:col-span-2">
                                     <Label className={labelClass}>Юридический адрес</Label>
                                     <Input className={inputClass} required value={formData.ip_face?.jur_address || ''} onChange={e => handleFaceChange('ip_face', 'jur_address', e.target.value)} />
+                                </div>
+                                <div className="space-y-2 md:col-span-2">
+                                    <Label className={labelClass}>Фактический адрес</Label>
+                                    <Input className={inputClass} required value={formData.ip_face?.fact_address || ''} onChange={e => handleFaceChange('ip_face', 'fact_address', e.target.value)} />
+                                </div>
+                                <div className="space-y-2 md:col-span-2">
+                                    <Label className={labelClass}>Почтовый адрес</Label>
+                                    <Input className={inputClass} required value={formData.ip_face?.post_address || ''} onChange={e => handleFaceChange('ip_face', 'post_address', e.target.value)} />
                                 </div>
                             </>
                         )}
