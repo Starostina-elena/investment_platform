@@ -72,14 +72,39 @@ export default function UserView({ user, isOwner }: UserViewProps) {
 
     const handleSave = async () => {
         setIsLoading(true);
-        const updatedUser = await UpdateUserInfo(formData, setMessage);
-        if (updatedUser) {
+        const responseData = await UpdateUserInfo(formData, setMessage);
+
+        if (responseData) {
+            let newAvatarPath = user.avatar_path; // По умолчанию старая аватарка
+
+            // Если загружали новую аву
             if (avatarFile) {
-                const newAvatarPath = await UploadUserAvatar(avatarFile, setMessage);
-                if (newAvatarPath) updatedUser.avatar_path = newAvatarPath;
+                const uploadedPath = await UploadUserAvatar(avatarFile, setMessage);
+                if (uploadedPath) newAvatarPath = uploadedPath;
             }
-            if (token) Login(updatedUser, token);
-            setFormData(updatedUser);
+
+            // МЕРДЖИМ ДАННЫЕ:
+            // Берем исходного юзера (с правильным балансом и датой)
+            // И перезаписываем только те поля, которые мы редактировали
+            const mergedUser: User = {
+                ...user, // <- Основа (ID, Balance, CreatedAt, IsAdmin, IsBanned)
+
+                // Обновляемые поля берем из ответа сервера (или из формы)
+                name: responseData.name,
+                surname: responseData.surname,
+                patronymic: responseData.patronymic,
+                nickname: responseData.nickname,
+                email: responseData.email,
+
+                // Аватар обновляем отдельно
+                avatar_path: newAvatarPath
+            };
+
+            // Обновляем глобальный стор
+            if (token) Login(mergedUser, token);
+
+            // Обновляем локальную форму
+            setFormData(mergedUser);
             setIsEditing(false);
             setAvatarFile(null);
         }

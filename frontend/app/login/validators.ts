@@ -40,8 +40,15 @@ export function PasswordValidator(e: FormEvent<HTMLInputElement>) {
 
 export function NameValidator(e: FormEvent<HTMLInputElement>) {
     const name = e.currentTarget.value;
-    const match = name.match(/^[a-zA-Zа-яА-Я]+$/);
-    if (name.length > 0 && !match) {
+    // Разрешаем пустую строку (для отчества)
+    if (name.length === 0) {
+        e.currentTarget.setCustomValidity("");
+        e.currentTarget.setAttribute("aria-invalid", "false");
+        return;
+    }
+
+    const match = name.match(/^[a-zA-Zа-яА-ЯёЁ]+$/); // Добавил ёЁ на всякий случай
+    if (!match) {
         e.currentTarget.setCustomValidity("Поле содержит недопустимые символы (пробелы, цифры и любые спец.символы запрещены)");
         e.currentTarget.setAttribute("aria-invalid", "true")
         return;

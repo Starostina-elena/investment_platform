@@ -119,7 +119,6 @@ export default function RegistrationForm({onLoginClick}: { onLoginClick?: () => 
             <input
                 className={styles.input_field}
                 placeholder="Отчество"
-                onInput={NameValidator} required minLength={2}
                 value={formData.patronymic}
                 onChange={(e) =>
                     setFormData({...formData, patronymic: e.target.value})
