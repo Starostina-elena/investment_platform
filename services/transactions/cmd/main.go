@@ -47,7 +47,7 @@ func main() {
 		}
 	}(db)
 
-	// Исправляем имена переменных, чтобы не конфликтовали с пакетами
+
 	repository := repo.NewRepo(db, *logger)
 	balanceClient := clients.NewBalanceClient(*logger)
 	svc := service.NewService(repository, balanceClient, *logger)

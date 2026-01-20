@@ -13,7 +13,7 @@ func getRouter(h *handler.Handler) *http.ServeMux {
 
 	router.Handle("GET /ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("pong")) // Игнорируем ошибку записи
+		_, _ = w.Write([]byte("pong"))
 	}))
 
 	return router

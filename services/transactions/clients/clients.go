@@ -47,7 +47,6 @@ func (bc *BalanceClient) ChangeBalance(ctx context.Context, entityType EntityTyp
 	var url string
 	var reqBody []byte
 
-	// Формируем запросы согласно API каждого сервиса
 	switch entityType {
 	case TypeUser:
 		url = fmt.Sprintf("%s/internal/balance", bc.userUrl)
@@ -56,14 +55,8 @@ func (bc *BalanceClient) ChangeBalance(ctx context.Context, entityType EntityTyp
 		url = fmt.Sprintf("%s/internal/balance", bc.orgUrl)
 		reqBody, _ = json.Marshal(map[string]interface{}{"id": id, "delta": delta})
 	case TypeProject:
-		// У проектов эндпоинт POST /{id}/funds - принимает только положительные значения
-		// Отправляем абсолютное значение (без знака)
 		url = fmt.Sprintf("%s/%d/funds", bc.projectUrl, id)
-		absAmount := delta
-		if absAmount < 0 {
-			absAmount = -absAmount
-		}
-		reqBody, _ = json.Marshal(map[string]interface{}{"amount": absAmount})
+		reqBody, _ = json.Marshal(map[string]interface{}{"amount": delta})
 	default:
 		return fmt.Errorf("unknown entity type: %s", entityType)
 	}

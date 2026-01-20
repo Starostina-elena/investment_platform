@@ -44,24 +44,18 @@ func (s *service) Transfer(ctx context.Context, fromType, toType clients.EntityT
 
 	s.log.Info("starting transfer", "from", fromType, "from_id", fromID, "to", toType, "to_id", toID, "amount", amount)
 
-	// --- 1. Списание средств (Deduct) ---
-	// Если здесь ошибка (недостаточно средств), процесс прерывается
 	err := s.clients.ChangeBalance(ctx, fromType, fromID, -amount)
 	if err != nil {
 		s.log.Error("failed to deduct funds", "error", err)
 		return nil, fmt.Errorf("transaction failed: %v", err)
 	}
 
-	// --- 2. Начисление средств (Add) ---
 	err = s.clients.ChangeBalance(ctx, toType, toID, amount)
 	if err != nil {
 		s.log.Error("failed to add funds, starting rollback", "error", err)
 
-		// --- COMPENSATING TRANSACTION (ROLLBACK) ---
-		// Возвращаем деньги отправителю
 		rbErr := s.clients.ChangeBalance(ctx, fromType, fromID, amount)
 		if rbErr != nil {
-			// Это критическая ситуация, требует ручного вмешательства администратора
 			s.log.Error("CRITICAL: ROLLBACK FAILED", "from_type", fromType, "from_id", fromID, "amount", amount, "error", rbErr)
 			return nil, fmt.Errorf("system error: money stuck, contact support")
 		}
@@ -69,7 +63,6 @@ func (s *service) Transfer(ctx context.Context, fromType, toType clients.EntityT
 		return nil, fmt.Errorf("transaction failed at destination: %v", err)
 	}
 
-	// --- 3. Сохранение истории ---
 	t := &Transaction{
 		FromType:  fromType,
 		FromID:    fromID,
@@ -81,7 +74,6 @@ func (s *service) Transfer(ctx context.Context, fromType, toType clients.EntityT
 
 	id, err := s.repo.Create(ctx, t)
 	if err != nil {
-		// Деньги переведены, но история не сохранилась. Не критично для балансов, но плохо для отчетности.
 		s.log.Error("transaction successful but failed to save record", "error", err)
 	}
 	t.ID = id

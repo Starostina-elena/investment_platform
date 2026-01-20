@@ -13,7 +13,6 @@ type Repo struct {
 }
 
 func NewRepo(db *sqlx.DB) *Repo {
-	// Создаем таблицу при старте (для упрощения, в проде нужны миграции)
 	db.MustExec(`
 		CREATE TABLE IF NOT EXISTS payments (
 			id UUID PRIMARY KEY,

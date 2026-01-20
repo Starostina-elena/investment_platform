@@ -627,14 +627,12 @@ func (r *Repo) ChangeBalance(ctx context.Context, orgID int, delta float64) erro
 	defer tx.Rollback()
 
 	var balance float64
-	// Блокируем строку для обновления (FOR UPDATE)
 	err = tx.QueryRowxContext(ctx, "SELECT balance FROM organizations WHERE id = $1 FOR UPDATE", orgID).Scan(&balance)
 	if err != nil {
 		r.log.Error("failed to get org balance", "org_id", orgID, "error", err)
 		return err
 	}
 
-	// Если списание, проверяем, хватит ли средств
 	if balance+delta < 0 {
 		return fmt.Errorf("insufficient funds in organization %d", orgID)
 	}
