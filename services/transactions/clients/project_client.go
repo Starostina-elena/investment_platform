@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -44,7 +45,12 @@ func (pc *ProjectClient) AddFunds(ctx context.Context, projectID int, amount flo
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			// TODO maybe not ignore
+		}
+	}(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		pc.log.Error("project service returned error", "status", resp.StatusCode)

@@ -40,7 +40,12 @@ func main() {
 	logger.Info("starting transactions service")
 
 	db := openDB()
-	defer db.Close()
+	defer func(db *sqlx.DB) {
+		err := db.Close()
+		if err != nil {
+			// TODO maybe not ignore
+		}
+	}(db)
 
 	// Исправляем имена переменных, чтобы не конфликтовали с пакетами
 	repository := repo.NewRepo(db, *logger)
