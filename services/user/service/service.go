@@ -29,6 +29,8 @@ type Service interface {
 	UploadAvatar(ctx context.Context, userID int, file multipart.File, fileHeader *multipart.FileHeader) (string, error)
 	DeleteAvatar(ctx context.Context, userID int, avatarPath string) error
 	ChangePassword(ctx context.Context, userID int, oldPassword string, newPassword string) (*core.User, error)
+	GetActiveInvestments(ctx context.Context, userID int) ([]core.UserProjectInvestment, error)
+	GetArchivedInvestments(ctx context.Context, userID int) ([]core.UserProjectInvestment, error)
 }
 
 type service struct {
@@ -207,3 +209,22 @@ func (s *service) ChangePassword(ctx context.Context, userID int, oldPassword st
 	s.log.Info("password changed successfully", "user_id", userID)
 	return updatedUser, nil
 }
+
+func (s *service) GetActiveInvestments(ctx context.Context, userID int) ([]core.UserProjectInvestment, error) {
+	investments, err := s.repo.GetActiveInvestments(ctx, userID)
+	if err != nil {
+		s.log.Error("failed to get active investments", "user_id", userID, "error", err)
+		return nil, err
+	}
+	return investments, nil
+}
+
+func (s *service) GetArchivedInvestments(ctx context.Context, userID int) ([]core.UserProjectInvestment, error) {
+	investments, err := s.repo.GetArchivedInvestments(ctx, userID)
+	if err != nil {
+		s.log.Error("failed to get archived investments", "user_id", userID, "error", err)
+		return nil, err
+	}
+	return investments, nil
+}
+

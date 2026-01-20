@@ -31,6 +31,8 @@ type RepoInterface interface {
 	BanUser(ctx context.Context, userID int, isBanned bool) error
 	UpdateAvatarPath(ctx context.Context, userID int, avatarPath *string) error
 	UpdatePassword(ctx context.Context, userID int, passwordHash string) error
+	GetActiveInvestments(ctx context.Context, userID int) ([]core.UserProjectInvestment, error)
+	GetArchivedInvestments(ctx context.Context, userID int) ([]core.UserProjectInvestment, error)
 }
 
 func NewRepo(db *sqlx.DB, log slog.Logger) RepoInterface {
@@ -131,4 +133,86 @@ func (r *Repo) UpdateAvatarPath(ctx context.Context, userID int, avatarPath *str
 func (r *Repo) UpdatePassword(ctx context.Context, userID int, passwordHash string) error {
 	_, err := r.db.ExecContext(ctx, `UPDATE users SET password_hash = $1 WHERE id = $2`, passwordHash, userID)
 	return err
+}
+
+func (r *Repo) GetActiveInvestments(ctx context.Context, userID int) ([]core.UserProjectInvestment, error) {
+	query := `
+		SELECT DISTINCT
+			p.id as project_id,
+			p.name as project_name,
+			p.quick_peek,
+			p.monetization_type,
+			p.created_at,
+			p.is_completed,
+			p.is_banned,
+			COALESCE(SUM(t_invested.amount), 0) as total_invested,
+			0 as total_received
+		FROM projects p
+		INNER JOIN transactions t_invested 
+			ON t_invested.reciever_id = p.id 
+			AND t_invested.from_id = $1
+			AND t_invested.type = 'user_to_project'
+		WHERE p.monetization_type NOT IN ('custom', 'charity')
+			AND NOT EXISTS (
+				SELECT 1 
+				FROM transactions t_received 
+				WHERE t_received.from_id = p.id 
+					AND t_received.reciever_id = $1
+					AND t_received.type = 'project_to_user'
+			)
+		GROUP BY p.id, p.name, p.quick_peek, p.monetization_type, p.created_at, p.is_completed, p.is_banned
+		ORDER BY p.created_at DESC
+	`
+
+	var investments []core.UserProjectInvestment
+	err := r.db.SelectContext(ctx, &investments, query, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return investments, nil
+}
+
+func (r *Repo) GetArchivedInvestments(ctx context.Context, userID int) ([]core.UserProjectInvestment, error) {
+	query := `
+		SELECT DISTINCT
+			p.id as project_id,
+			p.name as project_name,
+			p.quick_peek,
+			p.monetization_type,
+			p.created_at,
+			p.is_completed,
+			p.is_banned,
+			COALESCE(SUM(t_invested.amount), 0) as total_invested,
+			COALESCE((
+				SELECT SUM(t_received.amount)
+				FROM transactions t_received
+				WHERE t_received.from_id = p.id 
+					AND t_received.reciever_id = $1
+					AND t_received.type = 'project_to_user'
+			), 0) as total_received
+		FROM projects p
+		INNER JOIN transactions t_invested 
+			ON t_invested.reciever_id = p.id 
+			AND t_invested.from_id = $1
+			AND t_invested.type = 'user_to_project'
+		WHERE p.monetization_type IN ('custom', 'charity')
+			OR EXISTS (
+				SELECT 1 
+				FROM transactions t_received 
+				WHERE t_received.from_id = p.id 
+					AND t_received.reciever_id = $1
+					AND t_received.type = 'project_to_user'
+			)
+		GROUP BY p.id, p.name, p.quick_peek, p.monetization_type, p.created_at, p.is_completed, p.is_banned
+		ORDER BY p.created_at DESC
+	`
+
+	var investments []core.UserProjectInvestment
+	err := r.db.SelectContext(ctx, &investments, query, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return investments, nil
 }
