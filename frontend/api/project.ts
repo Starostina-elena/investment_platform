@@ -43,7 +43,7 @@ export async function GetProjects(
         const params = new URLSearchParams();
         params.append("limit", limit.toString());
         params.append("offset", offset.toString());
-        if (query) params.append("q", query);
+        if (query) params.append("search", query);
         if (category) params.append("category", category);
 
         const res = await api.get(`/projects/projects/?${params.toString()}`);
