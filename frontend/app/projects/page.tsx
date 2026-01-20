@@ -6,7 +6,7 @@ import {GetProjects, Project} from "@/api/project";
 import ProjectPreviewNew from "@/app/components/project-preview-new";
 import Spinner from "@/app/components/spinner";
 import {CATEGORIES} from "@/app/globals";
-import styles from "./projects.module.css"; // Свои стили для каталога
+import styles from "./page.module.css"; // Свои стили для каталога
 
 export default function ProjectsPage() {
     return (
