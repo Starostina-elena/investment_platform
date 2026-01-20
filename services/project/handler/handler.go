@@ -255,6 +255,7 @@ func GetProjectListHandler(h *Handler) http.HandlerFunc {
 		limitStr := r.URL.Query().Get("limit")
 		offsetStr := r.URL.Query().Get("offset")
 		monetizationType := r.URL.Query().Get("type")
+		searchQuery := r.URL.Query().Get("search")
 
 		limit := 10
 		offset := 0
@@ -283,7 +284,7 @@ func GetProjectListHandler(h *Handler) http.HandlerFunc {
 			}
 		}
 
-		projects, err := h.service.GetList(r.Context(), limit, offset, monetizationType)
+		projects, err := h.service.GetList(r.Context(), limit, offset, monetizationType, searchQuery)
 		if err != nil {
 			h.log.Error("failed to get projects list", "error", err)
 			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
