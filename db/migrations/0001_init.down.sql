@@ -1,4 +1,3 @@
-DROP TRIGGER IF EXISTS projects_set_completed ON projects;
 DROP FUNCTION IF EXISTS trg_set_project_completed();
 
 DROP INDEX IF EXISTS idx_projects_creator_id;
