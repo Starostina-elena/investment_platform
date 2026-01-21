@@ -14,7 +14,7 @@ import avatarPlaceholder from "@/public/avatar.svg";
 import MessageComponent from "@/app/components/message";
 import { Message } from "@/api/api";
 import Spinner from "@/app/components/spinner";
-import TopUpModal from "@/app/components/top-up-modal";
+import PaymentSection from "@/app/components/payment-section";
 import InvestmentsList from "@/app/components/investments-list";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import AdminBanControl from "@/app/components/admin-ban-control";
@@ -226,7 +226,6 @@ export default function UserView({ user, isOwner }: UserViewProps) {
                                                     {isRefreshing ? <Spinner size={16} /> : <RefreshCw size={16} />}
                                                 </Button>
                                             )}
-                                            {isOwner && <TopUpModal />}
                                         </div>
                                     </div>
 
@@ -344,6 +343,16 @@ export default function UserView({ user, isOwner }: UserViewProps) {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Операции с деньгами */}
+                            {isOwner && (
+                                <div>
+                                    <h2 className={styles.descHeader}>Финансовые операции</h2>
+                                    <div className="rounded-lg shadow-sm border border-gray-200" style={{ padding: '0', margin: '0', backgroundColor: 'transparent', display: 'block' }}>
+                                        <PaymentSection />
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Активность / Инвестиции */}
                             <div>

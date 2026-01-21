@@ -33,3 +33,33 @@ export async function InitPayment(
         return null;
     }
 }
+
+export async function InitWithdraw(
+    amount: number,
+    payoutToken: string,
+    setMessage: (msg: Message) => void
+): Promise<string | null> {
+    try {
+        const user = useUserStore.getState().user;
+
+        if (!user) {
+            setMessage({isError: true, message: "Ошибка: пользователь не авторизован"});
+            return null;
+        }
+
+        console.log("Sending withdraw init:", { user_id: user.id, amount, payout_destination: payoutToken });
+
+        const res = await api.post("/payment/withdraw/init", {
+            entity_type: "user",
+            entity_id: user.id,
+            amount: amount,
+            payout_destination: payoutToken
+        });
+
+        return res.data.id;
+    } catch (e: any) {
+        console.error("Withdraw init error:", e);
+        DefaultErrorHandler(setMessage)(e);
+        return null;
+    }
+}

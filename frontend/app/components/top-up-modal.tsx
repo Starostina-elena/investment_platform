@@ -42,7 +42,7 @@ export default function TopUpModal() {
                 onClick={() => setIsOpen(true)}
                 variant="outline"
                 size="sm"
-                className="ml-2 gap-2 border-[#DB935B] text-[#DB935B] hover:bg-[#DB935B] hover:text-black z-10 pointer-events-auto relative"
+                className="ml-2 gap-2 border-[#B7FF00] text-[#B7FF00] hover:bg-[#B7FF00] hover:text-black z-10 pointer-events-auto relative font-bold"
             >
                 <PlusCircle className="w-4 h-4" /> Пополнить
             </Button>
@@ -52,28 +52,43 @@ export default function TopUpModal() {
                 onClose={() => setIsOpen(false)}
                 title="Пополнение баланса"
             >
-                <div className="space-y-4">
-                    <div>
-                        <Label htmlFor="topup-amount" className="text-sm">Сумма (₽)</Label>
+                <div className="space-y-5">
+                    <div className="bg-blue-50 p-5 rounded-lg border border-blue-200">
+                        <Label htmlFor="topup-amount" className="text-sm font-bold block mb-3 text-gray-900">Сумма (₽)</Label>
                         <Input
                             id="topup-amount"
                             type="number"
                             value={amount}
                             min={100}
                             onChange={(e) => setAmount(e.target.value)}
-                            className="bg-[#301EBD] border-none text-white mt-1"
+                            className="bg-white border-blue-300 text-black font-bold text-lg p-3 w-full"
                         />
+                        <p className="text-xs text-blue-700 mt-2">Минимальная сумма: 100 ₽</p>
                     </div>
-                    <p className="text-xs text-gray-400">
-                        Вы будете перенаправлены на страницу ЮKassa для оплаты банковской картой.
-                    </p>
+
+                    <div className="bg-gradient-to-br from-[#B7FF00] to-[#a6e600] p-5 rounded-lg">
+                        <p className="text-sm text-gray-900 mb-2">
+                            <strong>Итого к оплате:</strong>
+                        </p>
+                        <p className="text-3xl font-bold text-gray-900">
+                            {parseFloat(amount || "0").toLocaleString()} ₽
+                        </p>
+                    </div>
+
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <p className="text-sm text-gray-700">
+                            Вы будете перенаправлены на страницу ЮKassa для оплаты банковской картой.
+                        </p>
+                    </div>
+
                     <MessageComponent message={message} />
+                    
                     <Button 
                         onClick={handleTopUp} 
                         disabled={loading} 
-                        className="w-full bg-[#B7FF00] text-black hover:bg-[#a6e600] font-bold"
+                        className="w-full bg-[#B7FF00] text-black hover:bg-[#a6e600] font-bold text-base py-6 h-auto"
                     >
-                        {loading ? <Spinner size={20} /> : `Перейти к оплате`}
+                        {loading ? <Spinner size={20} /> : "Перейти к оплате"}
                     </Button>
                 </div>
             </SimpleModal>

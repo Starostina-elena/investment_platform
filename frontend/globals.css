@@ -18,7 +18,7 @@ html,
 body {
     max-width: 100vw;
     overflow-x: hidden;
-    font-size: clamp(10px, 10px + (100vw - 575px) / (1920 - 575) * (16 - 10), 16px);
+    font-size: clamp(12px, 12px + (100vw - 575px) / (1920 - 575) * (18 - 12), 18px);
 }
 
 body {
@@ -45,4 +45,18 @@ a {
 button {
     border: none;
     outline: none;
+}
+
+#payout-form {
+    display: flex !important;
+    justify-content: flex-start !important;
+    width: 100% !important;
+    text-align: left !important;
+    margin-left: 0 !important;
+    margin-right: auto !important;
+}
+
+#payout-form * {
+    text-align: left !important;
+    margin-left: 0 !important;
 }

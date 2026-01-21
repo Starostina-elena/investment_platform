@@ -216,6 +216,8 @@ services:
       - "3000:3000"
     depends_on:
       - nginx
+    environment:
+      - NEXT_PUBLIC_YOOKASSA_AGENT_ID=${YOOKASSA_AGENT_ID}
     networks:
       - app-network
 
