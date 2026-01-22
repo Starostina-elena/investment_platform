@@ -159,22 +159,23 @@ export default function PaymentSection() {
         }
 
         setWithdrawLoading(true);
-        setWithdrawMessage(null);
+        setWithdrawMessage({
+            isError: false,
+            message: `Запрос на вывод ${value} ₽ отправлен`
+        });
+        setWithdrawOpen(false);
+        setShowWithdrawForm(true);
+        setSelectedCard(null);
+        setWithdrawAmount("1000");
+        widgetRenderedRef.current = false;
 
         const result = await InitWithdraw(value, selectedCard.payout_token, setWithdrawMessage);
 
         if (result) {
             setWithdrawMessage({
                 isError: false,
-                message: `Запрос на вывод ${value} ₽ успешно отправлен. ID: ${result}`
+                message: `Запрос на вывод ${value} ₽ отправлен. ID: ${result}`
             });
-            setTimeout(() => {
-                setWithdrawOpen(false);
-                setShowWithdrawForm(true);
-                setSelectedCard(null);
-                setWithdrawAmount("1000");
-                widgetRenderedRef.current = false;
-            }, 2000);
         }
 
         setWithdrawLoading(false);
@@ -193,6 +194,13 @@ export default function PaymentSection() {
 
     return (
         <div style={{ padding: '20px', margin: '0', width: '100%', display: 'block' }}>
+            {(topupMessage || withdrawMessage) && (
+                <div style={{ marginBottom: '20px' }}>
+                    {topupMessage && <MessageComponent message={topupMessage} />}
+                    {withdrawMessage && <MessageComponent message={withdrawMessage} />}
+                </div>
+            )}
+
             <div className="border-2 border-gray-200 rounded-lg" style={{ marginBottom: '20px' }}>
                 <button
                     onClick={() => setTopupOpen(!topupOpen)}
