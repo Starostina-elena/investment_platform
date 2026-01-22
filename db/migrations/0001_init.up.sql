@@ -178,11 +178,6 @@ RETURN NEW;
 END;
     $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER projects_set_completed
-    BEFORE INSERT OR UPDATE OF current_money, wanted_money ON projects
-    FOR EACH ROW
-    EXECUTE FUNCTION trg_set_project_completed();
-
 CREATE INDEX idx_projects_creator_id ON projects (creator_id);
 CREATE INDEX idx_organizations_type ON organizations (type);
 CREATE INDEX idx_organizations_owner ON organizations (owner);
