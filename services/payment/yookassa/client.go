@@ -13,28 +13,33 @@ import (
 )
 
 type Client struct {
-	ShopID    string
-	SecretKey string
-	APIURL    string
-	HTTP      *http.Client
+	ShopID       string
+	SecretKey    string
+	AgentID      string
+	PayoutAPIKey string
+	APIURL       string
+	PayoutAPIURL string
+	HTTP         *http.Client
 }
 
 func NewClient() *Client {
 	shopID := os.Getenv("YOOKASSA_SHOP_ID")
 	secretKey := os.Getenv("YOOKASSA_SECRET_KEY")
+	agentID := os.Getenv("YOOKASSA_AGENT_ID")
+	payoutAPIKey := os.Getenv("YOOKASSA_PAYOUT_API_KEY")
 
 	fmt.Printf("YooKassa Client initialized:\n")
 	fmt.Printf("  Shop ID: %s\n", shopID)
-	fmt.Printf("  Secret Key length: %d\n", len(secretKey))
-	if len(secretKey) > 10 {
-		fmt.Printf("  Secret Key prefix: %s...\n", secretKey[:10])
-	}
+	fmt.Printf("  Agent ID: %s\n", agentID)
 
 	return &Client{
-		ShopID:    shopID,
-		SecretKey: secretKey,
-		APIURL:    "https://api.yookassa.ru/v3/payments",
-		HTTP:      &http.Client{},
+		ShopID:       shopID,
+		SecretKey:    secretKey,
+		AgentID:      agentID,
+		PayoutAPIKey: payoutAPIKey,
+		APIURL:       "https://api.yookassa.ru/v3/payments",
+		PayoutAPIURL: "https://api.yookassa.ru/v3/payouts",
+		HTTP:         &http.Client{},
 	}
 }
 
@@ -159,10 +164,10 @@ type PayoutYooMoney struct {
 }
 
 type CreatePayoutRequest struct {
-	Amount            Amount            `json:"amount"`
-	Description       string            `json:"description"`
-	PayoutDestination PayoutDestination `json:"payout_destination_data"`
-	PayoutMetadata    map[string]string `json:"metadata,omitempty"`
+	Amount      Amount            `json:"amount"`
+	Description string            `json:"description"`
+	PayoutToken string            `json:"payout_token"`
+	Metadata    map[string]string `json:"metadata,omitempty"`
 }
 
 type PayoutResponse struct {
@@ -170,26 +175,24 @@ type PayoutResponse struct {
 	Status string `json:"status"`
 }
 
-func (c *Client) CreatePayout(amount string, description string, destination PayoutDestination) (*PayoutResponse, error) {
-	payoutURL := "https://api.yookassa.ru/v3/payouts"
-
+func (c *Client) CreatePayout(amount string, description string, payoutToken string) (*PayoutResponse, error) {
 	reqBody := CreatePayoutRequest{
 		Amount: Amount{
 			Value:    amount,
 			Currency: "RUB",
 		},
-		Description:       description,
-		PayoutDestination: destination,
+		Description: description,
+		PayoutToken: payoutToken,
 	}
 
 	bodyBytes, _ := json.Marshal(reqBody)
 	fmt.Printf("YooKassa CreatePayout request JSON:\n%s\n", string(bodyBytes))
-	req, err := http.NewRequest("POST", payoutURL, bytes.NewBuffer(bodyBytes))
+	req, err := http.NewRequest("POST", c.PayoutAPIURL, bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		return nil, err
 	}
 
-	auth := base64.StdEncoding.EncodeToString([]byte(c.ShopID + ":" + c.SecretKey))
+	auth := base64.StdEncoding.EncodeToString([]byte(c.AgentID + ":" + c.PayoutAPIKey))
 	req.Header.Set("Authorization", "Basic "+auth)
 	req.Header.Set("Idempotence-Key", uuid.New().String())
 	req.Header.Set("Content-Type", "application/json")
@@ -221,7 +224,7 @@ func (c *Client) GetPayout(payoutID string) (*PayoutResponse, error) {
 		return nil, err
 	}
 
-	auth := base64.StdEncoding.EncodeToString([]byte(c.ShopID + ":" + c.SecretKey))
+	auth := base64.StdEncoding.EncodeToString([]byte(c.AgentID + ":" + c.PayoutAPIKey))
 	req.Header.Set("Authorization", "Basic "+auth)
 	req.Header.Set("Content-Type", "application/json")
 

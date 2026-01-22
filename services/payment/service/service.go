@@ -160,35 +160,11 @@ func (s *Service) ProcessPendingPayments(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) InitWithdrawal(ctx context.Context, entityType string, entityID int, amount float64, destType string, destination string) (string, error) {
+func (s *Service) InitWithdrawal(ctx context.Context, entityType string, entityID int, amount float64, destination string) (string, error) {
 	amountStr := fmt.Sprintf("%.2f", amount)
 	desc := fmt.Sprintf("Вывод средств %s #%d", entityType, entityID)
 
-	var dest yookassa.PayoutDestination
-	switch destType {
-	case "bank_card":
-		dest = yookassa.PayoutDestination{
-			Type: "bank_card",
-			Card: &yookassa.PayoutCard{
-				Number: destination,
-			},
-		}
-	case "yoo_money":
-		yooMoneyDest := &yookassa.PayoutYooMoney{}
-		if len(destination) >= 10 && len(destination) <= 11 {
-			yooMoneyDest.Phone = destination
-		} else {
-			yooMoneyDest.AccountNumber = destination
-		}
-		dest = yookassa.PayoutDestination{
-			Type:     "yoo_money",
-			YooMoney: yooMoneyDest,
-		}
-	default:
-		return "", fmt.Errorf("invalid destination type: %s", destType)
-	}
-
-	yooResp, err := s.yookassa.CreatePayout(amountStr, desc, dest)
+	yooResp, err := s.yookassa.CreatePayout(amountStr, desc, destination)
 	if err != nil {
 		s.log.Error("yookassa payout creation failed", "error", err)
 		return "", err

@@ -113,12 +113,11 @@ func (h *Handler) CheckPaymentHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type InitWithdrawalRequest struct {
-	EntityType            string  `json:"entity_type"`
-	EntityID              int     `json:"entity_id"`
-	UserID                int     `json:"user_id"`
-	Amount                float64 `json:"amount"`
-	PayoutDestinationType string  `json:"payout_destination_type"`
-	PayoutDestination     string  `json:"payout_destination"`
+	EntityType        string  `json:"entity_type"`
+	EntityID          int     `json:"entity_id"`
+	UserID            int     `json:"user_id"`
+	Amount            float64 `json:"amount"`
+	PayoutDestination string  `json:"payout_destination"`
 }
 
 func (h *Handler) InitWithdrawalHandler(w http.ResponseWriter, r *http.Request) {
@@ -147,12 +146,12 @@ func (h *Handler) InitWithdrawalHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if req.PayoutDestinationType == "" || req.PayoutDestination == "" {
-		http.Error(w, "payout_destination_type and payout_destination are required", http.StatusBadRequest)
+	if req.PayoutDestination == "" {
+		http.Error(w, "payout_destination is required", http.StatusBadRequest)
 		return
 	}
 
-	withdrawalID, err := h.service.InitWithdrawal(r.Context(), entityType, entityID, req.Amount, req.PayoutDestinationType, req.PayoutDestination)
+	withdrawalID, err := h.service.InitWithdrawal(r.Context(), entityType, entityID, req.Amount, req.PayoutDestination)
 	if err != nil {
 		http.Error(w, "failed to init withdrawal", http.StatusInternalServerError)
 		return

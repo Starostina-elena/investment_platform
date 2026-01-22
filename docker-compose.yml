@@ -165,6 +165,8 @@ services:
       - DB_NAME=venture-platform-db
       - YOOKASSA_SHOP_ID=${YOOKASSA_SHOP_ID}
       - YOOKASSA_SECRET_KEY=${YOOKASSA_SECRET_KEY}
+      - YOOKASSA_AGENT_ID=${YOOKASSA_AGENT_ID}
+      - YOOKASSA_PAYOUT_API_KEY=${YOOKASSA_PAYOUT_API_KEY}
       - TRANSACTION_SERVICE_URL=http://transactions:8103
     networks:
       - app-network
