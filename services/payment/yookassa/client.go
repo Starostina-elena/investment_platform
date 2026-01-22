@@ -43,7 +43,6 @@ func NewClient() *Client {
 	}
 }
 
-// Структуры для запросов/ответов ЮKassa
 type Amount struct {
 	Value    string `json:"value"`
 	Currency string `json:"currency"`
@@ -91,7 +90,6 @@ func (c *Client) CreatePayment(amount string, description string, returnURL stri
 		return nil, err
 	}
 
-	// Auth headers
 	auth := base64.StdEncoding.EncodeToString([]byte(c.ShopID + ":" + c.SecretKey))
 	req.Header.Set("Authorization", "Basic "+auth)
 	req.Header.Set("Idempotence-Key", uuid.New().String())
@@ -119,6 +117,7 @@ func (c *Client) CreatePayment(amount string, description string, returnURL stri
 
 	return &result, nil
 }
+
 func (c *Client) GetPayment(paymentID string) (*CreatePaymentResponse, error) {
 	req, err := http.NewRequest("GET", c.APIURL+"/"+paymentID, nil)
 	if err != nil {
@@ -146,21 +145,6 @@ func (c *Client) GetPayment(paymentID string) (*CreatePaymentResponse, error) {
 	}
 
 	return &result, nil
-}
-
-type PayoutDestination struct {
-	Type     string          `json:"type"`                // "bank_card" или "yoo_money"
-	Card     *PayoutCard     `json:"card,omitempty"`      // для bank_card
-	YooMoney *PayoutYooMoney `json:"yoo_money,omitempty"` // для yoo_money
-}
-
-type PayoutCard struct {
-	Number string `json:"number"`
-}
-
-type PayoutYooMoney struct {
-	Phone         string `json:"phone,omitempty"`
-	AccountNumber string `json:"account_number,omitempty"`
 }
 
 type CreatePayoutRequest struct {

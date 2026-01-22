@@ -18,7 +18,6 @@ func NewHandler(s *service.Service) *Handler {
 type InitRequest struct {
 	EntityType string  `json:"entity_type"`
 	EntityID   int     `json:"entity_id"`
-	UserID     int     `json:"user_id"` // для обратной совместимости
 	Amount     float64 `json:"amount"`
 	ReturnURL  string  `json:"return_url"`
 }
@@ -30,14 +29,10 @@ func (h *Handler) InitPaymentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Backward compatibility: если entity_type не указан, считаем что это user
 	entityType := req.EntityType
 	entityID := req.EntityID
 	if entityType == "" {
 		entityType = "user"
-	}
-	if entityID == 0 && req.UserID != 0 {
-		entityID = req.UserID
 	}
 	if entityID == 0 {
 		http.Error(w, "entity_id must be set", http.StatusBadRequest)
@@ -67,7 +62,6 @@ func (h *Handler) WebhookHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Обрабатываем payment.succeeded и payment.failed
 	if req.Event == "payment.succeeded" || req.Event == "payment.failed" {
 		if err := h.service.ProcessWebhook(r.Context(), req.Event, req.Object); err != nil {
 			http.Error(w, "internal error", http.StatusInternalServerError)
@@ -75,7 +69,6 @@ func (h *Handler) WebhookHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Обрабатываем payout.succeeded и payout.failed
 	if req.Event == "payout.succeeded" || req.Event == "payout.failed" {
 		if err := h.service.ProcessWithdrawalWebhook(r.Context(), req.Event, req.Object); err != nil {
 			http.Error(w, "internal error", http.StatusInternalServerError)
@@ -115,7 +108,6 @@ func (h *Handler) CheckPaymentHandler(w http.ResponseWriter, r *http.Request) {
 type InitWithdrawalRequest struct {
 	EntityType        string  `json:"entity_type"`
 	EntityID          int     `json:"entity_id"`
-	UserID            int     `json:"user_id"`
 	Amount            float64 `json:"amount"`
 	PayoutDestination string  `json:"payout_destination"`
 }
@@ -127,14 +119,10 @@ func (h *Handler) InitWithdrawalHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Backward compatibility
 	entityType := req.EntityType
 	entityID := req.EntityID
 	if entityType == "" {
 		entityType = "user"
-	}
-	if entityID == 0 && req.UserID != 0 {
-		entityID = req.UserID
 	}
 	if entityID == 0 {
 		http.Error(w, "entity_id must be set", http.StatusBadRequest)

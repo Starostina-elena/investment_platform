@@ -14,7 +14,7 @@ type Payment struct {
 	ID         string        `db:"id"`          // Внутренний UUID
 	ExternalID string        `db:"external_id"` // ID в ЮKassa
 	Amount     float64       `db:"amount"`
-	EntityID   int           `db:"entity_id"`   // Кого пополняем
+	EntityID   int           `db:"entity_id"`
 	EntityType string        `db:"entity_type"` // "user" или "org"
 	Status     PaymentStatus `db:"status"`
 	CreatedAt  time.Time     `db:"created_at"`
@@ -32,7 +32,7 @@ const (
 type Withdrawal struct {
 	ID         string           `db:"id"`          // Внутренний UUID
 	ExternalID string           `db:"external_id"` // ID выплаты в ЮKassa
-	EntityID   int              `db:"entity_id"`   // Кто выводит
+	EntityID   int              `db:"entity_id"`
 	EntityType string           `db:"entity_type"` // "user" или "org"
 	Amount     float64          `db:"amount"`
 	Status     WithdrawalStatus `db:"status"`

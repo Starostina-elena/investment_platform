@@ -21,7 +21,6 @@ import (
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 
-	// DB Connection
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")
 	user := os.Getenv("DB_USER")

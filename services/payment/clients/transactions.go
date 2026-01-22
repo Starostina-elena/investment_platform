@@ -27,8 +27,8 @@ func NewTransactionClient() *TransactionClient {
 
 func (tc *TransactionClient) Deposit(ctx context.Context, toType string, toID int, amount float64) error {
 	reqBody, _ := json.Marshal(map[string]interface{}{
-		"from_type": "external", // Важно! Это помечает ввод средств
-		"from_id":   0,          // ID системы/шлюза
+		"from_type": "external",
+		"from_id":   0,
 		"to_type":   toType,     // "user" или "org"
 		"to_id":     toID,
 		"amount":    amount,
@@ -56,8 +56,8 @@ func (tc *TransactionClient) Withdraw(ctx context.Context, fromType string, from
 	reqBody, _ := json.Marshal(map[string]interface{}{
 		"from_type": fromType,   // "user" или "org"
 		"from_id":   fromID,
-		"to_type":   "external", // помечает вывод средств
-		"to_id":     0,          // ID системы/шлюза
+		"to_type":   "external",
+		"to_id":     0,
 		"amount":    amount,
 	})
 
